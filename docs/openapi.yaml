@@ -1,0 +1,1378 @@
+openapi: 3.0.3
+info:
+  title: そなえアレ API
+  version: 1.0.0
+  description: |
+    食物アレルギー家庭向け防災備蓄支援アプリ「そなえアレ」のMVP API。
+    DB設計書を正本とし、編集画面なしの前提で公開APIを定義する。
+
+servers:
+  - url: http://localhost:3000/api
+
+tags:
+  - name: Auth
+  - name: Me
+  - name: Dashboard
+  - name: Family
+  - name: Plans
+  - name: Products
+  - name: StockItems
+  - name: Payments
+  - name: Notifications
+  - name: Review
+
+paths:
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: 新規登録
+      description: Supabase Auth と profiles を作成する
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpRequest'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignUpResponse'
+        '400':
+          description: 入力不正
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 重複登録
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: ログイン
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: 認証失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: ログアウト
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /me:
+    get:
+      tags: [Me]
+      summary: 自分情報取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: ダッシュボード集約取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /family:
+    get:
+      tags: [Family]
+      summary: 家族情報取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Family]
+      summary: 家族情報登録
+      description: family_profiles / family_members / member_allergens をまとめて登録する
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyCreateRequest'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyCreateResponse'
+        '400':
+          description: 入力不正
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 既に登録済み
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /plans/generate:
+    post:
+      tags: [Plans]
+      summary: 備えプラン生成
+      description: 生成のみ。DB保存はしない
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanGenerateRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanGenerateResponse'
+        '400':
+          description: 入力不正
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 生成不可
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /plans:
+    get:
+      tags: [Plans]
+      summary: 保存済みプラン一覧取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlansListResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Plans]
+      summary: 生成済みプラン保存
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanCreateRequest'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanCreateResponse'
+        '400':
+          description: 入力不正
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 保存件数上限超過
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /plans/{id}:
+    get:
+      tags: [Plans]
+      summary: 保存済みプラン詳細取得
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PlanId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanDetailResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 権限なし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 対象なし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Plans]
+      summary: 保存済みプラン削除
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PlanId'
+      responses:
+        '204':
+          description: 削除成功
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 権限なし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 対象なし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /products:
+    get:
+      tags: [Products]
+      summary: 商品一覧取得
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: product_type
+          schema:
+            type: string
+            enum: [emergency_food, daily_item]
+          description: 商品種別
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: 商品カテゴリ
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: キーワード検索
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductsListResponse'
+        '400':
+          description: 入力不正
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /products/{id}:
+    get:
+      tags: [Products]
+      summary: 商品詳細取得
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetailResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 対象なし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stock-items:
+    get:
+      tags: [StockItems]
+      summary: 備蓄商品一覧取得
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [expires_at, created_at]
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [all, expiring]
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockItemsListResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [StockItems]
+      summary: 備蓄商品登録
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockItemCreateRequest'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockItemCreateResponse'
+        '400':
+          description: 入力不正
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 商品なし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 業務ルール違反
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stock-items/{id}:
+    delete:
+      tags: [StockItems]
+      summary: 備蓄商品削除
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StockItemId'
+      responses:
+        '204':
+          description: 削除成功
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 権限なし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 対象なし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /payments/checkout:
+    post:
+      tags: [Payments]
+      summary: Stripe Checkout作成
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutResponse'
+        '400':
+          description: 入力不正
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 状態競合
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /payments/webhook:
+    post:
+      tags: [Payments]
+      summary: Stripe Webhook受信
+      description: subscriptions を更新する
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: 署名不正または不正リクエスト
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /notifications/expiry/run:
+    post:
+      tags: [Notifications]
+      summary: 賞味期限通知実行
+      description: 内部API。賞味期限30日前通知をまとめて実行する
+      security:
+        - internalApiKey: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationRunResponse'
+        '401':
+          description: 認証失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 実行権限なし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /review/summary:
+    get:
+      tags: [Review]
+      summary: 見直し画面情報取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewSummaryResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    internalApiKey:
+      type: apiKey
+      in: header
+      name: x-internal-api-key
+
+  parameters:
+    PlanId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ProductId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    StockItemId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        data:
+          nullable: true
+          example: null
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: 入力内容に誤りがあります
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  reason:
+                    type: string
+
+    MessageResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: logged out
+        error:
+          nullable: true
+          example: null
+
+    SignUpRequest:
+      type: object
+      required: [email, password, display_name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        display_name:
+          type: string
+
+    SignUpResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            user:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                email:
+                  type: string
+                  format: email
+                display_name:
+                  type: string
+        error:
+          nullable: true
+          example: null
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            access_token:
+              type: string
+            refresh_token:
+              type: string
+            user:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                email:
+                  type: string
+                  format: email
+                display_name:
+                  type: string
+        error:
+          nullable: true
+          example: null
+
+    MeResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            profile:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                display_name:
+                  type: string
+            subscription:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: active
+                current_period_end:
+                  type: string
+                  format: date-time
+                  nullable: true
+            current_plan:
+              type: object
+              properties:
+                plan_code:
+                  type: string
+                  example: free
+                plan_name:
+                  type: string
+                  example: 無料プラン
+                max_saved_plans:
+                  type: integer
+                  example: 1
+        error:
+          nullable: true
+          example: null
+
+    DashboardResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            family_summary:
+              type: object
+              properties:
+                household_size:
+                  type: integer
+                member_count:
+                  type: integer
+            saved_plans:
+              type: array
+              items:
+                $ref: '#/components/schemas/PlanSummary'
+            expiring_stock_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ExpiringStockItem'
+            cost_summary:
+              type: object
+              properties:
+                total_estimated_cost:
+                  type: number
+                yearly_estimated_cost:
+                  type: number
+        error:
+          nullable: true
+          example: null
+
+    FamilyCreateRequest:
+      type: object
+      required: [household_size, members]
+      properties:
+        household_size:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+          nullable: true
+        members:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/FamilyMemberInput'
+
+    FamilyCreateResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            family_profile_id:
+              type: string
+              format: uuid
+        error:
+          nullable: true
+          example: null
+
+    FamilyResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          nullable: true
+          properties:
+            family_profile:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                household_size:
+                  type: integer
+                notes:
+                  type: string
+                  nullable: true
+            members:
+              type: array
+              items:
+                $ref: '#/components/schemas/FamilyMember'
+        error:
+          nullable: true
+          example: null
+
+    FamilyMemberInput:
+      type: object
+      required: [role, age_group]
+      properties:
+        role:
+          type: string
+          example: child
+        age_group:
+          type: string
+          example: child
+        notes:
+          type: string
+          nullable: true
+        allergens:
+          type: array
+          items:
+            type: string
+
+    FamilyMember:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        role:
+          type: string
+        age_group:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        allergens:
+          type: array
+          items:
+            type: string
+
+    PlanGenerateRequest:
+      type: object
+      required: [family_profile_id, days, priority_policy, include_daily_items]
+      properties:
+        family_profile_id:
+          type: string
+          format: uuid
+        days:
+          type: integer
+          minimum: 1
+        priority_policy:
+          type: string
+          example: allergy_safety_first
+        include_daily_items:
+          type: boolean
+
+    PlanGenerateResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GeneratedPlan'
+        error:
+          nullable: true
+          example: null
+
+    GeneratedPlan:
+      type: object
+      properties:
+        title:
+          type: string
+        days:
+          type: integer
+        priority_policy:
+          type: string
+        include_daily_items:
+          type: boolean
+        total_estimated_cost:
+          type: number
+        yearly_estimated_cost:
+          type: number
+        ai_comment:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanItemInput'
+
+    PlanCreateRequest:
+      type: object
+      required:
+        - title
+        - days
+        - priority_policy
+        - include_daily_items
+        - total_estimated_cost
+        - yearly_estimated_cost
+        - items
+      properties:
+        title:
+          type: string
+        days:
+          type: integer
+          minimum: 1
+        priority_policy:
+          type: string
+        include_daily_items:
+          type: boolean
+        total_estimated_cost:
+          type: number
+          minimum: 0
+        yearly_estimated_cost:
+          type: number
+          minimum: 0
+        ai_comment:
+          type: string
+          nullable: true
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/PlanItemInput'
+
+    PlanCreateResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            created_at:
+              type: string
+              format: date-time
+        error:
+          nullable: true
+          example: null
+
+    PlansListResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            plans:
+              type: array
+              items:
+                $ref: '#/components/schemas/PlanSummary'
+        error:
+          nullable: true
+          example: null
+
+    PlanDetailResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            plan:
+              $ref: '#/components/schemas/PlanRecord'
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/PlanItemDetail'
+        error:
+          nullable: true
+          example: null
+
+    PlanSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        days:
+          type: integer
+        total_estimated_cost:
+          type: number
+        yearly_estimated_cost:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PlanRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        days:
+          type: integer
+        priority_policy:
+          type: string
+        include_daily_items:
+          type: boolean
+        total_estimated_cost:
+          type: number
+        yearly_estimated_cost:
+          type: number
+        ai_comment:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PlanItemInput:
+      type: object
+      required: [product_id, quantity, priority]
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+        priority:
+          type: string
+          example: high
+        purpose_note:
+          type: string
+          nullable: true
+
+    PlanItemDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        priority:
+          type: string
+        purpose_note:
+          type: string
+          nullable: true
+        product:
+          $ref: '#/components/schemas/ProductSummary'
+
+    ProductsListResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            products:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductSummary'
+        error:
+          nullable: true
+          example: null
+
+    ProductSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+        product_type:
+          type: string
+          enum: [emergency_food, daily_item]
+        is_free_from_28:
+          type: boolean
+        price:
+          type: number
+        purchase_url:
+          type: string
+          format: uri
+        shelf_life_months:
+          type: integer
+        note:
+          type: string
+          nullable: true
+
+    ProductDetailResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductSummary'
+        error:
+          nullable: true
+          example: null
+
+    StockItemCreateRequest:
+      type: object
+      required: [product_id, quantity, purchased_at, expires_at, unit_price]
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+        purchased_at:
+          type: string
+          format: date
+        expires_at:
+          type: string
+          format: date
+        unit_price:
+          type: number
+          minimum: 0
+
+    StockItemCreateResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            created_at:
+              type: string
+              format: date-time
+        error:
+          nullable: true
+          example: null
+
+    StockItemsListResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            stock_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/StockItem'
+        error:
+          nullable: true
+          example: null
+
+    StockItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        purchased_at:
+          type: string
+          format: date
+        expires_at:
+          type: string
+          format: date
+        unit_price:
+          type: number
+        notified_30days_at:
+          type: string
+          format: date-time
+          nullable: true
+        product:
+          $ref: '#/components/schemas/ProductSummary'
+
+    ExpiringStockItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+        expires_at:
+          type: string
+          format: date
+        days_left:
+          type: integer
+
+    CheckoutRequest:
+      type: object
+      required: [plan_code, success_url, cancel_url]
+      properties:
+        plan_code:
+          type: string
+          example: premium
+        success_url:
+          type: string
+          format: uri
+        cancel_url:
+          type: string
+          format: uri
+
+    CheckoutResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            session_id:
+              type: string
+            checkout_url:
+              type: string
+              format: uri
+        error:
+          nullable: true
+          example: null
+
+    NotificationRunResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            target_user_count:
+              type: integer
+            sent_count:
+              type: integer
+            skipped_count:
+              type: integer
+            error_count:
+              type: integer
+        error:
+          nullable: true
+          example: null
+
+    ReviewSummaryResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            expiring_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ExpiringStockItem'
+            recommended_products:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductSummary'
+            related_saved_plans:
+              type: array
+              items:
+                $ref: '#/components/schemas/PlanSummary'
+        error:
+          nullable: true
+          example: null
