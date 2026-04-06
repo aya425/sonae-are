@@ -40,7 +40,8 @@
 - 備えプラン編集機能はMVPの対象外とする
 - 備蓄商品は、実際に購入した商品をユーザーが登録する
 - 備蓄商品編集機能はMVPの対象外とする
-- 備蓄商品は商品マスタへの外部キー参照を必須とせず、独立して登録可能とする
+- 備蓄商品は商品マスタから選択して登録できるようにするが、商品マスタに存在しない商品も自由入力で登録可能とする
+- そのため、備蓄商品の商品マスタ参照は任意とする
 - 通知はメールのみとし、賞味期限30日前に1日1回バッチ処理で送信する
 - 各備蓄商品に対する30日前通知は1回のみとする
 - 同日に通知対象となった商品は、ユーザー単位で1通のメールにまとめて送信する
@@ -66,7 +67,7 @@
 
 商品情報は固定商品マスタとして `products` に保持し、ユーザーごとの保存済み備えプランや備蓄商品とは分離する。
 
-備蓄商品は、実際にユーザーが購入・保有している状態を記録するデータとして扱い、商品マスタとは独立して保持する。
+備蓄商品は、実際にユーザーが購入・保有している状態を記録するデータとして扱う。商品マスタから選択して登録した場合は商品マスタとの参照を保持しつつ、商品マスタに存在しない商品も自由入力で登録できるようにする。
 
 #### 2.2.3 有料機能制御は最小構成で行う
 
@@ -175,6 +176,7 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 - `plans` 1 : N `plan_items`
 - `products` 1 : N `plan_items`
 - `users` 1 : N `stock_items`
+- `products` 1 : N `stock_items`（任意参照）
 - `users` 1 : N `notification_logs`
 - `stock_items` 1 : N `notification_logs`
 - `plans_master` 1 : N `subscriptions`
@@ -483,11 +485,13 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 #### 外部キー
 
 - `user_id -> users.id`
+- `product_id -> products.id`（NULL可）
 
 #### 主要カラム
 
 - `id`
 - `user_id`
+- `product_id`
 - `product_name`
 - `quantity`
 - `purchased_at`
@@ -512,8 +516,10 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 
 #### 備考
 
-- `products` とは独立して保持する
-- 実際の購入商品を自由に登録できるようにするため、商品名を直接保持する
+- `product_id` は商品マスタから選択して登録した場合のみ保持し、自由入力で登録した場合は NULL を許容する
+- `product_name` は表示用および自由入力商品登録のために保持する
+- 商品マスタから選択した場合は、`products.price` をもとに `unit_price` を自動入力する
+- 商品マスタに存在しない商品を自由入力する場合は、`product_name` と `unit_price` をユーザーが入力する
 - `purchased_at` はユーザー入力項目とはせず、備蓄登録日時を購入日として自動保存する
 - `notified_30days_at` は30日前通知済み判定に使用する
 - 商品マスタ価格とは別に、実際の購入単価を保持する
@@ -740,6 +746,7 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 - `plan_items.plan_id`
 - `plan_items.product_id`
 - `stock_items.user_id`
+- `stock_items.product_id`
 - `stock_items (user_id, expires_at)`
 - `stock_items (expires_at)`
 - `notification_logs.user_id`
@@ -1027,7 +1034,6 @@ ER図には全制約やRLSの詳細は載せず、全体構造の把握に必要
 
 #### `stock_items`
 
-- `product_id`
 - `storage_location`
 - `opened_at`
 - `consumed_at`
