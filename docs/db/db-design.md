@@ -386,6 +386,7 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 - `id`
 - `user_id`
 - `title`
+- `family_member_count`
 - `days`
 - `priority_policy`
 - `include_daily_items`
@@ -398,6 +399,8 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 
 - `user_id NOT NULL`
 - `title NOT NULL`
+- `family_member_count NOT NULL`
+- `family_member_count > 0`
 - `days NOT NULL`
 - `days > 0`
 - `total_estimated_cost >= 0`
@@ -409,6 +412,7 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 - 保存済みプランのみを保持する
 - 生成途中の一時プランは保持しない
 - 備えプラン編集機能はMVP対象外とする
+- `family_member_count` は備えプラン作成時点の家族人数を保持する
 - `total_estimated_cost` は備えプラン作成時点の初期費用を保持する
 - 年間維持コストは保持せず、保存済み備えプランのうち `updated_at` が最新の1件を算出元として、表示時に動的計算する
 - 保存件数制御は `subscriptions` と `plans_master` を参照してアプリ側で判定する
@@ -672,6 +676,7 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 - `created_at`
 - `updated_at`
 - `plans.title`
+- `plans.family_member_count`
 - `plans.days`
 - `plan_items.quantity`
 - `products.name`
@@ -706,6 +711,7 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 
 以下のチェック制約を設定する。
 
+- `family_member_count > 0`
 - `days > 0`
 - `quantity > 0`
 - `price >= 0`
