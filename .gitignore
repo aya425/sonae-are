@@ -1,0 +1,8 @@
+# .env系ファイルはすべて無視
+.env*
+
+# ただし .env.example は追跡対象
+!.env.example
+
+# node_modulesを無視
+node_modules/
