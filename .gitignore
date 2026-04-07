@@ -6,3 +6,4 @@
 
 # node_modulesを無視
 node_modules/
+.next
