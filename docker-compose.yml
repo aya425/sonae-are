@@ -9,4 +9,4 @@ services:
       - ./my-app:/app
       - /app/node_modules
     env_file:
-      - .env.local
+      - ./my-app/.env.local
