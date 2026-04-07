@@ -1,0 +1,253 @@
+openapi: 3.0.3
+info:
+  title: そなえアレ API
+  version: 1.0.0
+  description: 食物アレルギー家庭向け防災備蓄支援アプリ API
+
+servers:
+  - url: http://localhost:3000/api
+
+tags:
+  - name: Auth
+  - name: Me
+  - name: Dashboard
+  - name: Plans
+  - name: StockItems
+  - name: Payments
+
+paths:
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: ログイン
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: 認証失敗
+
+  /me:
+    get:
+      tags: [Me]
+      summary: 自分情報取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: ダッシュボード取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+
+  /plans/generate:
+    post:
+      tags: [Plans]
+      summary: 備えプラン生成
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanGenerateRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanGenerateResponse'
+
+  /plans:
+    get:
+      tags: [Plans]
+      summary: プラン一覧取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+
+    post:
+      tags: [Plans]
+      summary: プラン保存
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanCreateRequest'
+      responses:
+        '201':
+          description: 作成成功
+
+  /plans/{id}:
+    get:
+      tags: [Plans]
+      summary: プラン詳細取得
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /stock-items:
+    get:
+      tags: [StockItems]
+      summary: 備蓄一覧取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+
+    post:
+      tags: [StockItems]
+      summary: 備蓄登録
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockItemCreateRequest'
+      responses:
+        '201':
+          description: 作成成功
+
+  /payments/checkout:
+    post:
+      tags: [Payments]
+      summary: Checkout作成
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '200':
+          description: 成功
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+
+    MeResponse:
+      type: object
+      properties:
+        display_name:
+          type: string
+        plan_code:
+          type: string
+
+    PlanGenerateRequest:
+      type: object
+      properties:
+        family_profile_id:
+          type: string
+        days:
+          type: integer
+
+    PlanGenerateResponse:
+      type: object
+      properties:
+        total_estimated_cost:
+          type: number
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanItem'
+
+    PlanCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanItem'
+
+    PlanItem:
+      type: object
+      properties:
+        product_id:
+          type: string
+        quantity:
+          type: integer
+
+    StockItemCreateRequest:
+      type: object
+      properties:
+        product_id:
+          type: string
+        quantity:
+          type: integer
+        purchased_at:
+          type: string
+          format: date
+        expires_at:
+          type: string
+          format: date
+
+    CheckoutRequest:
+      type: object
+      properties:
+        plan_code:
+          type: string
