@@ -1,3 +1,4 @@
+//クライアント側では使わない
 import { createClient } from '@supabase/supabase-js'
 
 export function createAdminClient() {
