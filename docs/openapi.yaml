@@ -1,10 +1,11 @@
 openapi: 3.0.3
+
 info:
   title: そなえアレ API
   version: 1.0.0
-  description: |
-    食物アレルギー家庭向け防災備蓄支援アプリ「そなえアレ」のMVP API。
-    DB設計書を正本とし、編集画面なしの前提で公開APIを定義する。
+  description: >
+    食物アレルギー家庭向け防災備蓄支援アプリ「そなえアレ」のMVP API仕様。
+    要件定義・PRD・DB設計の更新版に準拠。
 
 servers:
   - url: http://localhost:3000/api
@@ -12,42 +13,34 @@ servers:
 tags:
   - name: Auth
   - name: Me
-  - name: Dashboard
   - name: Family
-  - name: Plans
   - name: Products
+  - name: Plans
   - name: StockItems
+  - name: Dashboard
   - name: Payments
   - name: Notifications
-  - name: Review
 
 paths:
   /auth/signup:
     post:
       tags: [Auth]
-      summary: 新規登録
-      description: Supabase Auth と profiles を作成する
+      summary: ユーザー登録
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SignUpRequest'
+              $ref: '#/components/schemas/AuthSignupRequest'
       responses:
         '201':
-          description: 作成成功
+          description: 登録成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SignUpResponse'
+                $ref: '#/components/schemas/AuthSignupResponse'
         '400':
-          description: 入力不正
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: 重複登録
+          description: 入力エラー
           content:
             application/json:
               schema:
@@ -62,16 +55,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: '#/components/schemas/AuthLoginRequest'
       responses:
         '200':
-          description: 成功
+          description: ログイン成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
+                $ref: '#/components/schemas/AuthLoginResponse'
         '401':
-          description: 認証失敗
+          description: 未認証
           content:
             application/json:
               schema:
@@ -85,11 +78,11 @@ paths:
         - bearerAuth: []
       responses:
         '200':
-          description: 成功
+          description: ログアウト成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
+                $ref: '#/components/schemas/AuthLogoutResponse'
         '401':
           description: 未認証
           content:
@@ -105,7 +98,7 @@ paths:
         - bearerAuth: []
       responses:
         '200':
-          description: 成功
+          description: 取得成功
           content:
             application/json:
               schema:
@@ -117,55 +110,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /dashboard:
+  /family-members:
     get:
-      tags: [Dashboard]
-      summary: ダッシュボード集約取得
+      tags: [Family]
+      summary: 家族一覧取得
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: 成功
+          description: 取得成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DashboardResponse'
+                $ref: '#/components/schemas/FamilyMembersListResponse'
         '401':
           description: 未認証
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: サーバエラー
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /family:
-    get:
-      tags: [Family]
-      summary: 家族情報取得
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: 成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FamilyResponse'
-        '401':
-          description: 未認証
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
     post:
       tags: [Family]
-      summary: 家族情報登録
-      description: family_profiles / family_members / member_allergens をまとめて登録する
+      summary: 家族メンバー登録
       security:
         - bearerAuth: []
       requestBody:
@@ -173,28 +140,142 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FamilyCreateRequest'
+              $ref: '#/components/schemas/FamilyMemberCreateRequest'
       responses:
         '201':
-          description: 作成成功
+          description: 登録成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FamilyCreateResponse'
+                $ref: '#/components/schemas/FamilyMemberMutationResponse'
         '400':
-          description: 入力不正
+          description: 入力エラー
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: 未認証
+
+  /family-members/{id}:
+    patch:
+      tags: [Family]
+      summary: 家族メンバー更新
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/FamilyMemberId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyMemberUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyMemberMutationResponse'
+        '400':
+          description: 入力エラー
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: 既に登録済み
+        '404':
+          description: データなし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /family-members/{id}/allergens:
+    put:
+      tags: [Family]
+      summary: アレルゲン一覧更新
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/FamilyMemberId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllergenUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyMemberMutationResponse'
+        '400':
+          description: 入力エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: データなし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /products:
+    get:
+      tags: [Products]
+      summary: 商品一覧取得
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: 商品カテゴリ
+        - in: query
+          name: product_type
+          schema:
+            type: string
+            enum: [emergency_food, daily_item]
+          description: 商品種別
+        - in: query
+          name: is_free_from_28
+          schema:
+            type: boolean
+          description: 28品目不使用フラグ
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: 商品名検索
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductsListResponse'
+
+  /products/{id}:
+    get:
+      tags: [Products]
+      summary: 商品詳細取得
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetailResponse'
+        '404':
+          description: データなし
           content:
             application/json:
               schema:
@@ -204,7 +285,7 @@ paths:
     post:
       tags: [Plans]
       summary: 備えプラン生成
-      description: 生成のみ。DB保存はしない
+      description: 生成のみを行い、DBには保存しない
       security:
         - bearerAuth: []
       requestBody:
@@ -215,31 +296,19 @@ paths:
               $ref: '#/components/schemas/PlanGenerateRequest'
       responses:
         '200':
-          description: 成功
+          description: 生成成功
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PlanGenerateResponse'
         '400':
-          description: 入力不正
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: 未認証
+          description: 入力エラー
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '422':
-          description: 生成不可
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: サーバエラー
+          description: 業務ルール違反
           content:
             application/json:
               schema:
@@ -253,7 +322,7 @@ paths:
         - bearerAuth: []
       responses:
         '200':
-          description: 成功
+          description: 取得成功
           content:
             application/json:
               schema:
@@ -264,9 +333,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
     post:
       tags: [Plans]
-      summary: 生成済みプラン保存
+      summary: 備えプラン保存
       security:
         - bearerAuth: []
       requestBody:
@@ -277,25 +347,19 @@ paths:
               $ref: '#/components/schemas/PlanCreateRequest'
       responses:
         '201':
-          description: 作成成功
+          description: 保存成功
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PlanCreateResponse'
         '400':
-          description: 入力不正
+          description: 入力エラー
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: 未認証
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: 保存件数上限超過
+        '422':
+          description: 業務ルール違反
           content:
             application/json:
               schema:
@@ -311,29 +375,18 @@ paths:
         - $ref: '#/components/parameters/PlanId'
       responses:
         '200':
-          description: 成功
+          description: 取得成功
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PlanDetailResponse'
-        '401':
-          description: 未認証
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: 権限なし
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: 対象なし
+          description: データなし
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
     delete:
       tags: [Plans]
       summary: 保存済みプラン削除
@@ -342,93 +395,14 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PlanId'
       responses:
-        '204':
+        '200':
           description: 削除成功
-        '401':
-          description: 未認証
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: 権限なし
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/DeleteResponse'
         '404':
-          description: 対象なし
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /products:
-    get:
-      tags: [Products]
-      summary: 商品一覧取得
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: query
-          name: product_type
-          schema:
-            type: string
-            enum: [emergency_food, daily_item]
-          description: 商品種別
-        - in: query
-          name: category
-          schema:
-            type: string
-          description: 商品カテゴリ
-        - in: query
-          name: keyword
-          schema:
-            type: string
-          description: キーワード検索
-      responses:
-        '200':
-          description: 成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProductsListResponse'
-        '400':
-          description: 入力不正
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: 未認証
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /products/{id}:
-    get:
-      tags: [Products]
-      summary: 商品詳細取得
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/ProductId'
-      responses:
-        '200':
-          description: 成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProductDetailResponse'
-        '401':
-          description: 未認証
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: 対象なし
+          description: データなし
           content:
             application/json:
               schema:
@@ -437,41 +411,20 @@ paths:
   /stock-items:
     get:
       tags: [StockItems]
-      summary: 備蓄商品一覧取得
+      summary: 備蓄一覧取得
       security:
         - bearerAuth: []
-      parameters:
-        - in: query
-          name: sort
-          schema:
-            type: string
-            enum: [expires_at, created_at]
-        - in: query
-          name: order
-          schema:
-            type: string
-            enum: [asc, desc]
-        - in: query
-          name: status
-          schema:
-            type: string
-            enum: [all, expiring]
       responses:
         '200':
-          description: 成功
+          description: 取得成功
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/StockItemsListResponse'
-        '401':
-          description: 未認証
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+
     post:
       tags: [StockItems]
-      summary: 備蓄商品登録
+      summary: 備蓄登録
       security:
         - bearerAuth: []
       requestBody:
@@ -482,25 +435,13 @@ paths:
               $ref: '#/components/schemas/StockItemCreateRequest'
       responses:
         '201':
-          description: 作成成功
+          description: 登録成功
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/StockItemCreateResponse'
         '400':
-          description: 入力不正
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: 未認証
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: 商品なし
+          description: 入力エラー
           content:
             application/json:
               schema:
@@ -515,28 +456,40 @@ paths:
   /stock-items/{id}:
     delete:
       tags: [StockItems]
-      summary: 備蓄商品削除
+      summary: 備蓄削除
       security:
         - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/StockItemId'
       responses:
-        '204':
+        '200':
           description: 削除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+        '404':
+          description: データなし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: ダッシュボード取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
         '401':
           description: 未認証
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: 権限なし
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: 対象なし
           content:
             application/json:
               schema:
@@ -545,7 +498,7 @@ paths:
   /payments/checkout:
     post:
       tags: [Payments]
-      summary: Stripe Checkout作成
+      summary: Stripe Checkout セッション作成
       security:
         - bearerAuth: []
       requestBody:
@@ -556,103 +509,37 @@ paths:
               $ref: '#/components/schemas/CheckoutRequest'
       responses:
         '200':
-          description: 成功
+          description: 作成成功
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CheckoutResponse'
-        '400':
-          description: 入力不正
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: 未認証
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: 状態競合
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /payments/webhook:
     post:
       tags: [Payments]
       summary: Stripe Webhook受信
-      description: subscriptions を更新する
       responses:
         '200':
-          description: 成功
-        '400':
-          description: 署名不正または不正リクエスト
+          description: 受信成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: サーバエラー
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/PaymentsWebhookResponse'
 
   /notifications/expiry/run:
     post:
       tags: [Notifications]
       summary: 賞味期限通知実行
-      description: 内部API。賞味期限30日前通知をまとめて実行する
       security:
         - internalApiKey: []
       responses:
         '200':
-          description: 成功
+          description: 実行成功
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotificationRunResponse'
-        '401':
-          description: 認証失敗
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: 実行権限なし
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: サーバエラー
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /review/summary:
-    get:
-      tags: [Review]
-      summary: 見直し画面情報取得
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: 成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReviewSummaryResponse'
-        '401':
-          description: 未認証
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   securitySchemes:
@@ -666,7 +553,7 @@ components:
       name: x-internal-api-key
 
   parameters:
-    PlanId:
+    FamilyMemberId:
       name: id
       in: path
       required: true
@@ -674,6 +561,13 @@ components:
         type: string
         format: uuid
     ProductId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PlanId:
       name: id
       in: path
       required: true
@@ -700,34 +594,29 @@ components:
           properties:
             code:
               type: string
-              example: VALIDATION_ERROR
+              example: ERROR_CODE
             message:
               type: string
-              example: 入力内容に誤りがあります
+              example: エラーメッセージ
             details:
               type: array
               items:
                 type: object
-                properties:
-                  field:
-                    type: string
-                  reason:
-                    type: string
 
-    MessageResponse:
+    DeleteResponse:
       type: object
       properties:
         data:
           type: object
           properties:
-            message:
-              type: string
-              example: logged out
+            deleted:
+              type: boolean
+              example: true
         error:
           nullable: true
           example: null
 
-    SignUpRequest:
+    AuthSignupRequest:
       type: object
       required: [email, password, display_name]
       properties:
@@ -740,28 +629,20 @@ components:
         display_name:
           type: string
 
-    SignUpResponse:
+    AuthSignupResponse:
       type: object
       properties:
         data:
           type: object
           properties:
-            user:
-              type: object
-              properties:
-                id:
-                  type: string
-                  format: uuid
-                email:
-                  type: string
-                  format: email
-                display_name:
-                  type: string
+            user_id:
+              type: string
+              format: uuid
         error:
           nullable: true
           example: null
 
-    LoginRequest:
+    AuthLoginRequest:
       type: object
       required: [email, password]
       properties:
@@ -771,7 +652,7 @@ components:
         password:
           type: string
 
-    LoginResponse:
+    AuthLoginResponse:
       type: object
       properties:
         data:
@@ -779,19 +660,19 @@ components:
           properties:
             access_token:
               type: string
-            refresh_token:
-              type: string
-            user:
-              type: object
-              properties:
-                id:
-                  type: string
-                  format: uuid
-                email:
-                  type: string
-                  format: email
-                display_name:
-                  type: string
+        error:
+          nullable: true
+          example: null
+
+    AuthLogoutResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
         error:
           nullable: true
           example: null
@@ -802,7 +683,7 @@ components:
         data:
           type: object
           properties:
-            profile:
+            user:
               type: object
               properties:
                 id:
@@ -813,22 +694,15 @@ components:
             subscription:
               type: object
               properties:
-                status:
-                  type: string
-                  example: active
-                current_period_end:
-                  type: string
-                  format: date-time
-                  nullable: true
-            current_plan:
-              type: object
-              properties:
                 plan_code:
                   type: string
                   example: free
                 plan_name:
                   type: string
                   example: 無料プラン
+                status:
+                  type: string
+                  example: active
                 max_saved_plans:
                   type: integer
                   example: 1
@@ -836,96 +710,9 @@ components:
           nullable: true
           example: null
 
-    DashboardResponse:
+    FamilyMemberCreateRequest:
       type: object
-      properties:
-        data:
-          type: object
-          properties:
-            family_summary:
-              type: object
-              properties:
-                household_size:
-                  type: integer
-                member_count:
-                  type: integer
-            saved_plans:
-              type: array
-              items:
-                $ref: '#/components/schemas/PlanSummary'
-            expiring_stock_items:
-              type: array
-              items:
-                $ref: '#/components/schemas/ExpiringStockItem'
-            cost_summary:
-              type: object
-              properties:
-                total_estimated_cost:
-                  type: number
-                yearly_estimated_cost:
-                  type: number
-        error:
-          nullable: true
-          example: null
-
-    FamilyCreateRequest:
-      type: object
-      required: [household_size, members]
-      properties:
-        household_size:
-          type: integer
-          minimum: 1
-        notes:
-          type: string
-          nullable: true
-        members:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/FamilyMemberInput'
-
-    FamilyCreateResponse:
-      type: object
-      properties:
-        data:
-          type: object
-          properties:
-            family_profile_id:
-              type: string
-              format: uuid
-        error:
-          nullable: true
-          example: null
-
-    FamilyResponse:
-      type: object
-      properties:
-        data:
-          type: object
-          nullable: true
-          properties:
-            family_profile:
-              type: object
-              properties:
-                id:
-                  type: string
-                  format: uuid
-                household_size:
-                  type: integer
-                notes:
-                  type: string
-                  nullable: true
-            members:
-              type: array
-              items:
-                $ref: '#/components/schemas/FamilyMember'
-        error:
-          nullable: true
-          example: null
-
-    FamilyMemberInput:
-      type: object
-      required: [role, age_group]
+      required: [role, age_group, allergens]
       properties:
         role:
           type: string
@@ -941,12 +728,9 @@ components:
           items:
             type: string
 
-    FamilyMember:
+    FamilyMemberUpdateRequest:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
         role:
           type: string
         age_group:
@@ -954,94 +738,17 @@ components:
         notes:
           type: string
           nullable: true
+
+    AllergenUpdateRequest:
+      type: object
+      required: [allergens]
+      properties:
         allergens:
           type: array
           items:
             type: string
 
-    PlanGenerateRequest:
-      type: object
-      required: [family_profile_id, days, priority_policy, include_daily_items]
-      properties:
-        family_profile_id:
-          type: string
-          format: uuid
-        days:
-          type: integer
-          minimum: 1
-        priority_policy:
-          type: string
-          example: allergy_safety_first
-        include_daily_items:
-          type: boolean
-
-    PlanGenerateResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/GeneratedPlan'
-        error:
-          nullable: true
-          example: null
-
-    GeneratedPlan:
-      type: object
-      properties:
-        title:
-          type: string
-        days:
-          type: integer
-        priority_policy:
-          type: string
-        include_daily_items:
-          type: boolean
-        total_estimated_cost:
-          type: number
-        yearly_estimated_cost:
-          type: number
-        ai_comment:
-          type: string
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/PlanItemInput'
-
-    PlanCreateRequest:
-      type: object
-      required:
-        - title
-        - days
-        - priority_policy
-        - include_daily_items
-        - total_estimated_cost
-        - yearly_estimated_cost
-        - items
-      properties:
-        title:
-          type: string
-        days:
-          type: integer
-          minimum: 1
-        priority_policy:
-          type: string
-        include_daily_items:
-          type: boolean
-        total_estimated_cost:
-          type: number
-          minimum: 0
-        yearly_estimated_cost:
-          type: number
-          minimum: 0
-        ai_comment:
-          type: string
-          nullable: true
-        items:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/PlanItemInput'
-
-    PlanCreateResponse:
+    FamilyMemberMutationResponse:
       type: object
       properties:
         data:
@@ -1050,138 +757,42 @@ components:
             id:
               type: string
               format: uuid
-            created_at:
-              type: string
-              format: date-time
+              nullable: true
+            created:
+              type: boolean
+              nullable: true
+            updated:
+              type: boolean
+              nullable: true
         error:
           nullable: true
           example: null
 
-    PlansListResponse:
+    FamilyMembersListResponse:
       type: object
       properties:
         data:
           type: object
           properties:
-            plans:
+            members:
               type: array
               items:
-                $ref: '#/components/schemas/PlanSummary'
-        error:
-          nullable: true
-          example: null
-
-    PlanDetailResponse:
-      type: object
-      properties:
-        data:
-          type: object
-          properties:
-            plan:
-              $ref: '#/components/schemas/PlanRecord'
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/PlanItemDetail'
-        error:
-          nullable: true
-          example: null
-
-    PlanSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        title:
-          type: string
-        days:
-          type: integer
-        total_estimated_cost:
-          type: number
-        yearly_estimated_cost:
-          type: number
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-
-    PlanRecord:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        title:
-          type: string
-        days:
-          type: integer
-        priority_policy:
-          type: string
-        include_daily_items:
-          type: boolean
-        total_estimated_cost:
-          type: number
-        yearly_estimated_cost:
-          type: number
-        ai_comment:
-          type: string
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-
-    PlanItemInput:
-      type: object
-      required: [product_id, quantity, priority]
-      properties:
-        product_id:
-          type: string
-          format: uuid
-        quantity:
-          type: integer
-          minimum: 1
-        priority:
-          type: string
-          example: high
-        purpose_note:
-          type: string
-          nullable: true
-
-    PlanItemDetail:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        product_id:
-          type: string
-          format: uuid
-        quantity:
-          type: integer
-        priority:
-          type: string
-        purpose_note:
-          type: string
-          nullable: true
-        product:
-          $ref: '#/components/schemas/ProductSummary'
-
-    ProductsListResponse:
-      type: object
-      properties:
-        data:
-          type: object
-          properties:
-            products:
-              type: array
-              items:
-                $ref: '#/components/schemas/ProductSummary'
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  role:
+                    type: string
+                  age_group:
+                    type: string
+                  notes:
+                    type: string
+                    nullable: true
+                  allergens:
+                    type: array
+                    items:
+                      type: string
         error:
           nullable: true
           example: null
@@ -1212,6 +823,20 @@ components:
           type: string
           nullable: true
 
+    ProductsListResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            products:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductSummary'
+        error:
+          nullable: true
+          example: null
+
     ProductDetailResponse:
       type: object
       properties:
@@ -1221,9 +846,73 @@ components:
           nullable: true
           example: null
 
-    StockItemCreateRequest:
+    PlanGenerateRequest:
       type: object
-      required: [product_id, quantity, purchased_at, expires_at, unit_price]
+      required: [days, include_daily_items, priority_policy]
+      properties:
+        days:
+          type: integer
+          minimum: 1
+        include_daily_items:
+          type: boolean
+        priority_policy:
+          type: string
+          example: balance
+
+    GeneratedPlanItem:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+        product_type:
+          type: string
+          enum: [emergency_food, daily_item]
+        quantity:
+          type: integer
+        priority:
+          type: string
+          enum: [high, medium, low]
+        price:
+          type: number
+        purchase_url:
+          type: string
+          format: uri
+
+    PlanGenerateResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            summary:
+              type: object
+              properties:
+                family_member_count:
+                  type: integer
+                days:
+                  type: integer
+                total_estimated_cost:
+                  type: number
+                annual_cost:
+                  type: number
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/GeneratedPlanItem'
+            ai_comment:
+              type: string
+        error:
+          nullable: true
+          example: null
+
+    PlanSaveItemInput:
+      type: object
+      required: [product_id, quantity, priority]
       properties:
         product_id:
           type: string
@@ -1231,9 +920,162 @@ components:
         quantity:
           type: integer
           minimum: 1
-        purchased_at:
+        priority:
           type: string
-          format: date
+          enum: [high, medium, low]
+        purpose_note:
+          type: string
+          nullable: true
+
+    PlanCreateRequest:
+      type: object
+      required:
+        - title
+        - days
+        - priority_policy
+        - include_daily_items
+        - family_member_count
+        - total_estimated_cost
+        - items
+      properties:
+        title:
+          type: string
+        days:
+          type: integer
+          minimum: 1
+        priority_policy:
+          type: string
+        include_daily_items:
+          type: boolean
+        family_member_count:
+          type: integer
+          minimum: 1
+        total_estimated_cost:
+          type: number
+          minimum: 0
+        ai_comment:
+          type: string
+          nullable: true
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/PlanSaveItemInput'
+
+    PlanCreateResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            plan_id:
+              type: string
+              format: uuid
+        error:
+          nullable: true
+          example: null
+
+    PlansListResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            plans:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  title:
+                    type: string
+                  family_member_count:
+                    type: integer
+                  days:
+                    type: integer
+                  total_estimated_cost:
+                    type: number
+                  created_at:
+                    type: string
+                    format: date-time
+                  updated_at:
+                    type: string
+                    format: date-time
+        error:
+          nullable: true
+          example: null
+
+    PlanDetailResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            title:
+              type: string
+            family_member_count:
+              type: integer
+            days:
+              type: integer
+            priority_policy:
+              type: string
+            include_daily_items:
+              type: boolean
+            total_estimated_cost:
+              type: number
+            annual_cost:
+              type: number
+            ai_comment:
+              type: string
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  product_id:
+                    type: string
+                    format: uuid
+                  product_name:
+                    type: string
+                  quantity:
+                    type: integer
+                  priority:
+                    type: string
+                  purpose_note:
+                    type: string
+                    nullable: true
+                  unit_price:
+                    type: number
+                  category:
+                    type: string
+                  product_type:
+                    type: string
+                    enum: [emergency_food, daily_item]
+                  purchase_url:
+                    type: string
+                    format: uri
+        error:
+          nullable: true
+          example: null
+
+    StockItemCreateRequest:
+      type: object
+      required: [product_name, quantity, expires_at, unit_price]
+      properties:
+        product_id:
+          type: string
+          format: uuid
+          nullable: true
+        product_name:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
         expires_at:
           type: string
           format: date
@@ -1247,12 +1089,9 @@ components:
         data:
           type: object
           properties:
-            id:
+            stock_item_id:
               type: string
               format: uuid
-            created_at:
-              type: string
-              format: date-time
         error:
           nullable: true
           example: null
@@ -1266,47 +1105,92 @@ components:
             stock_items:
               type: array
               items:
-                $ref: '#/components/schemas/StockItem'
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  product_id:
+                    type: string
+                    format: uuid
+                    nullable: true
+                  product_name:
+                    type: string
+                  quantity:
+                    type: integer
+                  purchased_at:
+                    type: string
+                    format: date
+                  expires_at:
+                    type: string
+                    format: date
+                  unit_price:
+                    type: number
+                  is_expiring_soon:
+                    type: boolean
+            stock_total_cost:
+              type: number
         error:
           nullable: true
           example: null
 
-    StockItem:
+    DashboardResponse:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
-        quantity:
-          type: integer
-        purchased_at:
-          type: string
-          format: date
-        expires_at:
-          type: string
-          format: date
-        unit_price:
-          type: number
-        notified_30days_at:
-          type: string
-          format: date-time
+        data:
+          type: object
+          properties:
+            family:
+              type: object
+              properties:
+                member_count:
+                  type: integer
+            cost:
+              type: object
+              properties:
+                annual_cost:
+                  type: number
+                stock_total_cost:
+                  type: number
+            expiring_items:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  product_name:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date
+                  days_left:
+                    type: integer
+            plans:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  title:
+                    type: string
+                  total_estimated_cost:
+                    type: number
+            subscription:
+              type: object
+              properties:
+                plan_code:
+                  type: string
+                plan_name:
+                  type: string
+                status:
+                  type: string
+        error:
           nullable: true
-        product:
-          $ref: '#/components/schemas/ProductSummary'
-
-    ExpiringStockItem:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        product_name:
-          type: string
-        expires_at:
-          type: string
-          format: date
-        days_left:
-          type: integer
+          example: null
 
     CheckoutRequest:
       type: object
@@ -1328,11 +1212,22 @@ components:
         data:
           type: object
           properties:
-            session_id:
-              type: string
             checkout_url:
               type: string
               format: uri
+        error:
+          nullable: true
+          example: null
+
+    PaymentsWebhookResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            received:
+              type: boolean
+              example: true
         error:
           nullable: true
           example: null
@@ -1343,36 +1238,10 @@ components:
         data:
           type: object
           properties:
-            target_user_count:
+            processed_users:
               type: integer
-            sent_count:
+            sent_notifications:
               type: integer
-            skipped_count:
-              type: integer
-            error_count:
-              type: integer
-        error:
-          nullable: true
-          example: null
-
-    ReviewSummaryResponse:
-      type: object
-      properties:
-        data:
-          type: object
-          properties:
-            expiring_items:
-              type: array
-              items:
-                $ref: '#/components/schemas/ExpiringStockItem'
-            recommended_products:
-              type: array
-              items:
-                $ref: '#/components/schemas/ProductSummary'
-            related_saved_plans:
-              type: array
-              items:
-                $ref: '#/components/schemas/PlanSummary'
         error:
           nullable: true
           example: null
