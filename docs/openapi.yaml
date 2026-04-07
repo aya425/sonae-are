@@ -1,8 +1,11 @@
 openapi: 3.0.3
+
 info:
   title: そなえアレ API
   version: 1.0.0
-  description: 食物アレルギー家庭向け防災備蓄支援アプリ API
+  description: >
+    食物アレルギー家庭向け防災備蓄支援アプリ「そなえアレ」のMVP API仕様。
+    要件定義・PRD・DB設計の更新版に準拠。
 
 servers:
   - url: http://localhost:3000/api
@@ -10,12 +13,38 @@ servers:
 tags:
   - name: Auth
   - name: Me
-  - name: Dashboard
+  - name: Family
+  - name: Products
   - name: Plans
   - name: StockItems
+  - name: Dashboard
   - name: Payments
+  - name: Notifications
 
 paths:
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: ユーザー登録
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthSignupRequest'
+      responses:
+        '201':
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSignupResponse'
+        '400':
+          description: 入力エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /auth/login:
     post:
@@ -26,16 +55,40 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: '#/components/schemas/AuthLoginRequest'
       responses:
         '200':
-          description: 成功
+          description: ログイン成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
+                $ref: '#/components/schemas/AuthLoginResponse'
         '401':
-          description: 認証失敗
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: ログアウト
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: ログアウト成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLogoutResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /me:
     get:
@@ -45,26 +98,194 @@ paths:
         - bearerAuth: []
       responses:
         '200':
-          description: 成功
+          description: 取得成功
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MeResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  /dashboard:
+  /family-members:
     get:
-      tags: [Dashboard]
-      summary: ダッシュボード取得
+      tags: [Family]
+      summary: 家族一覧取得
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: 成功
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyMembersListResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Family]
+      summary: 家族メンバー登録
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyMemberCreateRequest'
+      responses:
+        '201':
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyMemberMutationResponse'
+        '400':
+          description: 入力エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /family-members/{id}:
+    patch:
+      tags: [Family]
+      summary: 家族メンバー更新
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/FamilyMemberId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyMemberUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyMemberMutationResponse'
+        '400':
+          description: 入力エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: データなし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /family-members/{id}/allergens:
+    put:
+      tags: [Family]
+      summary: アレルゲン一覧更新
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/FamilyMemberId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllergenUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyMemberMutationResponse'
+        '400':
+          description: 入力エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: データなし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /products:
+    get:
+      tags: [Products]
+      summary: 商品一覧取得
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: 商品カテゴリ
+        - in: query
+          name: product_type
+          schema:
+            type: string
+            enum: [emergency_food, daily_item]
+          description: 商品種別
+        - in: query
+          name: is_free_from_28
+          schema:
+            type: boolean
+          description: 28品目不使用フラグ
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: 商品名検索
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductsListResponse'
+
+  /products/{id}:
+    get:
+      tags: [Products]
+      summary: 商品詳細取得
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetailResponse'
+        '404':
+          description: データなし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /plans/generate:
     post:
       tags: [Plans]
       summary: 備えプラン生成
+      description: 生成のみを行い、DBには保存しない
       security:
         - bearerAuth: []
       requestBody:
@@ -75,25 +296,47 @@ paths:
               $ref: '#/components/schemas/PlanGenerateRequest'
       responses:
         '200':
-          description: 成功
+          description: 生成成功
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PlanGenerateResponse'
+        '400':
+          description: 入力エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 業務ルール違反
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /plans:
     get:
       tags: [Plans]
-      summary: プラン一覧取得
+      summary: 保存済みプラン一覧取得
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: 成功
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlansListResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     post:
       tags: [Plans]
-      summary: プラン保存
+      summary: 備えプラン保存
       security:
         - bearerAuth: []
       requestBody:
@@ -104,23 +347,66 @@ paths:
               $ref: '#/components/schemas/PlanCreateRequest'
       responses:
         '201':
-          description: 作成成功
+          description: 保存成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanCreateResponse'
+        '400':
+          description: 入力エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 業務ルール違反
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /plans/{id}:
     get:
       tags: [Plans]
-      summary: プラン詳細取得
+      summary: 保存済みプラン詳細取得
       security:
         - bearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/PlanId'
       responses:
         '200':
-          description: 成功
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanDetailResponse'
+        '404':
+          description: データなし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Plans]
+      summary: 保存済みプラン削除
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PlanId'
+      responses:
+        '200':
+          description: 削除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+        '404':
+          description: データなし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /stock-items:
     get:
@@ -130,7 +416,11 @@ paths:
         - bearerAuth: []
       responses:
         '200':
-          description: 成功
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockItemsListResponse'
 
     post:
       tags: [StockItems]
@@ -145,12 +435,70 @@ paths:
               $ref: '#/components/schemas/StockItemCreateRequest'
       responses:
         '201':
-          description: 作成成功
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockItemCreateResponse'
+        '400':
+          description: 入力エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 業務ルール違反
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stock-items/{id}:
+    delete:
+      tags: [StockItems]
+      summary: 備蓄削除
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StockItemId'
+      responses:
+        '200':
+          description: 削除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+        '404':
+          description: データなし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: ダッシュボード取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /payments/checkout:
     post:
       tags: [Payments]
-      summary: Checkout作成
+      summary: Stripe Checkout セッション作成
       security:
         - bearerAuth: []
       requestBody:
@@ -161,93 +509,739 @@ paths:
               $ref: '#/components/schemas/CheckoutRequest'
       responses:
         '200':
-          description: 成功
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutResponse'
+
+  /payments/webhook:
+    post:
+      tags: [Payments]
+      summary: Stripe Webhook受信
+      responses:
+        '200':
+          description: 受信成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentsWebhookResponse'
+
+  /notifications/expiry/run:
+    post:
+      tags: [Notifications]
+      summary: 賞味期限通知実行
+      security:
+        - internalApiKey: []
+      responses:
+        '200':
+          description: 実行成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationRunResponse'
 
 components:
-
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    internalApiKey:
+      type: apiKey
+      in: header
+      name: x-internal-api-key
+
+  parameters:
+    FamilyMemberId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ProductId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PlanId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    StockItemId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
 
   schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        data:
+          nullable: true
+          example: null
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: ERROR_CODE
+            message:
+              type: string
+              example: エラーメッセージ
+            details:
+              type: array
+              items:
+                type: object
 
-    LoginRequest:
+    DeleteResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            deleted:
+              type: boolean
+              example: true
+        error:
+          nullable: true
+          example: null
+
+    AuthSignupRequest:
+      type: object
+      required: [email, password, display_name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        display_name:
+          type: string
+
+    AuthSignupResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            user_id:
+              type: string
+              format: uuid
+        error:
+          nullable: true
+          example: null
+
+    AuthLoginRequest:
       type: object
       required: [email, password]
       properties:
         email:
           type: string
+          format: email
         password:
           type: string
 
-    LoginResponse:
+    AuthLoginResponse:
       type: object
       properties:
-        access_token:
-          type: string
+        data:
+          type: object
+          properties:
+            access_token:
+              type: string
+        error:
+          nullable: true
+          example: null
+
+    AuthLogoutResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+        error:
+          nullable: true
+          example: null
 
     MeResponse:
       type: object
       properties:
-        display_name:
+        data:
+          type: object
+          properties:
+            user:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                display_name:
+                  type: string
+            subscription:
+              type: object
+              properties:
+                plan_code:
+                  type: string
+                  example: free
+                plan_name:
+                  type: string
+                  example: 無料プラン
+                status:
+                  type: string
+                  example: active
+                max_saved_plans:
+                  type: integer
+                  example: 1
+        error:
+          nullable: true
+          example: null
+
+    FamilyMemberCreateRequest:
+      type: object
+      required: [role, age_group, allergens]
+      properties:
+        role:
           type: string
-        plan_code:
+          example: child
+        age_group:
           type: string
+          example: child
+        notes:
+          type: string
+          nullable: true
+        allergens:
+          type: array
+          items:
+            type: string
+
+    FamilyMemberUpdateRequest:
+      type: object
+      properties:
+        role:
+          type: string
+        age_group:
+          type: string
+        notes:
+          type: string
+          nullable: true
+
+    AllergenUpdateRequest:
+      type: object
+      required: [allergens]
+      properties:
+        allergens:
+          type: array
+          items:
+            type: string
+
+    FamilyMemberMutationResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              nullable: true
+            created:
+              type: boolean
+              nullable: true
+            updated:
+              type: boolean
+              nullable: true
+        error:
+          nullable: true
+          example: null
+
+    FamilyMembersListResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            members:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  role:
+                    type: string
+                  age_group:
+                    type: string
+                  notes:
+                    type: string
+                    nullable: true
+                  allergens:
+                    type: array
+                    items:
+                      type: string
+        error:
+          nullable: true
+          example: null
+
+    ProductSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+        product_type:
+          type: string
+          enum: [emergency_food, daily_item]
+        is_free_from_28:
+          type: boolean
+        price:
+          type: number
+        purchase_url:
+          type: string
+          format: uri
+        shelf_life_months:
+          type: integer
+        note:
+          type: string
+          nullable: true
+
+    ProductsListResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            products:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductSummary'
+        error:
+          nullable: true
+          example: null
+
+    ProductDetailResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductSummary'
+        error:
+          nullable: true
+          example: null
 
     PlanGenerateRequest:
       type: object
+      required: [days, include_daily_items, priority_policy]
       properties:
-        family_profile_id:
-          type: string
         days:
           type: integer
+          minimum: 1
+        include_daily_items:
+          type: boolean
+        priority_policy:
+          type: string
+          example: balance
+
+    GeneratedPlanItem:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+        product_type:
+          type: string
+          enum: [emergency_food, daily_item]
+        quantity:
+          type: integer
+        priority:
+          type: string
+          enum: [high, medium, low]
+        price:
+          type: number
+        purchase_url:
+          type: string
+          format: uri
 
     PlanGenerateResponse:
       type: object
       properties:
-        total_estimated_cost:
-          type: number
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/PlanItem'
+        data:
+          type: object
+          properties:
+            summary:
+              type: object
+              properties:
+                family_member_count:
+                  type: integer
+                days:
+                  type: integer
+                total_estimated_cost:
+                  type: number
+                annual_cost:
+                  type: number
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/GeneratedPlanItem'
+            ai_comment:
+              type: string
+        error:
+          nullable: true
+          example: null
+
+    PlanSaveItemInput:
+      type: object
+      required: [product_id, quantity, priority]
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+        priority:
+          type: string
+          enum: [high, medium, low]
+        purpose_note:
+          type: string
+          nullable: true
 
     PlanCreateRequest:
       type: object
+      required:
+        - title
+        - days
+        - priority_policy
+        - include_daily_items
+        - family_member_count
+        - total_estimated_cost
+        - items
       properties:
         title:
           type: string
+        days:
+          type: integer
+          minimum: 1
+        priority_policy:
+          type: string
+        include_daily_items:
+          type: boolean
+        family_member_count:
+          type: integer
+          minimum: 1
+        total_estimated_cost:
+          type: number
+          minimum: 0
+        ai_comment:
+          type: string
+          nullable: true
         items:
           type: array
+          minItems: 1
           items:
-            $ref: '#/components/schemas/PlanItem'
+            $ref: '#/components/schemas/PlanSaveItemInput'
 
-    PlanItem:
+    PlanCreateResponse:
       type: object
       properties:
-        product_id:
-          type: string
-        quantity:
-          type: integer
+        data:
+          type: object
+          properties:
+            plan_id:
+              type: string
+              format: uuid
+        error:
+          nullable: true
+          example: null
+
+    PlansListResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            plans:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  title:
+                    type: string
+                  family_member_count:
+                    type: integer
+                  days:
+                    type: integer
+                  total_estimated_cost:
+                    type: number
+                  created_at:
+                    type: string
+                    format: date-time
+                  updated_at:
+                    type: string
+                    format: date-time
+        error:
+          nullable: true
+          example: null
+
+    PlanDetailResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            title:
+              type: string
+            family_member_count:
+              type: integer
+            days:
+              type: integer
+            priority_policy:
+              type: string
+            include_daily_items:
+              type: boolean
+            total_estimated_cost:
+              type: number
+            annual_cost:
+              type: number
+            ai_comment:
+              type: string
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  product_id:
+                    type: string
+                    format: uuid
+                  product_name:
+                    type: string
+                  quantity:
+                    type: integer
+                  priority:
+                    type: string
+                  purpose_note:
+                    type: string
+                    nullable: true
+                  unit_price:
+                    type: number
+                  category:
+                    type: string
+                  product_type:
+                    type: string
+                    enum: [emergency_food, daily_item]
+                  purchase_url:
+                    type: string
+                    format: uri
+        error:
+          nullable: true
+          example: null
 
     StockItemCreateRequest:
       type: object
+      required: [product_name, quantity, expires_at, unit_price]
       properties:
         product_id:
           type: string
+          format: uuid
+          nullable: true
+        product_name:
+          type: string
         quantity:
           type: integer
-        purchased_at:
-          type: string
-          format: date
+          minimum: 1
         expires_at:
           type: string
           format: date
+        unit_price:
+          type: number
+          minimum: 0
+
+    StockItemCreateResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            stock_item_id:
+              type: string
+              format: uuid
+        error:
+          nullable: true
+          example: null
+
+    StockItemsListResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            stock_items:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  product_id:
+                    type: string
+                    format: uuid
+                    nullable: true
+                  product_name:
+                    type: string
+                  quantity:
+                    type: integer
+                  purchased_at:
+                    type: string
+                    format: date
+                  expires_at:
+                    type: string
+                    format: date
+                  unit_price:
+                    type: number
+                  is_expiring_soon:
+                    type: boolean
+            stock_total_cost:
+              type: number
+        error:
+          nullable: true
+          example: null
+
+    DashboardResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            family:
+              type: object
+              properties:
+                member_count:
+                  type: integer
+            cost:
+              type: object
+              properties:
+                annual_cost:
+                  type: number
+                stock_total_cost:
+                  type: number
+            expiring_items:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  product_name:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date
+                  days_left:
+                    type: integer
+            plans:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  title:
+                    type: string
+                  total_estimated_cost:
+                    type: number
+            subscription:
+              type: object
+              properties:
+                plan_code:
+                  type: string
+                plan_name:
+                  type: string
+                status:
+                  type: string
+        error:
+          nullable: true
+          example: null
 
     CheckoutRequest:
       type: object
+      required: [plan_code, success_url, cancel_url]
       properties:
         plan_code:
           type: string
+          example: premium
+        success_url:
+          type: string
+          format: uri
+        cancel_url:
+          type: string
+          format: uri
+
+    CheckoutResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            checkout_url:
+              type: string
+              format: uri
+        error:
+          nullable: true
+          example: null
+
+    PaymentsWebhookResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            received:
+              type: boolean
+              example: true
+        error:
+          nullable: true
+          example: null
+
+    NotificationRunResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            processed_users:
+              type: integer
+            sent_notifications:
+              type: integer
+        error:
+          nullable: true
+          example: null
