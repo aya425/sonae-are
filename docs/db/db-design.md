@@ -40,7 +40,8 @@
 - 備えプラン編集機能はMVPの対象外とする
 - 備蓄商品は、実際に購入した商品をユーザーが登録する
 - 備蓄商品編集機能はMVPの対象外とする
-- 備蓄商品は商品マスタへの外部キー参照を必須とせず、独立して登録可能とする
+- 備蓄商品は商品マスタから選択して登録できるようにするが、商品マスタに存在しない商品も自由入力で登録可能とする
+- そのため、備蓄商品の商品マスタ参照は任意とする
 - 通知はメールのみとし、賞味期限30日前に1日1回バッチ処理で送信する
 - 各備蓄商品に対する30日前通知は1回のみとする
 - 同日に通知対象となった商品は、ユーザー単位で1通のメールにまとめて送信する
@@ -66,7 +67,7 @@
 
 商品情報は固定商品マスタとして `products` に保持し、ユーザーごとの保存済み備えプランや備蓄商品とは分離する。
 
-備蓄商品は、実際にユーザーが購入・保有している状態を記録するデータとして扱い、商品マスタとは独立して保持する。
+備蓄商品は、実際にユーザーが購入・保有している状態を記録するデータとして扱う。商品マスタから選択して登録した場合は商品マスタとの参照を保持しつつ、商品マスタに存在しない商品も自由入力で登録できるようにする。
 
 #### 2.2.3 有料機能制御は最小構成で行う
 
@@ -78,7 +79,7 @@
 
 MVP段階では、家族構成を表すための中間テーブルを増やしすぎず、`users` 直下に `family_members` を持たせる構成とする。
 
-また、`yearly_estimated_cost` のような計算可能な派生値はDBに保持せず、必要時にアプリケーション側で算出する。
+また、年間維持コストや備蓄コスト目安のような計算可能な派生値はDBに保持せず、必要時にアプリケーション側で算出する。
 
 #### 2.2.5 過剰なマスタ分割を避ける
 
@@ -123,7 +124,7 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 
 - `auth.users` を認証情報の正本とする
 - アプリ側ユーザー情報は `users` に持つ
-- `auth.users` と `public.users` は役割を分離して扱う
+- `auth.users` と `users` は役割を分離して扱う
 - 有料 / 無料の判定は `subscriptions` と `plans_master` を参照する
 - `users.plan_type` は持たない
 
@@ -175,6 +176,7 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 - `plans` 1 : N `plan_items`
 - `products` 1 : N `plan_items`
 - `users` 1 : N `stock_items`
+- `products` 1 : N `stock_items`（任意参照）
 - `users` 1 : N `notification_logs`
 - `stock_items` 1 : N `notification_logs`
 - `plans_master` 1 : N `subscriptions`
@@ -267,6 +269,8 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 
 - `role` は続柄の表現に使う
 - `age_group` は `adult / child` 程度の区分で運用する
+- 家族人数は独立した保存値は持たず、`family_members` の登録件数によって表現する
+- これにより、家族構成の実データを正として扱い、人数とメンバー情報の不整合を防ぐ
 
 ---
 
@@ -384,6 +388,7 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 - `id`
 - `user_id`
 - `title`
+- `family_member_count`
 - `days`
 - `priority_policy`
 - `include_daily_items`
@@ -396,6 +401,8 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 
 - `user_id NOT NULL`
 - `title NOT NULL`
+- `family_member_count NOT NULL`
+- `family_member_count > 0`
 - `days NOT NULL`
 - `days > 0`
 - `total_estimated_cost >= 0`
@@ -407,7 +414,9 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 - 保存済みプランのみを保持する
 - 生成途中の一時プランは保持しない
 - 備えプラン編集機能はMVP対象外とする
-- 年間維持コストは保存値として保持せず、アプリ側で計算して表示する
+- `family_member_count` は備えプラン作成時点の家族人数を保持する
+- `total_estimated_cost` は備えプラン作成時点の初期費用を保持する
+- 年間維持コストは保持せず、保存済み備えプランのうち `updated_at` が最新の1件を算出元として、表示時に動的計算する
 - 保存件数制御は `subscriptions` と `plans_master` を参照してアプリ側で判定する
 
 ---
@@ -476,11 +485,13 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 #### 外部キー
 
 - `user_id -> users.id`
+- `product_id -> products.id`（NULL可）
 
 #### 主要カラム
 
 - `id`
 - `user_id`
+- `product_id`
 - `product_name`
 - `quantity`
 - `purchased_at`
@@ -505,8 +516,11 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 
 #### 備考
 
-- `products` とは独立して保持する
-- 実際の購入商品を自由に登録できるようにするため、商品名を直接保持する
+- `product_id` は商品マスタから選択して登録した場合のみ保持し、自由入力で登録した場合は NULL を許容する
+- `product_name` は表示用および自由入力商品登録のために保持する
+- 商品マスタから選択した場合は、`products.price` をもとに `unit_price` を自動入力する
+- 商品マスタに存在しない商品を自由入力する場合は、`product_name` と `unit_price` をユーザーが入力する
+- `purchased_at` はユーザー入力項目とはせず、備蓄登録日時を購入日として自動保存する
 - `notified_30days_at` は30日前通知済み判定に使用する
 - 商品マスタ価格とは別に、実際の購入単価を保持する
 - 備蓄商品編集機能はMVP対象外とする
@@ -668,6 +682,7 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 - `created_at`
 - `updated_at`
 - `plans.title`
+- `plans.family_member_count`
 - `plans.days`
 - `plan_items.quantity`
 - `products.name`
@@ -702,6 +717,7 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 
 以下のチェック制約を設定する。
 
+- `family_member_count > 0`
 - `days > 0`
 - `quantity > 0`
 - `price >= 0`
@@ -730,6 +746,7 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 - `plan_items.plan_id`
 - `plan_items.product_id`
 - `stock_items.user_id`
+- `stock_items.product_id`
 - `stock_items (user_id, expires_at)`
 - `stock_items (expires_at)`
 - `notification_logs.user_id`
@@ -856,7 +873,7 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 
 そのため、MVPでは `notification_batches` のような追加テーブルは持たない。
 
-通知メールは、期限が近い商品を知らせることを主目的とし、必要に応じてユーザーがアプリ内で備え状況を確認できる前提とする。
+通知メールは、期限が近い商品を知らせることを主目的とし、必要に応じてユーザーがダッシュボードまたは備蓄一覧画面で備え状況を確認できる前提とする。
 
 ---
 
@@ -890,6 +907,75 @@ Supabase Auth では、主に認証のために必要な情報を管理する。
 2. 紐づく `plans_master.max_saved_plans` を取得する
 3. ユーザーの現在保存済み `plans` 件数を数える
 4. 上限内であれば保存可、超過していれば保存不可とする
+
+---
+
+### 11.4 コスト算出値の扱い
+
+本システムでは、コスト関連の表示値として以下を扱う。
+
+- 初期費用
+- 年間維持コスト
+- 備蓄コスト目安
+
+これらのうち、DBに保存する値と、表示時に算出する派生値を明確に分ける。
+
+#### 初期費用
+
+初期費用は、保存済み備えプランに含まれる各商品の単価と数量をもとに算出する。
+
+算出式：
+
+`初期費用 = Σ（商品単価 × 数量）`
+
+MVPでは、保存済み備えプランの作成時点での費用把握を優先するため、`plans.total_estimated_cost` に保存する。
+
+#### 年間維持コスト
+
+年間維持コストは、保存済み備えプランのうち `updated_at` が最も新しい1件を算出元として、当該プランに含まれる各商品の単価、数量、賞味期限（月）をもとに算出する。
+
+算出式：
+
+`年間維持コスト = Σ（商品単価 × 数量 × 12 ÷ 賞味期限（月））`
+
+補足：
+
+- 算出元とする備えプランは、対象ユーザーの保存済み備えプランのうち `updated_at` が最新の1件とする
+- 商品単価は `products.price` を使用する
+- 数量は `plan_items.quantity` を使用する
+- 賞味期限（月）は `products.shelf_life_months` を使用する
+- 小数点を含む場合は、表示時に四捨五入する
+- 年間維持コストは保存値ではなく、表示時に算出する派生値として扱う
+- 複数の保存済み備えプランが存在する場合でも、年間維持コスト表示には最新更新プランのみを使用する
+
+この方針により、複数プラン保存に対応しつつ、年間維持コストの算出元を明確にした状態で表示できるようにする。
+
+#### 備蓄コスト目安
+
+備蓄コスト目安は、備蓄一覧に登録された各商品の単価と数量をもとに算出する。
+
+算出式：
+
+`備蓄コスト目安 = Σ（単価 × 数量）`
+
+補足：
+
+- 単価は `stock_items.unit_price` を使用する
+- 数量は `stock_items.quantity` を使用する
+- 備蓄コスト目安は保存値ではなく、表示時に算出する派生値として扱う
+
+#### 保存値と派生値の整理
+
+MVPにおけるコスト関連項目の扱いは以下の通りとする。
+
+- `plans.total_estimated_cost`
+  - 初期費用の保存値として保持する
+- 年間維持コスト
+  - 保存済み備えプランのうち最新の1件を算出元とし、`products.price`、`plan_items.quantity`、`products.shelf_life_months` をもとに表示時に算出する
+- 備蓄コスト目安
+  - `stock_items.unit_price`、`stock_items.quantity` をもとに表示時に算出する
+
+過剰な派生値保存を避けるため、年間維持コストおよび備蓄コスト目安はDBには保持せず、アプリケーション側で計算する。
 
 ---
 
@@ -944,11 +1030,10 @@ ER図には全制約やRLSの詳細は載せず、全体構造の把握に必要
 - `version_no`
 - `status`
 - `generation_prompt`
-- `yearly_estimated_cost`
+- 年間維持コストの保存用カラム
 
 #### `stock_items`
 
-- `product_id`
 - `storage_location`
 - `opened_at`
 - `consumed_at`
