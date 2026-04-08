@@ -34,16 +34,18 @@ export default function PlanResultPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">備えプラン結果</h1>
+      {/* 初期費用カード */}
       <div className="mb-6 rounded-lg border bg-yellow-50 p-4">
         <p className="text-sm text-gray-600">初期費用の目安</p>
         <p className="text-2xl font-bold">2,120円</p>
-        <div className="mb-6 rounded-lg border bg-white p-4">
-          <p className="text-sm font-semibold text-gray-700 mb-2">
-            このプランの説明
-          </p>
-          <p className="text-sm leading-7 text-gray-600">{mockExplanation}</p>
-        </div>
       </div>
+      <div className="mb-6 rounded-lg border bg-white p-4">
+        <p className="text-sm font-semibold text-gray-700 mb-2">
+          このプランの説明
+        </p>
+        <p className="text-sm leading-7 text-gray-600">{mockExplanation}</p>
+      </div>
+
       <div className="grid gap-4">
         {mockItems.map((item) => (
           <div
