@@ -2,16 +2,22 @@
 
 export default function Page() {
   const handleClick = async () => {
-    const res = await fetch("/api/payments/checkout", {
-      method: "POST",
-    });
+    try {
+      const res = await fetch("/api/payments/checkout", {
+        method: "POST",
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      alert("Checkout URL の取得に失敗しました");
+      if (!res.ok || !data?.data?.url) {
+        alert("Checkout URL の取得に失敗しました");
+        return;
+      }
+
+      window.location.href = data.data.url;
+    } catch (error) {
+      console.error("Failed to start checkout", error);
+      alert("通信に失敗しました");
     }
   };
 
