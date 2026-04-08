@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@upstash/redis": "^1.37.0",
     "openai": "^6.33.0"
   }
 }
