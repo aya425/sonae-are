@@ -15,40 +15,37 @@ const AGE_GROUP_OPTIONS = [
 ];
 
 const ALLERGEN_OPTIONS = [
-  "卵",
-  "乳",
-  "小麦",
-  "えび",
-  "かに",
-  "落花生",
-  "そば",
-  "くるみ",
+  { value: "egg", label: "卵" },
+  { value: "milk", label: "乳" },
+  { value: "wheat", label: "小麦" },
+  { value: "shrimp", label: "えび" },
+  { value: "crab", label: "かに" },
+  { value: "peanut", label: "落花生" },
+  { value: "buckwheat", label: "そば" },
+  { value: "walnut", label: "くるみ" },
 ];
 
 type FamilyMemberInput = {
+  id: string;
   role: string;
   ageGroup: string;
   allergens: string[];
 };
 
+const createEmptyMember = (): FamilyMemberInput => ({
+  id: crypto.randomUUID(),
+  role: "",
+  ageGroup: "",
+  allergens: [],
+});
+
 export default function FamilyPage() {
   const [members, setMembers] = useState<FamilyMemberInput[]>([
-    {
-      role: "",
-      ageGroup: "",
-      allergens: [],
-    },
+    createEmptyMember(),
   ]);
 
   const addMember = () => {
-    setMembers((prev) => [
-      ...prev,
-      {
-        role: "",
-        ageGroup: "",
-        allergens: [],
-      },
-    ]);
+    setMembers((prev) => [...prev, createEmptyMember()]);
   };
 
   const updateMemberField = (
@@ -94,7 +91,7 @@ export default function FamilyPage() {
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         {members.map((member, index) => (
-          <section key={index} className="rounded-lg border p-4">
+          <section key={member.id} className="rounded-lg border p-4">
             <h2 className="mb-4 text-lg font-semibold">
               家族メンバー {index + 1}
             </h2>
@@ -143,15 +140,15 @@ export default function FamilyPage() {
                 <div className="grid grid-cols-2 gap-2">
                   {ALLERGEN_OPTIONS.map((allergen) => (
                     <label
-                      key={allergen}
+                      key={allergen.value}
                       className="flex items-center gap-2 text-sm"
                     >
                       <input
                         type="checkbox"
-                        checked={member.allergens.includes(allergen)}
-                        onChange={() => toggleAllergen(index, allergen)}
+                        checked={member.allergens.includes(allergen.value)}
+                        onChange={() => toggleAllergen(index, allergen.value)}
                       />
-                      <span>{allergen}</span>
+                      <span>{allergen.label}</span>
                     </label>
                   ))}
                 </div>
