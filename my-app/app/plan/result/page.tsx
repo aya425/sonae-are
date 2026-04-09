@@ -1,21 +1,19 @@
+type PlanItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  type: string;
+  price: number;
+  url: string;
+};
+
+type GeneratedPlan = {
+  items: PlanItem[];
+  explanation: string;
+  notice: string;
+};
+
 export default function PlanResultPage() {
-  type PlanItem = {
-    id: string;
-    name: string;
-    quantity: number;
-    type: string;
-    price: number;
-    url: string;
-    explanation?: string;
-  };
-
-  type GeneratedPlan = {
-    items: PlanItem[];
-    explanation: string;
-    notice: string;
-    totalCost?: number;
-  };
-
   const mockPlan: GeneratedPlan = {
     items: [
       {
@@ -45,11 +43,13 @@ export default function PlanResultPage() {
     ],
     explanation: "このプランはアレルギー条件と保存性を考慮して選定しています。",
     notice:
-      "商品情報は公式表示を確認してください。このプランはアレルギー条件と保存性を考慮して選定しています。※本AIの提案は参考情報です。最終判断は自身で行なってください。",
+      "商品情報は公式表示を確認してください。※本AIの提案は参考情報です。最終判断は自身で行なってください。",
   };
+
   const totalCost = mockPlan.items.reduce((sum, item) => {
     return sum + item.price * item.quantity;
   }, 0);
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">備えプラン結果</h1>
@@ -67,9 +67,10 @@ export default function PlanResultPage() {
           {mockPlan.explanation}
         </p>
       </div>
-      <div>
-        <p>※注意事項</p>
-        <p>{mockPlan.notice}</p>
+
+      <div className="mb-6 rounded-lg border bg-gray-50 p-4">
+        <p className="text-sm font-semibold text-gray-700 mb-2">注意事項</p>
+        <p className="text-sm leading-7 text-gray-600">{mockPlan.notice}</p>
       </div>
 
       <div className="grid gap-4">
@@ -78,7 +79,7 @@ export default function PlanResultPage() {
             key={item.id}
             className="border rounded-lg p-4 shadow-sm bg-white"
           >
-            <div className="flex items-start justify-between gap-4 mb-3">
+            <div className="flex flex-col gap-2 mb-3 sm:flex-row sm:items-start sm:justify-between">
               <h2 className="text-lg font-semibold">{item.name}</h2>
               <span className="text-sm px-2 py-1 rounded bg-gray-100">
                 {item.type}
@@ -96,7 +97,7 @@ export default function PlanResultPage() {
               rel="noopener noreferrer"
               className="inline-block mt-4 text-blue-600 underline"
             >
-              商品を見る
+              商品ページを見る
             </a>
           </div>
         ))}
