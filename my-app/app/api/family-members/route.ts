@@ -10,9 +10,7 @@ export async function GET(_request: NextRequest) {
       error: userError,
     } = await supabase.auth.getUser();
 
-    console.log("userError:", userError);
-
-    if (!user) {
+    if (userError || !user) {
       return NextResponse.json(
         {
           data: null,
@@ -97,7 +95,7 @@ export async function POST(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
+    if (userError || !user) {
       return NextResponse.json(
         {
           data: null,
