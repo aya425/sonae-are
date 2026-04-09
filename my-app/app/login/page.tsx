@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/src/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,30 +13,30 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setErrorMessage("");
-  setIsLoading(true);
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrorMessage("");
+    setIsLoading(true);
 
-  try {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      setErrorMessage(error.message || "ログインに失敗しました。");
-      return;
+      if (error) {
+        setErrorMessage(error.message || "ログインに失敗しました。");
+        return;
+      }
+
+      router.push("/family");
+    } catch (error) {
+      console.error("unexpected login error", error);
+      setErrorMessage("ログイン中に予期しないエラーが発生しました。");
+    } finally {
+      setIsLoading(false);
     }
-
-    router.push("/family");
-  } catch (error) {
-    console.error("unexpected login error", error);
-    setErrorMessage("ログイン中に予期しないエラーが発生しました。");
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <main className="mx-auto max-w-md p-6">

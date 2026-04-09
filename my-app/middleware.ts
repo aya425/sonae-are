@@ -1,24 +1,51 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
+
+          response = NextResponse.next({ request });
+
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { pathname } = request.nextUrl;
 
-  // /family にアクセスしたときだけチェック
-  if (pathname.startsWith("/family")) {
-    const hasAuthCookie =
-      request.cookies.get("sb-access-token") ||
-      request.cookies.get("supabase-auth-token");
-
-    // 未ログインなら /login にリダイレクト
-    if (!hasAuthCookie) {
-      const loginUrl = new URL("/login", request.url);
-      return NextResponse.redirect(loginUrl);
-    }
+  if (pathname.startsWith("/family") && !user) {
+    const loginUrl = new URL("/login", request.url);
+    return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  if (pathname.startsWith("/login") && user) {
+    const familyUrl = new URL("/family", request.url);
+    return NextResponse.redirect(familyUrl);
+  }
+
+  return response;
 }
 
 export const config = {
-  matcher: ["/family/:path*"],
+  matcher: ["/family/:path*", "/login"],
 };
