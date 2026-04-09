@@ -1,0 +1,8 @@
+node_modules
+.next
+dist
+build
+coverage
+package-lock.json
+my-app/node_modules
+my-app/.next

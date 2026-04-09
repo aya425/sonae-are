@@ -1,8 +1,12 @@
 {
   "dependencies": {
-    "@upstash/redis": "^1.37.0",
-    "openai": "^6.33.0",
     "@supabase/ssr": "^0.10.0",
-    "@supabase/supabase-js": "^2.101.1"
+    "@supabase/supabase-js": "^2.101.1",
+    "@upstash/redis": "^1.37.0",
+    "openai": "^6.33.0"
+  },
+  "devDependencies": {
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1"
   }
 }
