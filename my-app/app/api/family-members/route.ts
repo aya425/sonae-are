@@ -1,6 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "../../../lib/supabase/server";
 
+type FamilyMemberInput = {
+  role?: string;
+  age_group?: string;
+  notes?: string | null;
+};
+
+function validateFamilyMember(input: FamilyMemberInput) {
+  if (!input.role || input.role.trim() === "") {
+    return "role is required";
+  }
+
+  if (!input.age_group || !["adult", "child"].includes(input.age_group)) {
+    return "age_group must be adult or child";
+  }
+
+  return null;
+}
+
 export async function GET(_request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -25,18 +43,31 @@ export async function GET(_request: NextRequest) {
 
     const { data, error } = await supabase
       .from("family_members")
-      .select("id, role, age_group, notes, created_at, updated_at")
+      .select(
+        `
+        id,
+        role,
+        age_group,
+        notes,
+        created_at,
+        updated_at,
+        member_allergens (
+          allergen_name
+        )
+      `
+      )
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
     if (error) {
+      console.error("family_members select error:", error);
+
       return NextResponse.json(
         {
           data: null,
           error: {
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to fetch family members",
-            details: error.message,
           },
         },
         { status: 500 }
@@ -44,9 +75,15 @@ export async function GET(_request: NextRequest) {
     }
 
     const response = (data ?? []).map((member) => ({
-      ...member,
+      id: member.id,
+      role: member.role,
+      age_group: member.age_group,
       notes: member.notes ?? "",
-      allergens: [],
+      created_at: member.created_at,
+      updated_at: member.updated_at,
+      allergens: (member.member_allergens ?? []).map(
+        (item: { allergen_name: string }) => item.allergen_name
+      ),
     }));
 
     return NextResponse.json({
@@ -69,30 +106,13 @@ export async function GET(_request: NextRequest) {
   }
 }
 
-type FamilyMemberInput = {
-  role?: string;
-  age_group?: string;
-  notes?: string | null;
-};
-
-function validateFamilyMember(input: FamilyMemberInput) {
-  if (!input.role || input.role.trim() === "") {
-    return "role is required";
-  }
-
-  if (!input.age_group || !["adult", "child"].includes(input.age_group)) {
-    return "age_group must be adult or child";
-  }
-
-  return null;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
     const {
       data: { user },
+      error: userError,
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
@@ -128,7 +148,7 @@ export async function POST(request: NextRequest) {
       .from("family_members")
       .insert({
         user_id: user.id,
-        role: body.role,
+        role: body.role.trim(),
         age_group: body.age_group,
         notes: body.notes ?? "",
       })
@@ -153,7 +173,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        data,
+        data: {
+          ...data,
+          allergens: [],
+        },
         error: null,
       },
       { status: 201 }
