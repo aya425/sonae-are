@@ -215,6 +215,8 @@ function buildCandidateProducts(
     usedProductIds.add(chosen.id);
   }
 
+  // minimum + 日常品含む の場合は、最低限の備えに加えて
+  // 日常転用品も候補に入ることを見せるため、日常品を1件だけ追加する
   if (includeDailyItems && priorityPolicy === "minimum") {
     const extraDailyItem = targetProducts.find(
       (product) =>
