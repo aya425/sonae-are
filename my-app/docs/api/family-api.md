@@ -1,6 +1,6 @@
 # Family API 仕様
 
-## GET /api/family
+## GET /api/family-members
 
 ### 概要
 ログインユーザーの家族情報一覧を取得する
@@ -8,6 +8,8 @@
 ---
 
 ## レスポンス
+
+### 正常系
 
 {
   "data": [
@@ -35,6 +37,27 @@
 
 ---
 
+### 家族未登録時
+
+{
+  "data": [],
+  "error": null
+}
+
+---
+
+### 未認証時
+
+{
+  "data": null,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Unauthorized"
+  }
+}
+
+---
+
 ### フィールド説明
 
 | フィールド | 型 | 説明 |
@@ -46,6 +69,8 @@
 | allergens | string[] | アレルゲン一覧 |
 | created_at | string | 作成日時 |
 | updated_at | string | 更新日時 |
+
+---
 
 ## POST /api/family
 
@@ -79,6 +104,27 @@
 }
 
 ---
+
+## POST /api/family-members
+
+### リクエスト
+
+{
+  "role": "母",
+  "age_group": "adult",
+  "notes": ""
+}
+
+---
+
+### バリデーション
+
+- role：必須
+- age_group：必須（adult / child）
+- notes：任意
+
+---
+
 ### 設計意図
 
 - DB上は family_members と member_allergens に分かれているが、フロントでは家族メンバー単位で扱いたいため、1つの配列に整形した形で返す
