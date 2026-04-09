@@ -21,6 +21,8 @@ type ProductRow = {
 };
 
 export async function POST(request: NextRequest) {
+  console.log("[plans/generate] start");
+
   try {
     const body = (await request.json()) as GeneratePlanRequest;
     const { days, includeDailyItems, priorityPolicy } = body;
@@ -55,7 +57,6 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // TODO: 認証ありで family_members を本人データに絞って確認する
     const {
       data: { user },
       error: userError,
@@ -77,7 +78,8 @@ export async function POST(request: NextRequest) {
 
     const { data: familyMembers, error: familyError } = await supabase
       .from("family_members")
-      .select("id");
+      .select("id")
+      .eq("user_id", user.id);
 
     if (familyError) {
       return NextResponse.json(
@@ -97,6 +99,7 @@ export async function POST(request: NextRequest) {
       .length;
 
     if (familyMemberCount === 0) {
+      console.log("[plans/generate] family members not found");
       return NextResponse.json(
         {
           data: null,
@@ -146,7 +149,10 @@ export async function POST(request: NextRequest) {
       }),
     );
 
-    const plan = generatePlan({
+    // TODO:
+    // 現状は familyMemberCount を使った最小版の生成ロジック。
+    // 次段で member_allergens を参照し、家族条件に応じた候補絞り込みへ拡張する。
+    const generatedPlan = generatePlan({
       familyMemberCount,
       days,
       includeDailyItems,
@@ -154,16 +160,25 @@ export async function POST(request: NextRequest) {
       products: normalizedProducts,
     });
 
+    console.log("[plans/generate] success");
+
     return NextResponse.json(
       {
         data: {
-          plan,
+          plan: {
+            summary: generatedPlan.summary,
+            items: generatedPlan.items,
+            explanation: generatedPlan.explanation,
+            notice: generatedPlan.notice,
+          },
         },
         error: null,
       },
       { status: 200 },
     );
   } catch (error) {
+    console.error("[plans/generate] unexpected error", error);
+
     return NextResponse.json(
       {
         data: null,

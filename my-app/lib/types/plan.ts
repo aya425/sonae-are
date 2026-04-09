@@ -17,7 +17,7 @@ export type GeneratedPlanItem = ProductResponseItem & {
 
 export type GeneratePlanSummary = {
   familyMemberCount: number;
-  days: number;
+  days: 3 | 7;
   includeDailyItems: boolean;
   priorityPolicy: PriorityPolicy;
   totalCost: number;

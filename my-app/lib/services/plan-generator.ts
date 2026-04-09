@@ -15,7 +15,12 @@ type ItemPriority = "high" | "medium" | "low";
 
 type CategoryName = "主食" | "飲料" | "おかず" | "汁物" | "おやつ";
 
+// おやつはMVPの最小提案では必須カテゴリに含めず、余裕がある場合のみ追加候補とする
 const CATEGORY_ORDER: CategoryName[] = ["主食", "飲料", "おかず", "汁物"];
+
+function isCategoryName(category: string): category is CategoryName {
+  return ["主食", "飲料", "おかず", "汁物", "おやつ"].includes(category);
+}
 
 function countProductsByType(
   products: ProductResponseItem[],
@@ -112,8 +117,10 @@ function getMinimumQuantity(
     return 1;
   }
 
-  if (category === "主食" || category === "飲料" || category === "おかず")
+  if (category === "主食" || category === "飲料" || category === "おかず") {
     return 2;
+  }
+
   return 1;
 }
 
@@ -176,7 +183,10 @@ function buildCandidateProducts(
   includeDailyItems: boolean,
   priorityPolicy: PriorityPolicy,
 ): ProductResponseItem[] {
-  const activeProducts = products.filter((product) => product.isActive);
+  const activeProducts = products.filter(
+    (product) => product.isActive && product.isFreeFrom28,
+  );
+
   const targetProducts = includeDailyItems
     ? activeProducts
     : activeProducts.filter(
@@ -188,7 +198,8 @@ function buildCandidateProducts(
 
   for (const category of CATEGORY_ORDER) {
     const candidatesInCategory = targetProducts.filter(
-      (product) => product.category === category,
+      (product) =>
+        isCategoryName(product.category) && product.category === category,
     );
 
     const chosen = chooseCandidateForCategory(
@@ -219,6 +230,9 @@ function buildCandidateProducts(
   return selected;
 }
 
+// TODO:
+// 現状は familyMemberCount ベースの最小版。
+// 次段で member_allergens を使った候補除外・優先調整を入れる。
 export function generatePlan({
   familyMemberCount,
   days,
