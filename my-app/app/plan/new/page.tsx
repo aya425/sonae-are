@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 
 const DAYS_OPTIONS = [
   { value: 3, label: "3日" },
@@ -78,12 +79,12 @@ export default function PlanNewPage() {
           <p className="text-sm text-yellow-800">
             備えプランを作るには、先に家族情報の登録が必要です。
           </p>
-          <a
+          <Link
             href="/family"
             className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
           >
             家族情報を登録する
-          </a>
+          </Link>
         </div>
       )}
 
