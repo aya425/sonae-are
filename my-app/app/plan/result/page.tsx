@@ -43,7 +43,7 @@ export default function PlanResultPage() {
     ],
     explanation: "このプランはアレルギー条件と保存性を考慮して選定しています。",
     notice:
-      "商品情報は公式表示を確認してください。※本AIの提案は参考情報です。最終判断は自身で行なってください。",
+      "商品情報は公式表示を確認してください。※本AIの提案は参考情報です。最終判断は自身で行ってください。",
   };
 
   const totalCost = mockPlan.items.reduce((sum, item) => {
