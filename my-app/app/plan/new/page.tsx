@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 
 const DAYS_OPTIONS = [
   { value: 3, label: "3日" },
@@ -35,10 +36,16 @@ export default function PlanNewPage() {
 
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasFamily] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMessage("");
+
+    if (!hasFamily) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -66,6 +73,20 @@ export default function PlanNewPage() {
           {errorMessage}
         </div>
       ) : null}
+
+      {!isSubmitting && !hasFamily && (
+        <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+          <p className="text-sm text-yellow-800">
+            備えプランを作るには、先に家族情報の登録が必要です。
+          </p>
+          <Link
+            href="/family"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            家族情報を登録する
+          </Link>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         <section className="rounded-lg border p-4">
@@ -107,7 +128,10 @@ export default function PlanNewPage() {
                 disabled={isSubmitting}
               >
                 {SCOPE_OPTIONS.map((option) => (
-                  <option key={String(option.value)} value={String(option.value)}>
+                  <option
+                    key={String(option.value)}
+                    value={String(option.value)}
+                  >
                     {option.label}
                   </option>
                 ))}
@@ -140,11 +164,17 @@ export default function PlanNewPage() {
         <div>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !hasFamily}
             className="rounded bg-green-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "生成中..." : "プランを生成する"}
           </button>
+
+          {isSubmitting && (
+            <p className="mt-4 text-sm text-gray-600">
+              備えプランを作成しています...
+            </p>
+          )}
         </div>
       </form>
     </main>
