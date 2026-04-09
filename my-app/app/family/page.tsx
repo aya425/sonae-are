@@ -16,14 +16,14 @@ const AGE_GROUP_OPTIONS = [
 ];
 
 const ALLERGEN_OPTIONS = [
-  "卵",
-  "乳",
-  "小麦",
-  "えび",
-  "かに",
-  "落花生",
-  "そば",
-  "くるみ",
+  { value: "卵", label: "卵" },
+  { value: "乳", label: "乳" },
+  { value: "小麦", label: "小麦" },
+  { value: "えび", label: "えび" },
+  { value: "かに", label: "かに" },
+  { value: "落花生", label: "落花生" },
+  { value: "そば", label: "そば" },
+  { value: "くるみ", label: "くるみ" },
 ];
 
 type FamilyMemberInput = {
@@ -114,8 +114,6 @@ export default function FamilyPage() {
 
     try {
       console.log("family members:", members);
-
-      // 仮遷移（API未接続）
       router.push("/plan/new");
     } catch (error) {
       console.error(error);
@@ -187,15 +185,15 @@ export default function FamilyPage() {
                 <div className="grid grid-cols-2 gap-2">
                   {ALLERGEN_OPTIONS.map((allergen) => (
                     <label
-                      key={allergen}
+                      key={allergen.value}
                       className="flex items-center gap-2 text-sm"
                     >
                       <input
                         type="checkbox"
-                        checked={member.allergens.includes(allergen)}
-                        onChange={() => toggleAllergen(index, allergen)}
+                        checked={member.allergens.includes(allergen.value)}
+                        onChange={() => toggleAllergen(index, allergen.value)}
                       />
-                      <span>{allergen}</span>
+                      <span>{allergen.label}</span>
                     </label>
                   ))}
                 </div>
