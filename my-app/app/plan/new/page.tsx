@@ -42,25 +42,18 @@ export default function PlanNewPage() {
     e.preventDefault();
     setErrorMessage("");
 
-    if (!hasFamily) {
-      return;
-    }
+    if (!hasFamily) return;
 
     setIsSubmitting(true);
 
     try {
-      console.log("plan condition:", form);
-
-      // 仮遷移（API未接続）
       router.push("/plan/result");
     } catch (error) {
-      console.error(error);
       setErrorMessage("プラン生成に失敗しました。");
     } finally {
       setIsSubmitting(false);
     }
   };
-
   return (
     <main className="mx-auto max-w-3xl p-6">
       <h1 className="text-2xl font-bold">備えプランを作成</h1>
@@ -70,7 +63,7 @@ export default function PlanNewPage() {
 
       {errorMessage ? (
         <div className="mt-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {errorMessage}
+          {errorMessage && <p className="text-red-500">{errorMessage}</p>}
         </div>
       ) : null}
 
