@@ -1,53 +1,79 @@
 export default function PlanResultPage() {
-  const mockExplanation =
-    "商品情報は公式表示を確認してください。このプランはアレルギー条件と保存性を考慮して選定しています。※本AIの提案は参考情報です。最終判断は自身で行なってください。";
-  const mockItems = [
-    {
-      id: "1",
-      name: "アルファ米 白飯",
-      quantity: 3,
-      type: "防災食",
-      price: 300,
-      url: "https://example.com/item1",
-      explanation: "主食として優先度が高く、保存しやすい商品です。",
-    },
-    {
-      id: "2",
-      name: "レトルトカレー",
-      quantity: 2,
-      type: "日常転用品",
-      price: 250,
-      url: "https://example.com/item2",
-      explanation: "普段使いもしやすく、ローリングストック向きです。",
-    },
-    {
-      id: "3",
-      name: "アレルギー対応ビスケット",
-      quantity: 4,
-      type: "防災食",
-      price: 180,
-      url: "https://example.com/item3",
-      explanation: "間食用として食べやすく、子ども向けの備えにも向いています。",
-    },
-  ];
+  type PlanItem = {
+    id: string;
+    name: string;
+    quantity: number;
+    type: string;
+    price: number;
+    url: string;
+    explanation?: string;
+  };
 
+  type GeneratedPlan = {
+    items: PlanItem[];
+    explanation: string;
+    notice: string;
+    totalCost?: number;
+  };
+
+  const mockPlan: GeneratedPlan = {
+    items: [
+      {
+        id: "1",
+        name: "アルファ米 白飯",
+        quantity: 3,
+        type: "防災食",
+        price: 300,
+        url: "https://example.com/item1",
+      },
+      {
+        id: "2",
+        name: "レトルトカレー",
+        quantity: 2,
+        type: "日常転用品",
+        price: 250,
+        url: "https://example.com/item2",
+      },
+      {
+        id: "3",
+        name: "アレルギー対応ビスケット",
+        quantity: 4,
+        type: "防災食",
+        price: 180,
+        url: "https://example.com/item3",
+      },
+    ],
+    explanation: "このプランはアレルギー条件と保存性を考慮して選定しています。",
+    notice:
+      "商品情報は公式表示を確認してください。このプランはアレルギー条件と保存性を考慮して選定しています。※本AIの提案は参考情報です。最終判断は自身で行なってください。",
+  };
+  const totalCost = mockPlan.items.reduce((sum, item) => {
+    return sum + item.price * item.quantity;
+  }, 0);
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">備えプラン結果</h1>
-      {/* 初期費用カード */}
+
       <div className="mb-6 rounded-lg border bg-yellow-50 p-4">
         <p className="text-sm text-gray-600">初期費用の目安</p>
-        <p className="text-2xl font-bold">2,120円</p>
+        <p className="text-2xl font-bold">{totalCost}円</p>
       </div>
+
       <div className="mb-6 rounded-lg border bg-white p-4">
         <p className="text-sm font-semibold text-gray-700 mb-2">
           このプランの説明
         </p>
-        <p className="text-sm leading-7 text-gray-600">{mockExplanation}</p>
+        <p className="text-sm leading-7 text-gray-600">
+          {mockPlan.explanation}
+        </p>
+      </div>
+      <div>
+        <p>※注意事項</p>
+        <p>{mockPlan.notice}</p>
       </div>
 
       <div className="grid gap-4">
-        {mockItems.map((item) => (
+        {mockPlan.items.map((item) => (
           <div
             key={item.id}
             className="border rounded-lg p-4 shadow-sm bg-white"
