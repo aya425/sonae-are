@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 const RELATION_OPTIONS = [
-  { value: "本人", label: "本人" },
-  { value: "配偶者", label: "配偶者" },
-  { value: "子ども", label: "子ども" },
-  { value: "その他", label: "その他" },
+  { value: "self", label: "本人" },
+  { value: "spouse", label: "配偶者" },
+  { value: "child", label: "子ども" },
+  { value: "other", label: "その他" },
 ];
 
 const AGE_GROUP_OPTIONS = [
@@ -26,43 +27,32 @@ const ALLERGEN_OPTIONS = [
 ];
 
 type FamilyMemberInput = {
-  id: string;
   role: string;
   ageGroup: string;
   allergens: string[];
 };
 
-type FamilyMemberResponse = {
-  id: string;
-  role: string;
-  age_group: string;
-  notes?: string | null;
-  allergens?: string[];
-  created_at?: string;
-  updated_at?: string;
-};
-
-const createEmptyMember = (id: string): FamilyMemberInput => ({
-  id,
-  role: "",
-  ageGroup: "",
-  allergens: [],
-});
-
 export default function FamilyPage() {
-  const [members, setMembers] = useState<FamilyMemberInput[]>([
-    createEmptyMember("member-1"),
-  ]);
-  const [familyList, setFamilyList] = useState<FamilyMemberResponse[]>([]);
-  const [message, setMessage] = useState("");
+  const router = useRouter();
 
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isFetching, setIsFetching] = useState<boolean>(false);
+  const [members, setMembers] = useState<FamilyMemberInput[]>([
+    {
+      role: "",
+      ageGroup: "",
+      allergens: [],
+    },
+  ]);
+
+  const [errorMessage, setErrorMessage] = useState("");
 
   const addMember = () => {
     setMembers((prev) => [
       ...prev,
-      createEmptyMember(`member-${prev.length + 1}-${crypto.randomUUID()}`),
+      {
+        role: "",
+        ageGroup: "",
+        allergens: [],
+      },
     ]);
   };
 
@@ -95,75 +85,39 @@ export default function FamilyPage() {
     );
   };
 
-  const handleGetFamily = async () => {
-    try {
-      setIsFetching(true);
-      setMessage("");
-
-      const res = await fetch("/api/family");
-      const data = await res.json();
-
-      if (!res.ok) {
-        setMessage(`エラー: ${data.error ?? "取得に失敗しました"}`);
-        return;
-      }
-
-      setFamilyList(data.data ?? []);
-    } catch (error) {
-      console.error("fetch family error:", error);
-      setMessage("通信エラーが発生しました");
-    } finally {
-      setIsFetching(false);
+  const validateMembers = () => {
+    if (members.length === 0) {
+      return "家族メンバーを1人以上登録してください。";
     }
-  };
 
-  useEffect(() => {
-    handleGetFamily();
-  }, []);
+    for (const member of members) {
+      if (!member.role) {
+        return "続柄を選択してください。";
+      }
+      if (!member.ageGroup) {
+        return "年齢区分を選択してください。";
+      }
+    }
+
+    return "";
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setErrorMessage("");
+
+    const validationError = validateMembers();
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
 
     try {
-      setIsSubmitting(true);
-      setMessage("");
-
-for (const member of members) {
-  if (!member.role || !member.ageGroup) {
-    setMessage("続柄と年齢区分を入力してください");
-    return;
-  }
-
-  const familyRes = await fetch("/api/family", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      role: member.role,
-      age_group: member.ageGroup,
-      notes: "",
-    }),
-  });
-
-  const familyData = await familyRes.json();
-
-  if (!familyRes.ok) {
-    setMessage(
-      `家族情報の保存に失敗しました: ${familyData.error ?? "不明なエラー"}`
-    );
-    return;
-  }
-}
-
-      setMessage("家族情報を保存しました");
-      setMembers([createEmptyMember("member-1")]);
-      await handleGetFamily();
+      console.log("family members:", members);
+      router.push("/plan/new");
     } catch (error) {
-      console.error("submit error:", error);
-      setMessage("通信エラーが発生しました");
-    } finally {
-      setIsSubmitting(false);
+      console.error(error);
+      setErrorMessage("画面遷移に失敗しました。");
     }
   };
 
@@ -174,9 +128,15 @@ for (const member of members) {
         備えプラン作成の前提になる情報です。
       </p>
 
+      {errorMessage ? (
+        <div className="mt-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {errorMessage}
+        </div>
+      ) : null}
+
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         {members.map((member, index) => (
-          <section key={member.id} className="rounded-lg border p-4">
+          <section key={index} className="rounded-lg border p-4">
             <h2 className="mb-4 text-lg font-semibold">
               家族メンバー {index + 1}
             </h2>
@@ -242,53 +202,23 @@ for (const member of members) {
           </section>
         ))}
 
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={addMember}
-            disabled={isSubmitting}
-            className="rounded border px-4 py-2 text-sm disabled:opacity-50"
-          >
-            家族メンバーを追加
-          </button>
+        <button
+          type="button"
+          onClick={addMember}
+          className="rounded border px-4 py-2 text-sm"
+        >
+          家族メンバーを追加
+        </button>
 
-          <button
-            type="button"
-            onClick={handleGetFamily}
-            disabled={isFetching || isSubmitting}
-            className="rounded bg-green-600 px-4 py-2 text-white disabled:opacity-50"
-          >
-            {isFetching ? "取得中..." : "家族一覧を取得"}
-          </button>
-
+        <div>
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+            className="rounded bg-green-600 px-4 py-2 text-white"
           >
-            {isSubmitting ? "保存中..." : "保存する"}
+            保存してプラン作成へ
           </button>
         </div>
-
-        {message && <p className="text-sm">{message}</p>}
       </form>
-
-      {familyList.length === 0 ? (
-        <p className="mt-4 text-sm text-gray-400">
-          まだ家族情報がありません
-        </p>
-      ) : (
-        <ul className="mt-4 space-y-2">
-          {familyList.map((member) => (
-            <li key={member.id} className="rounded border p-3">
-              <p>続柄: {member.role}</p>
-              <p>年齢区分: {member.age_group}</p>
-              <p>メモ: {member.notes ?? "なし"}</p>
-              <p>アレルゲン: {member.allergens?.join(", ") || "なし"}</p>
-            </li>
-          ))}
-        </ul>
-      )}
     </main>
   );
 }
