@@ -1,4 +1,12 @@
 {
+  "name": "sonae-are",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "lint": "npm --prefix my-app run lint",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
+  },
   "dependencies": {
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
