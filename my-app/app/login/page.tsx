@@ -1,53 +1,82 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
-  const supabase = createClient()
+  const router = useRouter();
+  const supabase = createClient();
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [message, setMessage] = useState('')
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setErrorMessage("");
+  setIsLoading(true);
 
+  try {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
-    })
+    });
 
     if (error) {
-      setMessage(`ログイン失敗: ${error.message}`)
-      return
+      setErrorMessage(error.message || "ログインに失敗しました。");
+      return;
     }
 
-    setMessage('ログイン成功')
-    window.location.href = '/api/me'
+    router.push("/family");
+  } catch (error) {
+    console.error("unexpected login error", error);
+    setErrorMessage("ログイン中に予期しないエラーが発生しました。");
+  } finally {
+    setIsLoading(false);
   }
+};
 
   return (
-    <main style={{ padding: '24px' }}>
-      <h1>ログイン</h1>
+    <main className="mx-auto max-w-md p-6">
+      <h1 className="mb-6 text-2xl font-bold">ログイン</h1>
 
-      <form onSubmit={handleLogin} style={{ display: 'grid', gap: '12px', maxWidth: '400px' }}>
-        <input
-          type="email"
-          placeholder="メールアドレス"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="パスワード"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button type="submit">ログイン</button>
+      <form onSubmit={handleLogin} className="space-y-4">
+        <div>
+          <label htmlFor="email">メールアドレス</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full rounded border px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="password">パスワード</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full rounded border px-3 py-2"
+          />
+        </div>
+
+        {errorMessage && <p className="text-red-600">{errorMessage}</p>}
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full rounded bg-black px-4 py-2 text-white disabled:opacity-50"
+        >
+          {isLoading ? "ログイン中..." : "ログインする"}
+        </button>
       </form>
-
-      {message && <p>{message}</p>}
     </main>
-  )
+  );
 }
