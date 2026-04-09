@@ -164,7 +164,7 @@ export default function PlanNewPage() {
         <div>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !hasFamily}
             className="rounded bg-green-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "生成中..." : "プランを生成する"}
