@@ -1,0 +1,7 @@
+node_modules
+my-app/node_modules
+my-app/.next
+my-app/dist
+my-app/build
+my-app/coverage
+package-lock.json
