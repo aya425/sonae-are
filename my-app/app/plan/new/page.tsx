@@ -16,22 +16,20 @@ const SCOPE_OPTIONS = [
 
 const PRIORITY_OPTIONS = [
   { value: "minimum", label: "最低限そろえる" },
-  { value: "balance", label: "バランス重視" },
+  { value: "balanced", label: "バランス重視" },
 ];
-
 type PlanConditionInput = {
   days: 3 | 7;
   includeDailyItems: boolean;
-  priorityPolicy: "minimum" | "balance";
+  priorityPolicy: "minimum" | "balanced";
 };
-
 export default function PlanNewPage() {
   const router = useRouter();
 
   const [form, setForm] = useState<PlanConditionInput>({
     days: 3,
     includeDailyItems: true,
-    priorityPolicy: "balance",
+    priorityPolicy: "balanced",
   });
 
   const [errorMessage, setErrorMessage] = useState("");
@@ -42,13 +40,54 @@ export default function PlanNewPage() {
     e.preventDefault();
     setErrorMessage("");
 
-    if (!hasFamily) return;
+    if (!hasFamily) {
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
+      console.log("generate request body:", {
+        days: form.days,
+        includeDailyItems: form.includeDailyItems,
+        priorityPolicy: form.priorityPolicy,
+      });
+      const res = await fetch("/api/plans/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          days: form.days,
+          includeDailyItems: form.includeDailyItems,
+          priorityPolicy: form.priorityPolicy,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.log("generate error response:", data);
+        setErrorMessage(
+          data?.error?.message ?? data?.error ?? "プラン生成に失敗しました。",
+        );
+        return;
+      }
+      console.log("generated plan:", data);
+
+      sessionStorage.setItem(
+        "generatedPlan",
+        JSON.stringify(data.data?.plan ?? data.plan ?? data),
+      );
+
+      console.log(
+        "saved generatedPlan:",
+        sessionStorage.getItem("generatedPlan"),
+      );
+
       router.push("/plan/result");
     } catch (error) {
+      console.error(error);
       setErrorMessage("プラン生成に失敗しました。");
     } finally {
       setIsSubmitting(false);
@@ -139,7 +178,7 @@ export default function PlanNewPage() {
                 onChange={(e) =>
                   setForm((prev) => ({
                     ...prev,
-                    priorityPolicy: e.target.value as "minimum" | "balance",
+                    priorityPolicy: e.target.value as "minimum" | "balanced",
                   }))
                 }
                 disabled={isSubmitting}
