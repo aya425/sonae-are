@@ -314,11 +314,11 @@ export default function FamilyPage() {
                 <select
                   className="w-full rounded border px-3 py-2"
                   value={member.role}
-                  onChange={(e) =>
-                    console.log("role changed", index, e.target.value);
-                    updateMemberField(index, "role", e.target.value)
-                  }
-                  disabled={isSubmitting}
+                    onChange={(e) => {
+                      console.log("role changed", index, e.target.value);
+                      updateMemberField(index, "role", e.target.value);
+                    }}
+                    disabled={isSubmitting}
                 >
                   <option value="">選択してください</option>
                   {RELATION_OPTIONS.map((option) => (
@@ -336,9 +336,10 @@ export default function FamilyPage() {
                 <select
                   className="w-full rounded border px-3 py-2"
                   value={member.ageGroup}
-                  onChange={(e) =>
-                    updateMemberField(index, "ageGroup", e.target.value)
-                  }
+                    onChange={(e) => {
+                      console.log("ageGroup changed", index, e.target.value);
+                      updateMemberField(index, "ageGroup", e.target.value);
+                    }}
                   disabled={isSubmitting}
                 >
                   <option value="">選択してください</option>
