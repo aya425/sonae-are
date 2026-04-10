@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "../../../lib/supabase/server";
+import { createClient } from "@/src/lib/supabase/server";
 
 type FamilyMemberInput = {
   role?: string;
@@ -7,19 +7,31 @@ type FamilyMemberInput = {
   notes?: string | null;
 };
 
+function isValidFamilyMemberInput(input: FamilyMemberInput): input is {
+  role: string;
+  age_group: "adult" | "child";
+  notes?: string | null;
+} {
+  return (
+    typeof input.role === "string" &&
+    input.role.trim() !== "" &&
+    (input.age_group === "adult" || input.age_group === "child")
+  );
+}
+
 function validateFamilyMember(input: FamilyMemberInput) {
   if (!input.role || input.role.trim() === "") {
-    return "role is required";
+    return "続柄は必須です";
   }
 
   if (!input.age_group || !["adult", "child"].includes(input.age_group)) {
-    return "age_group must be adult or child";
+    return "区分は大人または子供を選択してください";
   }
 
   return null;
 }
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient();
 
@@ -34,10 +46,11 @@ export async function GET(_request: NextRequest) {
           data: null,
           error: {
             code: "UNAUTHORIZED",
-            message: "Unauthorized",
+            message: "認証が必要です。",
+            details: null,
           },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -54,7 +67,7 @@ export async function GET(_request: NextRequest) {
         member_allergens (
           allergen_name
         )
-      `
+      `,
       )
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
@@ -67,10 +80,11 @@ export async function GET(_request: NextRequest) {
           data: null,
           error: {
             code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to fetch family members",
+            message: "家族情報の取得に失敗しました。",
+            details: error.message,
           },
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -82,7 +96,7 @@ export async function GET(_request: NextRequest) {
       created_at: member.created_at,
       updated_at: member.updated_at,
       allergens: (member.member_allergens ?? []).map(
-        (item: { allergen_name: string }) => item.allergen_name
+        (item: { allergen_name: string }) => item.allergen_name,
       ),
     }));
 
@@ -98,10 +112,11 @@ export async function GET(_request: NextRequest) {
         data: null,
         error: {
           code: "INTERNAL_SERVER_ERROR",
-          message: "Internal Server Error",
+          message: "予期しないエラーが発生しました。",
+          details: error instanceof Error ? error.message : null,
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -121,26 +136,28 @@ export async function POST(request: NextRequest) {
           data: null,
           error: {
             code: "UNAUTHORIZED",
-            message: "Unauthorized",
+            message: "認証が必要です。",
+            details: null,
           },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const body = (await request.json()) as FamilyMemberInput;
 
     const validationError = validateFamilyMember(body);
-    if (validationError) {
+    if (validationError || !isValidFamilyMemberInput(body)) {
       return NextResponse.json(
         {
           data: null,
           error: {
             code: "BAD_REQUEST",
-            message: validationError,
+            message: validationError ?? "家族情報の入力値が不正です。",
+            details: null,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -163,11 +180,11 @@ export async function POST(request: NextRequest) {
           data: null,
           error: {
             code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to create family member",
+            message: "家族情報の登録に失敗しました。",
             details: error.message,
           },
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -179,7 +196,7 @@ export async function POST(request: NextRequest) {
         },
         error: null,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("POST /api/family-members error:", error);
@@ -189,10 +206,11 @@ export async function POST(request: NextRequest) {
         data: null,
         error: {
           code: "INTERNAL_SERVER_ERROR",
-          message: "Internal Server Error",
+          message: "予期しないエラーが発生しました。",
+          details: error instanceof Error ? error.message : null,
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

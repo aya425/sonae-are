@@ -52,7 +52,8 @@
   "data": null,
   "error": {
     "code": "UNAUTHORIZED",
-    "message": "Unauthorized"
+    "message": "認証が必要です。",
+    "details": null
   }
 }
 
@@ -72,7 +73,7 @@
 
 ---
 
-## POST /api/family
+## POST /api/family-members
 
 ### 概要
 家族メンバーを1件登録する
@@ -98,21 +99,10 @@
     "age_group": "adult",
     "notes": "",
     "created_at": "...",
-    "updated_at": "..."
+    "updated_at": "...",
+    "allergens": []
   },
   "error": null
-}
-
----
-
-## POST /api/family-members
-
-### リクエスト
-
-{
-  "role": "母",
-  "age_group": "adult",
-  "notes": ""
 }
 
 ---
