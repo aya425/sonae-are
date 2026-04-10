@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const DAYS_OPTIONS = [
   { value: 3, label: "3日" },
@@ -70,6 +70,21 @@ type GeneratePlanResponse = {
   error: ApiError | null;
 };
 
+type FamilyMembersResponse = {
+  data:
+    | {
+        id: string;
+        role: string;
+        age_group: string;
+        notes: string | null;
+        allergens: string[];
+        created_at: string;
+        updated_at: string;
+      }[]
+    | null;
+  error: ApiError | null;
+};
+
 export default function PlanNewPage() {
   const router = useRouter();
 
@@ -83,10 +98,50 @@ export default function PlanNewPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [needsFamilyRegistration, setNeedsFamilyRegistration] = useState(false);
 
+  const [hasFamily, setHasFamily] = useState<boolean | null>(null);
+  const [isCheckingFamily, setIsCheckingFamily] = useState(false);
+
+  useEffect(() => {
+    const fetchFamilyMembers = async () => {
+      try {
+        const response = await fetch("/api/family-members", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        const result: FamilyMembersResponse = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result.error?.message || "家族情報の確認に失敗しました。"
+          );
+        }
+
+        setHasFamily((result.data?.length ?? 0) > 0);
+      } catch (error) {
+        console.error(error);
+        setHasFamily(null);
+      } finally {
+        setIsCheckingFamily(false);
+      }
+    };
+
+    fetchFamilyMembers();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMessage("");
     setNeedsFamilyRegistration(false);
+
+    if (isSubmitting || isCheckingFamily) return;
+
+    if (hasFamily === false) {
+      setNeedsFamilyRegistration(true);
+      setErrorMessage("先に家族情報を登録してください。");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -113,7 +168,7 @@ export default function PlanNewPage() {
           setNeedsFamilyRegistration(true);
           setErrorMessage(
             result.error.message ||
-              "家族情報が未登録です。先に家族情報を登録してください。",
+              "家族情報が未登録です。先に家族情報を登録してください。"
           );
           return;
         }
@@ -132,7 +187,7 @@ export default function PlanNewPage() {
     } catch (error) {
       console.error(error);
       setErrorMessage(
-        error instanceof Error ? error.message : "プラン生成に失敗しました。",
+        error instanceof Error ? error.message : "プラン生成に失敗しました。"
       );
     } finally {
       setIsSubmitting(false);
@@ -145,6 +200,20 @@ export default function PlanNewPage() {
       <p className="mt-2 text-sm text-gray-600">
         家族条件に合わせて、備え候補を提案します。
       </p>
+
+      {hasFamily === false && !errorMessage ? (
+        <div className="mt-4 rounded border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+          <p>家族情報がまだ登録されていません。</p>
+          <div className="mt-3">
+            <Link
+              href="/family"
+              className="inline-block rounded bg-yellow-700 px-3 py-2 text-white no-underline"
+            >
+              家族情報を登録する
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       {errorMessage ? (
         <div className="mt-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -179,7 +248,7 @@ export default function PlanNewPage() {
                     days: Number(e.target.value) as 3 | 7,
                   }))
                 }
-                disabled={isSubmitting}
+                disabled={isSubmitting || isCheckingFamily}
               >
                 {DAYS_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -200,7 +269,7 @@ export default function PlanNewPage() {
                     includeDailyItems: e.target.value === "true",
                   }))
                 }
-                disabled={isSubmitting}
+                disabled={isSubmitting || isCheckingFamily}
               >
                 {SCOPE_OPTIONS.map((option) => (
                   <option
@@ -224,7 +293,7 @@ export default function PlanNewPage() {
                     priorityPolicy: e.target.value as "minimum" | "balanced",
                   }))
                 }
-                disabled={isSubmitting}
+                disabled={isSubmitting || isCheckingFamily}
               >
                 {PRIORITY_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -239,10 +308,14 @@ export default function PlanNewPage() {
         <div>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isCheckingFamily}
             className="rounded bg-green-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSubmitting ? "生成中..." : "プランを生成する"}
+            {isCheckingFamily
+              ? "家族情報を確認中..."
+              : isSubmitting
+              ? "生成中..."
+              : "プランを生成する"}
           </button>
         </div>
       </form>
