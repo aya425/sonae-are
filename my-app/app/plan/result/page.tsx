@@ -39,18 +39,24 @@ export default function PlanResultPage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("generatedPlan");
+    const timer = window.setTimeout(() => {
+      const stored = sessionStorage.getItem("generatedPlan");
 
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as GeneratedPlan;
-        setPlan(parsed);
-      } catch (error) {
-        console.error("generatedPlan の読み込みに失敗しました", error);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as GeneratedPlan;
+          setPlan(parsed);
+        } catch (error) {
+          console.error("generatedPlan の読み込みに失敗しました", error);
+        }
       }
-    }
 
-    setIsLoaded(true);
+      setIsLoaded(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, []);
 
   const totalCost =
