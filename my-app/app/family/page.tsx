@@ -315,9 +315,10 @@ export default function FamilyPage() {
                   className="w-full rounded border px-3 py-2"
                   value={member.role}
                   onChange={(e) =>
+                    console.log("role changed", index, e.target.value);
                     updateMemberField(index, "role", e.target.value)
                   }
-                  disabled={isSubmitting || hasExistingMembers}
+                  disabled={isSubmitting}
                 >
                   <option value="">選択してください</option>
                   {RELATION_OPTIONS.map((option) => (
@@ -338,7 +339,7 @@ export default function FamilyPage() {
                   onChange={(e) =>
                     updateMemberField(index, "ageGroup", e.target.value)
                   }
-                  disabled={isSubmitting || hasExistingMembers}
+                  disabled={isSubmitting}
                 >
                   <option value="">選択してください</option>
                   {AGE_GROUP_OPTIONS.map((option) => (
@@ -361,7 +362,7 @@ export default function FamilyPage() {
                         type="checkbox"
                         checked={member.allergens.includes(allergen.value)}
                         onChange={() => toggleAllergen(index, allergen.value)}
-                        disabled={isSubmitting || hasExistingMembers}
+                        disabled={isSubmitting}
                       />
                       <span>{allergen.label}</span>
                     </label>
@@ -378,7 +379,7 @@ export default function FamilyPage() {
                   onChange={(e) =>
                     updateMemberField(index, "notes", e.target.value)
                   }
-                  disabled={isSubmitting || hasExistingMembers}
+                  disabled={isSubmitting}
                   placeholder="任意でメモを入力"
                 />
               </div>
@@ -386,21 +387,19 @@ export default function FamilyPage() {
           </section>
         ))}
 
-        {!hasExistingMembers ? (
-          <button
-            type="button"
-            onClick={addMember}
-            className="rounded border px-4 py-2 text-sm"
-            disabled={isSubmitting}
-          >
-            家族メンバーを追加
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={addMember}
+          className="rounded border px-4 py-2 text-sm"
+          disabled={isSubmitting}
+        >
+          家族メンバーを追加
+        </button>
 
         <div>
           <button
             type="submit"
-            disabled={isSubmitting || hasExistingMembers}
+            disabled={isSubmitting}
             className="rounded bg-green-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "保存中..." : "保存してプラン作成へ"}
