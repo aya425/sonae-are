@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   app:
     build: .
@@ -10,3 +8,5 @@ services:
       - /app/node_modules
     env_file:
       - ./my-app/.env.local
+    environment:
+      - NODE_OPTIONS=--max-old-space-size=4096
