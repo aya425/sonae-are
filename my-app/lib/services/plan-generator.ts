@@ -95,16 +95,17 @@ function getCategoryMultiplier(
   priorityPolicy: PriorityPolicy,
 ): number {
   if (priorityPolicy === "minimum") {
-    if (category === "主食") return 0.8;
-    if (category === "飲料") return 0.7;
-    if (category === "おかず" || category === "汁物") return 0.35;
+    if (category === "主食") return 1.0;
+    if (category === "飲料") return 1.0;
+    if (category === "おかず") return 0.6;
+    if (category === "汁物") return 0.5;
     return 0.2;
   }
 
-  if (category === "主食") return 0.75;
-  if (category === "飲料") return 0.7;
-  if (category === "おかず") return 0.55;
-  if (category === "汁物") return 0.45;
+  if (category === "主食") return 1.0;
+  if (category === "飲料") return 1.0;
+  if (category === "おかず") return 0.8;
+  if (category === "汁物") return 0.7;
   return 0.3;
 }
 
