@@ -16,13 +16,13 @@ const SCOPE_OPTIONS = [
 
 const PRIORITY_OPTIONS = [
   { value: "minimum", label: "最低限そろえる" },
-  { value: "balance", label: "バランス重視" },
+  { value: "balanced", label: "バランス重視" },
 ] as const;
 
 type PlanConditionInput = {
   days: 3 | 7;
   includeDailyItems: boolean;
-  priorityPolicy: "minimum" | "balance";
+  priorityPolicy: "minimum" | "balanced";
 };
 
 type GeneratedPlanSummary = {
@@ -30,16 +30,24 @@ type GeneratedPlanSummary = {
   days: number;
   includeDailyItems: boolean;
   priorityPolicy: string;
-  totalEstimatedCost: number;
+  totalCost: number;
+  annualCost: number;
 };
 
 type GeneratedPlanItem = {
   id: string;
   name: string;
-  quantity: number;
-  type: string;
+  category: string;
+  productType: string;
+  isFreeFrom28: boolean;
   price: number;
-  url: string;
+  purchaseUrl: string;
+  shelfLifeMonths: number;
+  isActive: boolean;
+  quantity: number;
+  subtotal: number;
+  priority: string;
+  reason: string;
 };
 
 type GeneratedPlan = {
@@ -68,7 +76,7 @@ export default function PlanNewPage() {
   const [form, setForm] = useState<PlanConditionInput>({
     days: 3,
     includeDailyItems: true,
-    priorityPolicy: "balance",
+    priorityPolicy: "balanced",
   });
 
   const [errorMessage, setErrorMessage] = useState("");
@@ -105,7 +113,7 @@ export default function PlanNewPage() {
           setNeedsFamilyRegistration(true);
           setErrorMessage(
             result.error.message ||
-              "家族情報が未登録です。先に家族情報を登録してください。"
+              "家族情報が未登録です。先に家族情報を登録してください。",
           );
           return;
         }
@@ -124,9 +132,7 @@ export default function PlanNewPage() {
     } catch (error) {
       console.error(error);
       setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "プラン生成に失敗しました。"
+        error instanceof Error ? error.message : "プラン生成に失敗しました。",
       );
     } finally {
       setIsSubmitting(false);
@@ -197,7 +203,10 @@ export default function PlanNewPage() {
                 disabled={isSubmitting}
               >
                 {SCOPE_OPTIONS.map((option) => (
-                  <option key={String(option.value)} value={String(option.value)}>
+                  <option
+                    key={String(option.value)}
+                    value={String(option.value)}
+                  >
                     {option.label}
                   </option>
                 ))}
@@ -212,7 +221,7 @@ export default function PlanNewPage() {
                 onChange={(e) =>
                   setForm((prev) => ({
                     ...prev,
-                    priorityPolicy: e.target.value as "minimum" | "balance",
+                    priorityPolicy: e.target.value as "minimum" | "balanced",
                   }))
                 }
                 disabled={isSubmitting}
