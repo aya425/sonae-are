@@ -18,8 +18,17 @@ type PlanItem = {
   reason: string;
 };
 
+type GeneratedPlanSummary = {
+  familyMemberCount: number;
+  days: number;
+  includeDailyItems: boolean;
+  priorityPolicy: string;
+  totalCost: number;
+  annualCost: number;
+};
+
 type GeneratedPlan = {
-  summary?: string;
+  summary?: GeneratedPlanSummary;
   items: PlanItem[];
   explanation: string;
   notice: string;
@@ -27,18 +36,34 @@ type GeneratedPlan = {
 
 export default function PlanResultPage() {
   const [plan, setPlan] = useState<GeneratedPlan | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("generatedPlan");
 
     if (stored) {
-      const parsed = JSON.parse(stored);
-      setPlan(parsed);
+      try {
+        const parsed = JSON.parse(stored) as GeneratedPlan;
+        setPlan(parsed);
+      } catch (error) {
+        console.error("generatedPlan の読み込みに失敗しました", error);
+      }
     }
+
+    setIsLoaded(true);
   }, []);
 
   const totalCost =
     plan?.items.reduce((sum, item) => sum + item.subtotal, 0) ?? 0;
+
+  if (!isLoaded) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6">備えプラン結果</h1>
+        <p className="text-sm text-gray-600">プランを読み込んでいます...</p>
+      </div>
+    );
+  }
 
   if (!plan) {
     return (
