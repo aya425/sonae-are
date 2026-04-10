@@ -71,6 +71,9 @@
 | created_at | string | 作成日時 |
 | updated_at | string | 更新日時 |
 
+補足
+- notes は未入力時、APIでは空文字で返す
+
 ---
 
 ## POST /api/family-members
@@ -92,6 +95,8 @@
 
 ### レスポンス
 
+#### 正常系
+
 {
   "data": {
     "id": "uuid",
@@ -103,6 +108,32 @@
     "allergens": []
   },
   "error": null
+}
+
+---
+
+#### 未認証時
+
+{
+  "data": null,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "認証が必要です。",
+    "details": null
+  }
+}
+
+---
+
+#### 入力エラー時
+
+{
+  "data": null,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "続柄は必須です",
+    "details": null
+  }
 }
 
 ---
@@ -120,6 +151,7 @@
 - DB上は family_members と member_allergens に分かれているが、フロントでは家族メンバー単位で扱いたいため、1つの配列に整形した形で返す
 - allergens は string[] で返し、画面側でそのまま一覧表示・タグ表示・カンマ区切り表示に使えるようにする
 - data をそのままループ描画できる形にして、フロント実装時の変換処理を減らす
+- notes は未入力時も API で空文字を返すことで、画面側の null 判定を減らす
 
 ### フロント利用想定
 - data をそのまま家族一覧描画に使う

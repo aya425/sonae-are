@@ -25,7 +25,7 @@ function validateFamilyMember(input: FamilyMemberInput) {
   }
 
   if (!input.age_group || !["adult", "child"].includes(input.age_group)) {
-    return "区分は大人または子供を選択してください";
+    return "区分は大人または子どもを選択してください";
   }
 
   return null;
@@ -73,7 +73,13 @@ export async function GET() {
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error("family_members select error:", error);
+      console.error("GET /api/family-members family_members select error", {
+        path: "/api/family-members",
+        method: "GET",
+        user_id: user.id,
+        error_code: error.code ?? null,
+        error_message: error.message,
+      });
 
       return NextResponse.json(
         {
@@ -105,7 +111,11 @@ export async function GET() {
       error: null,
     });
   } catch (error) {
-    console.error("GET /api/family-members error:", error);
+    console.error("GET /api/family-members unexpected error", {
+      path: "/api/family-members",
+      method: "GET",
+      error_message: error instanceof Error ? error.message : null,
+    });
 
     return NextResponse.json(
       {
@@ -173,7 +183,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error("family_members insert error:", error);
+      console.error("POST /api/family-members family_members insert error", {
+        path: "/api/family-members",
+        method: "POST",
+        user_id: user.id,
+        error_code: error.code ?? null,
+        error_message: error.message,
+      });
 
       return NextResponse.json(
         {
@@ -199,7 +215,11 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    console.error("POST /api/family-members error:", error);
+    console.error("POST /api/family-members unexpected error", {
+      path: "/api/family-members",
+      method: "POST",
+      error_message: error instanceof Error ? error.message : null,
+    });
 
     return NextResponse.json(
       {
