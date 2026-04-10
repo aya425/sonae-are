@@ -359,12 +359,15 @@ export default function FamilyPage() {
                       key={allergen.value}
                       className="flex items-center gap-2 text-sm"
                     >
-                      <input
-                        type="checkbox"
-                        checked={member.allergens.includes(allergen.value)}
-                        onChange={() => toggleAllergen(index, allergen.value)}
-                        disabled={isSubmitting}
-                      />
+                        <input
+                          type="checkbox"
+                          checked={member.allergens.includes(allergen.value)}
+                          onChange={() => {
+                            console.log("allergen toggled", index, allergen.value);
+                            toggleAllergen(index, allergen.value);
+                          }}
+                          disabled={isSubmitting}
+                        />
                       <span>{allergen.label}</span>
                     </label>
                   ))}
