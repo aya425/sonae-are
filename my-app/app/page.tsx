@@ -1,65 +1,85 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+const features = [
+  {
+    title: "家族条件に合う備えを提案",
+    description: "家族構成やアレルギー情報に合わせて、何をどれだけ備えるかを考えやすくします。",
+  },
+  {
+    title: "日常で買える商品も候補に表示",
+    description: "防災食だけでなく、日常で買いやすい28品目不使用商品も備蓄候補として確認できます。",
+  },
+  {
+    title: "期限通知で見直しやすい",
+    description: "賞味期限が近づいた備蓄に気づきやすく、入れ替えや再購入につなげやすくします。",
+  },
+];
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+      <section className="mx-auto flex max-w-6xl flex-col gap-12 px-6 py-16 md:px-10 md:py-24">
+        <div className="flex flex-col gap-6">
+          <span className="inline-flex w-fit rounded-full bg-green-100 px-4 py-1 text-sm font-medium text-green-700">
+            食物アレルギー家庭向け防災備蓄支援アプリ
+          </span>
+
+          <div className="flex flex-col gap-4">
+            <h1 className="text-4xl font-bold leading-tight md:text-5xl">そなえアレ</h1>
+            <p className="max-w-3xl text-xl font-semibold leading-relaxed text-slate-700 md:text-2xl">
+              家族に合った“食べられる備え”を、 迷わず準備して続けられるように。
+            </p>
+            <p className="max-w-3xl text-base leading-7 text-slate-600 md:text-lg">
+              そなえアレは、食物アレルギーのある家庭が 家族条件に合った備えを考え、商品を確認し、
+              備蓄の登録・期限管理・見直しまで一気通貫で進められる Webアプリです。
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+            <Link
+              href="/signup"
+              className="inline-flex items-center justify-center rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              無料で始める
+            </Link>
+
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              ログイン
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        <section className="grid gap-4 md:grid-cols-3">
+          {features.map((feature) => (
+            <article
+              key={feature.title}
+              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+            >
+              <h2 className="mb-3 text-lg font-semibold text-slate-900">{feature.title}</h2>
+              <p className="text-sm leading-6 text-slate-600">{feature.description}</p>
+            </article>
+          ))}
+        </section>
+
+        <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-2xl font-bold text-slate-900">こんな悩みはありませんか？</h2>
+            <ul className="space-y-3 text-sm leading-6 text-slate-600 md:text-base">
+              <li>・家族に合う非常食をどう選べばよいか分からない</li>
+              <li>・防災食だけでは選択肢が少なく、日常品をどう備蓄に回すか迷う</li>
+              <li>・備えた後の賞味期限やコスト管理が続かない</li>
+            </ul>
+
+            <p className="pt-2 text-sm leading-6 text-slate-600 md:text-base">
+              そなえアレは、提案だけで終わらず、
+              購入・登録・期限確認までつながる体験を目指しています。
+            </p>
+          </div>
+        </section>
+      </section>
+    </main>
   );
 }

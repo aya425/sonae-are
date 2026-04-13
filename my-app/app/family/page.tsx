@@ -4,11 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const RELATION_OPTIONS = [
-  { value: "本人", label: "本人" },
-  { value: "夫", label: "夫" },
-  { value: "妻", label: "妻" },
-  { value: "子ども", label: "子ども" },
-  { value: "その他", label: "その他" },
+  { value: "self", label: "本人" },
+  { value: "spouse", label: "配偶者" },
+  { value: "child", label: "子ども" },
+  { value: "other", label: "その他" },
 ] as const;
 
 const AGE_GROUP_OPTIONS = [
@@ -46,46 +45,22 @@ type FamilyMemberGetItem = {
 
 type FamilyMemberPostItem = {
   id: string;
+  user_id: string;
   role: string;
   age_group: "adult" | "child";
   notes: string | null;
-  allergens: string[];
   created_at: string;
   updated_at: string;
 };
 
-type ApiError = {
-  code: string;
-  message: string;
-  details: string | null;
-};
-
 type ApiResponse<T> = {
   data: T | null;
-  error: ApiError | null;
+  error: string | null;
 };
-
-function normalizeRole(role: string): string {
-  switch (role) {
-    case "self":
-      return "本人";
-    case "husband":
-      return "夫";
-    case "wife":
-      return "妻";
-    case "child":
-    case "子供":
-      return "子ども";
-    case "other":
-      return "その他";
-    default:
-      return role;
-  }
-}
 
 function toFamilyMemberForm(member: FamilyMemberGetItem): FamilyMemberForm {
   return {
-    role: normalizeRole(member.role),
+    role: member.role,
     ageGroup: member.age_group,
     allergens: member.allergens ?? [],
     notes: member.notes ?? "",
@@ -101,14 +76,14 @@ async function fetchFamilyMembers(): Promise<FamilyMemberGetItem[]> {
   const result: ApiResponse<FamilyMemberGetItem[]> = await response.json();
 
   if (!response.ok || !result.data) {
-    throw new Error(result.error?.message ?? "家族情報の取得に失敗しました。");
+    throw new Error(result.error ?? "家族情報の取得に失敗しました。");
   }
 
   return result.data;
 }
 
 async function createFamilyMember(
-  member: FamilyMemberForm,
+  member: FamilyMemberForm
 ): Promise<FamilyMemberPostItem> {
   const response = await fetch("/api/family-members", {
     method: "POST",
@@ -126,9 +101,7 @@ async function createFamilyMember(
   const result: ApiResponse<FamilyMemberPostItem> = await response.json();
 
   if (!response.ok || !result.data) {
-    throw new Error(
-      result.error?.message ?? "家族メンバーの登録に失敗しました。",
-    );
+    throw new Error(result.error ?? "家族メンバーの登録に失敗しました。");
   }
 
   return result.data;
@@ -152,7 +125,6 @@ export default function FamilyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const hasExistingMembers = savedMembers.length > 0;
-  const isFormDisabled = isSubmitting;
 
   useEffect(() => {
     const load = async () => {
@@ -177,19 +149,10 @@ export default function FamilyPage() {
         setMembers(fetchedMembers.map(toFamilyMemberForm));
       } catch (error) {
         console.error(error);
-        setSavedMembers([]);
-        setMembers([
-          {
-            role: "",
-            ageGroup: "",
-            allergens: [],
-            notes: "",
-          },
-        ]);
         setErrorMessage(
           error instanceof Error
-            ? `${error.message} 新規の家族情報入力はこのまま続けられます。`
-            : "家族情報の取得に失敗しました。新規の家族情報入力はこのまま続けられます。",
+            ? error.message
+            : "家族情報の取得に失敗しました。"
         );
       } finally {
         setIsLoading(false);
@@ -200,6 +163,8 @@ export default function FamilyPage() {
   }, []);
 
   const addMember = () => {
+    if (hasExistingMembers) return;
+
     setMembers((prev) => [
       ...prev,
       {
@@ -214,16 +179,20 @@ export default function FamilyPage() {
   const updateMemberField = (
     index: number,
     field: "role" | "ageGroup" | "notes",
-    value: string,
+    value: string
   ) => {
+    if (hasExistingMembers) return;
+
     setMembers((prev) =>
       prev.map((member, i) =>
-        i === index ? { ...member, [field]: value } : member,
-      ),
+        i === index ? { ...member, [field]: value } : member
+      )
     );
   };
 
   const toggleAllergen = (index: number, allergen: string) => {
+    if (hasExistingMembers) return;
+
     setMembers((prev) =>
       prev.map((member, i) => {
         if (i !== index) return member;
@@ -236,7 +205,7 @@ export default function FamilyPage() {
             ? member.allergens.filter((item) => item !== allergen)
             : [...member.allergens, allergen],
         };
-      }),
+      })
     );
   };
 
@@ -262,23 +231,23 @@ export default function FamilyPage() {
     e.preventDefault();
     setErrorMessage("");
 
+    if (hasExistingMembers) {
+      setErrorMessage(
+        "現在、登録済みデータの編集・更新には未対応です。新規未登録時のみ保存できます。"
+      );
+      return;
+    }
+
     const validationError = validateMembers();
     if (validationError) {
       setErrorMessage(validationError);
       return;
     }
 
-    const newMembers = members.slice(savedMembers.length);
-
-    if (newMembers.length === 0) {
-      router.push("/plan/new");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      for (const member of newMembers) {
+      for (const member of members) {
         await createFamilyMember(member);
       }
 
@@ -288,7 +257,7 @@ export default function FamilyPage() {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "家族情報の保存に失敗しました。",
+          : "家族情報の保存に失敗しました。"
       );
     } finally {
       setIsSubmitting(false);
@@ -315,12 +284,12 @@ export default function FamilyPage() {
 
       {hasExistingMembers ? (
         <div className="mt-4 rounded border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-          すでに登録済みの家族情報があります。続柄・年齢区分・メモは画面上で変更できますが、現在は更新API未実装のため保存すると新規登録になります。
+          すでに登録済みの家族情報を表示しています。現在は更新API未実装のため、表示のみ対応です。
         </div>
       ) : null}
 
       <div className="mt-4 rounded border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
-        現在のバックエンド実装では、アレルゲン情報は表示・選択はできますが保存未対応です。家族情報の取得に失敗した場合でも、新規入力はこのまま続けられます。
+        現在のバックエンド実装では、アレルゲン情報は表示・選択はできますが保存未対応です。
       </div>
 
       {errorMessage ? (
@@ -332,9 +301,7 @@ export default function FamilyPage() {
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         {members.map((member, index) => (
           <section
-            key={
-              hasExistingMembers ? (savedMembers[index]?.id ?? index) : index
-            }
+            key={hasExistingMembers ? savedMembers[index]?.id ?? index : index}
             className="rounded-lg border p-4"
           >
             <h2 className="mb-4 text-lg font-semibold">
@@ -347,10 +314,11 @@ export default function FamilyPage() {
                 <select
                   className="w-full rounded border px-3 py-2"
                   value={member.role}
-                  onChange={(e) =>
-                    updateMemberField(index, "role", e.target.value)
-                  }
-                  disabled={isFormDisabled}
+                    onChange={(e) => {
+                      console.log("role changed", index, e.target.value);
+                      updateMemberField(index, "role", e.target.value);
+                    }}
+                    disabled={isSubmitting}
                 >
                   <option value="">選択してください</option>
                   {RELATION_OPTIONS.map((option) => (
@@ -368,10 +336,11 @@ export default function FamilyPage() {
                 <select
                   className="w-full rounded border px-3 py-2"
                   value={member.ageGroup}
-                  onChange={(e) =>
-                    updateMemberField(index, "ageGroup", e.target.value)
-                  }
-                  disabled={isFormDisabled}
+                    onChange={(e) => {
+                      console.log("ageGroup changed", index, e.target.value);
+                      updateMemberField(index, "ageGroup", e.target.value);
+                    }}
+                  disabled={isSubmitting}
                 >
                   <option value="">選択してください</option>
                   {AGE_GROUP_OPTIONS.map((option) => (
@@ -390,12 +359,15 @@ export default function FamilyPage() {
                       key={allergen.value}
                       className="flex items-center gap-2 text-sm"
                     >
-                      <input
-                        type="checkbox"
-                        checked={member.allergens.includes(allergen.value)}
-                        onChange={() => toggleAllergen(index, allergen.value)}
-                        disabled={isFormDisabled}
-                      />
+                        <input
+                          type="checkbox"
+                          checked={member.allergens.includes(allergen.value)}
+                          onChange={() => {
+                            console.log("allergen toggled", index, allergen.value);
+                            toggleAllergen(index, allergen.value);
+                          }}
+                          disabled={isSubmitting}
+                        />
                       <span>{allergen.label}</span>
                     </label>
                   ))}
@@ -411,7 +383,7 @@ export default function FamilyPage() {
                   onChange={(e) =>
                     updateMemberField(index, "notes", e.target.value)
                   }
-                  disabled={isFormDisabled}
+                  disabled={isSubmitting}
                   placeholder="任意でメモを入力"
                 />
               </div>
@@ -422,8 +394,8 @@ export default function FamilyPage() {
         <button
           type="button"
           onClick={addMember}
-          className="rounded border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={isFormDisabled}
+          className="rounded border px-4 py-2 text-sm"
+          disabled={isSubmitting}
         >
           家族メンバーを追加
         </button>
@@ -431,7 +403,7 @@ export default function FamilyPage() {
         <div>
           <button
             type="submit"
-            disabled={isFormDisabled}
+            disabled={isSubmitting}
             className="rounded bg-green-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "保存中..." : "保存してプラン作成へ"}
