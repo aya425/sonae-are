@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!["minimum", "balance"].includes(priorityPolicy)) {
+    if (!["minimum", "balanced"].includes(priorityPolicy)) {
       return NextResponse.json(
         {
           data: null,

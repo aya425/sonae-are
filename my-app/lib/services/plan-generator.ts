@@ -1,7 +1,7 @@
 import type { ProductResponseItem, ProductType } from "@/lib/types/product";
 import type {
   GeneratePlanRequest,
-  GeneratePlanResponse,
+  GeneratePlanSummary,
   GeneratedPlanItem,
   PriorityPolicy,
 } from "@/lib/types/plan";
@@ -9,6 +9,13 @@ import type {
 type GeneratePlanInput = GeneratePlanRequest & {
   familyMemberCount: number;
   products: ProductResponseItem[];
+};
+
+type GeneratePlanResult = {
+  summary: GeneratePlanSummary;
+  items: GeneratedPlanItem[];
+  explanation: string;
+  notice: string;
 };
 
 type ItemPriority = "high" | "medium" | "low";
@@ -22,9 +29,7 @@ function isCategoryName(category: string): category is CategoryName {
   return ["主食", "飲料", "おかず", "汁物", "おやつ"].includes(category);
 }
 
-function countProductsByType(
-  products: ProductResponseItem[],
-): Record<ProductType, number> {
+function countProductsByType(products: ProductResponseItem[]): Record<ProductType, number> {
   return products.reduce(
     (counts, product) => {
       counts[product.productType] += 1;
@@ -33,7 +38,7 @@ function countProductsByType(
     {
       emergency_food: 0,
       daily_item: 0,
-    } as Record<ProductType, number>,
+    } as Record<ProductType, number>
   );
 }
 
@@ -41,32 +46,30 @@ function chooseCandidateForCategory(
   candidatesInCategory: ProductResponseItem[],
   selected: ProductResponseItem[],
   includeDailyItems: boolean,
-  priorityPolicy: PriorityPolicy,
+  priorityPolicy: PriorityPolicy
 ): ProductResponseItem | undefined {
   if (candidatesInCategory.length === 0) return undefined;
 
   if (!includeDailyItems) {
     return (
-      candidatesInCategory.find(
-        (product) => product.productType === "emergency_food",
-      ) ?? candidatesInCategory[0]
+      candidatesInCategory.find((product) => product.productType === "emergency_food") ??
+      candidatesInCategory[0]
     );
   }
 
   if (priorityPolicy === "minimum") {
     return (
-      candidatesInCategory.find(
-        (product) => product.productType === "emergency_food",
-      ) ?? candidatesInCategory[0]
+      candidatesInCategory.find((product) => product.productType === "emergency_food") ??
+      candidatesInCategory[0]
     );
   }
 
   const selectedTypeCounts = countProductsByType(selected);
   const dailyCandidate = candidatesInCategory.find(
-    (product) => product.productType === "daily_item",
+    (product) => product.productType === "daily_item"
   );
   const emergencyCandidate = candidatesInCategory.find(
-    (product) => product.productType === "emergency_food",
+    (product) => product.productType === "emergency_food"
   );
 
   if (dailyCandidate && emergencyCandidate) {
@@ -90,10 +93,7 @@ function getPriorityByCategory(category: string): ItemPriority {
   return "low";
 }
 
-function getCategoryMultiplier(
-  category: string,
-  priorityPolicy: PriorityPolicy,
-): number {
+function getCategoryMultiplier(category: string, priorityPolicy: PriorityPolicy): number {
   if (priorityPolicy === "minimum") {
     if (category === "主食") return 1.0;
     if (category === "飲料") return 1.0;
@@ -109,10 +109,7 @@ function getCategoryMultiplier(
   return 0.3;
 }
 
-function getMinimumQuantity(
-  category: string,
-  priorityPolicy: PriorityPolicy,
-): number {
+function getMinimumQuantity(category: string, priorityPolicy: PriorityPolicy): number {
   if (priorityPolicy === "minimum") {
     if (category === "主食" || category === "飲料") return 2;
     return 1;
@@ -129,24 +126,15 @@ function getBaseQuantity(
   category: string,
   familyMemberCount: number,
   days: number,
-  priorityPolicy: PriorityPolicy,
+  priorityPolicy: PriorityPolicy
 ): number {
   const baseCount = familyMemberCount * days;
-  const multipliedCount = Math.ceil(
-    baseCount * getCategoryMultiplier(category, priorityPolicy),
-  );
+  const multipliedCount = Math.ceil(baseCount * getCategoryMultiplier(category, priorityPolicy));
 
-  return Math.max(
-    getMinimumQuantity(category, priorityPolicy),
-    multipliedCount,
-  );
+  return Math.max(getMinimumQuantity(category, priorityPolicy), multipliedCount);
 }
 
-function getReason(
-  category: string,
-  productType: ProductType,
-  priority: ItemPriority,
-): string {
+function getReason(category: string, productType: ProductType, priority: ItemPriority): string {
   const typeLabel = productType === "emergency_food" ? "防災食" : "日常品";
 
   if (priority === "high") {
@@ -160,10 +148,7 @@ function getReason(
   return `${typeLabel}として余裕があれば加えたい${category}です。`;
 }
 
-function getExplanation(
-  includeDailyItems: boolean,
-  priorityPolicy: PriorityPolicy,
-): string {
+function getExplanation(includeDailyItems: boolean, priorityPolicy: PriorityPolicy): string {
   if (priorityPolicy === "minimum" && includeDailyItems) {
     return "最低限そろえる前提で、防災食を中心にしつつ、候補範囲に含まれる日常品も一部混ぜて提案しています。";
   }
@@ -182,32 +167,27 @@ function getExplanation(
 function buildCandidateProducts(
   products: ProductResponseItem[],
   includeDailyItems: boolean,
-  priorityPolicy: PriorityPolicy,
+  priorityPolicy: PriorityPolicy
 ): ProductResponseItem[] {
-  const activeProducts = products.filter(
-    (product) => product.isActive && product.isFreeFrom28,
-  );
+  const activeProducts = products.filter((product) => product.isActive && product.isFreeFrom28);
 
   const targetProducts = includeDailyItems
     ? activeProducts
-    : activeProducts.filter(
-        (product) => product.productType === "emergency_food",
-      );
+    : activeProducts.filter((product) => product.productType === "emergency_food");
 
   const selected: ProductResponseItem[] = [];
   const usedProductIds = new Set<string>();
 
   for (const category of CATEGORY_ORDER) {
     const candidatesInCategory = targetProducts.filter(
-      (product) =>
-        isCategoryName(product.category) && product.category === category,
+      (product) => isCategoryName(product.category) && product.category === category
     );
 
     const chosen = chooseCandidateForCategory(
       candidatesInCategory,
       selected,
       includeDailyItems,
-      priorityPolicy,
+      priorityPolicy
     );
 
     if (!chosen || usedProductIds.has(chosen.id)) continue;
@@ -220,8 +200,7 @@ function buildCandidateProducts(
   // 日常転用品も候補に入ることを見せるため、日常品を1件だけ追加する
   if (includeDailyItems && priorityPolicy === "minimum") {
     const extraDailyItem = targetProducts.find(
-      (product) =>
-        product.productType === "daily_item" && !usedProductIds.has(product.id),
+      (product) => product.productType === "daily_item" && !usedProductIds.has(product.id)
     );
 
     if (extraDailyItem) {
@@ -242,21 +221,12 @@ export function generatePlan({
   includeDailyItems,
   priorityPolicy,
   products,
-}: GeneratePlanInput): GeneratePlanResponse["data"]["plan"] {
-  const candidateProducts = buildCandidateProducts(
-    products,
-    includeDailyItems,
-    priorityPolicy,
-  );
+}: GeneratePlanInput): GeneratePlanResult {
+  const candidateProducts = buildCandidateProducts(products, includeDailyItems, priorityPolicy);
 
   const items: GeneratedPlanItem[] = candidateProducts.map((product) => {
     const priority = getPriorityByCategory(product.category);
-    const quantity = getBaseQuantity(
-      product.category,
-      familyMemberCount,
-      days,
-      priorityPolicy,
-    );
+    const quantity = getBaseQuantity(product.category, familyMemberCount, days, priorityPolicy);
     const subtotal = product.price * quantity;
 
     return {
@@ -273,7 +243,7 @@ export function generatePlan({
   const annualCost = Math.round(
     items.reduce((sum, item) => {
       return sum + (item.price * item.quantity * 12) / item.shelfLifeMonths;
-    }, 0),
+    }, 0)
   );
 
   return {
