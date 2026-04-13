@@ -156,7 +156,7 @@ export default function StockItemsPage() {
         <div className="mt-4 space-y-3">
           {stockItems.length === 0 ? (
             <p className="text-sm text-gray-600">
-              登録済みの備蓄商品はまだありません。
+              登録済みの備蓄商品はまだありません。上のフォームから備蓄商品を登録してください。
             </p>
           ) : (
             stockItems.map((item) => (
