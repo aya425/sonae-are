@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 type PlanCondition = {
   title: string;
@@ -26,6 +29,19 @@ type PlanItem = {
   subtotal: number;
   priority: "high" | "medium" | "low";
   reason: string;
+};
+
+type StoredGeneratedPlan = {
+  title: string;
+  familyMemberCount: number;
+  days: 3 | 7;
+  includeDailyItems: boolean;
+  priorityPolicy: "minimum" | "balanced";
+  totalCost: number;
+  annualCost: number;
+  explanation: string;
+  items: PlanItem[];
+  warnings: string[];
 };
 
 const mockPlanCondition: PlanCondition = {
@@ -92,8 +108,56 @@ const mockPlanItems: PlanItem[] = [
 ];
 
 export default function PlanDetailPage() {
-  const plan = mockPlanCondition;
-  const planItems = mockPlanItems;
+  const getInitialPlanState = (): {
+    plan: PlanCondition;
+    planItems: PlanItem[];
+  } => {
+    if (typeof window === "undefined") {
+      return {
+        plan: mockPlanCondition,
+        planItems: mockPlanItems,
+      };
+    }
+
+    const storedPlan = sessionStorage.getItem("generatedPlan");
+
+    if (!storedPlan) {
+      return {
+        plan: mockPlanCondition,
+        planItems: mockPlanItems,
+      };
+    }
+
+    try {
+      const parsedPlan = JSON.parse(storedPlan) as StoredGeneratedPlan;
+
+      return {
+        plan: {
+          title: parsedPlan.title,
+          familyMemberCount: parsedPlan.familyMemberCount,
+          days: parsedPlan.days,
+          includeDailyItems: parsedPlan.includeDailyItems,
+          priorityPolicy: parsedPlan.priorityPolicy,
+          totalCost: parsedPlan.totalCost,
+          annualCost: parsedPlan.annualCost,
+          explanation: parsedPlan.explanation,
+          warnings: parsedPlan.warnings,
+        },
+        planItems: parsedPlan.items,
+      };
+    } catch (error) {
+      console.error("generatedPlanの読み込みに失敗しました", error);
+
+      return {
+        plan: mockPlanCondition,
+        planItems: mockPlanItems,
+      };
+    }
+  };
+
+  const initialState = getInitialPlanState();
+  const [plan] = useState<PlanCondition>(initialState.plan);
+  const [planItems] = useState<PlanItem[]>(initialState.planItems);
 
   const priorityPolicyLabel =
     plan.priorityPolicy === "minimum" ? "最低限そろえる" : "バランス重視";
@@ -109,6 +173,17 @@ export default function PlanDetailPage() {
     if (priority === "high") return "高";
     if (priority === "medium") return "中";
     return "低";
+  };
+
+  const handleSave = () => {
+    alert("保存機能は次の工程で接続します。");
+  };
+
+  const handleDelete = () => {
+    const confirmed = window.confirm("このプランを削除しますか？");
+    if (!confirmed) return;
+
+    alert("削除機能は次の工程で接続します。");
   };
   return (
     <main className="mx-auto max-w-5xl p-6">
@@ -240,12 +315,14 @@ export default function PlanDetailPage() {
       <div className="flex flex-wrap gap-3">
         <button
           type="button"
+          onClick={handleSave}
           className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white"
         >
           保存する
         </button>
         <button
           type="button"
+          onClick={handleDelete}
           className="rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
         >
           削除する

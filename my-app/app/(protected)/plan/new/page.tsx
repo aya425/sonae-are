@@ -110,7 +110,9 @@ export default function PlanNewPage() {
         const result: FamilyMembersResponse = await response.json();
 
         if (!response.ok) {
-          throw new Error(result.error?.message || "家族情報の確認に失敗しました。");
+          throw new Error(
+            result.error?.message || "家族情報の確認に失敗しました。",
+          );
         }
 
         setHasFamily((result.data?.length ?? 0) > 0);
@@ -125,7 +127,9 @@ export default function PlanNewPage() {
     fetchFamilyMembers();
   }, []);
 
-  const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
+  const handleSubmit = async (
+    e: SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     setErrorMessage("");
     setNeedsFamilyRegistration(false);
@@ -157,10 +161,14 @@ export default function PlanNewPage() {
       const result: GeneratePlanResponse = await response.json();
 
       if (!response.ok) {
-        if (response.status === 422 && result.error?.code === "FAMILY_MEMBERS_REQUIRED") {
+        if (
+          response.status === 422 &&
+          result.error?.code === "FAMILY_MEMBERS_REQUIRED"
+        ) {
           setNeedsFamilyRegistration(true);
           setErrorMessage(
-            result.error.message || "家族情報が未登録です。先に家族情報を登録してください。"
+            result.error.message ||
+              "家族情報が未登録です。先に家族情報を登録してください。",
           );
           return;
         }
@@ -172,13 +180,18 @@ export default function PlanNewPage() {
         throw new Error("生成結果の取得に失敗しました。");
       }
 
-      sessionStorage.setItem("generatedPlan", JSON.stringify(result.data.generatedPlan));
+      sessionStorage.setItem(
+        "generatedPlan",
+        JSON.stringify(result.data.generatedPlan),
+      );
       sessionStorage.setItem("planConditions", JSON.stringify(form));
 
-      router.push("/plan/result");
+      router.push("/plans/temp");
     } catch (error) {
       console.error(error);
-      setErrorMessage(error instanceof Error ? error.message : "プラン生成に失敗しました。");
+      setErrorMessage(
+        error instanceof Error ? error.message : "プラン生成に失敗しました。",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -187,7 +200,9 @@ export default function PlanNewPage() {
   return (
     <main className="mx-auto max-w-3xl p-6">
       <h1 className="text-2xl font-bold">備えプランを作成</h1>
-      <p className="mt-2 text-sm text-gray-600">家族条件に合わせて、備え候補を提案します。</p>
+      <p className="mt-2 text-sm text-gray-600">
+        家族条件に合わせて、備え候補を提案します。
+      </p>
 
       {hasFamily === false && !errorMessage ? (
         <div className="mt-4 rounded border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
@@ -260,7 +275,10 @@ export default function PlanNewPage() {
                 disabled={isSubmitting || isCheckingFamily}
               >
                 {SCOPE_OPTIONS.map((option) => (
-                  <option key={String(option.value)} value={String(option.value)}>
+                  <option
+                    key={String(option.value)}
+                    value={String(option.value)}
+                  >
                     {option.label}
                   </option>
                 ))}
