@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -25,9 +26,30 @@ const ALLERGEN_OPTIONS = [
   { value: "落花生", label: "落花生" },
   { value: "そば", label: "そば" },
   { value: "くるみ", label: "くるみ" },
+  { value: "アーモンド", label: "アーモンド" },
+  { value: "あわび", label: "あわび" },
+  { value: "いか", label: "いか" },
+  { value: "いくら", label: "いくら" },
+  { value: "オレンジ", label: "オレンジ" },
+  { value: "カシューナッツ", label: "カシューナッツ" },
+  { value: "キウイフルーツ", label: "キウイフルーツ" },
+  { value: "牛肉", label: "牛肉" },
+  { value: "豚肉", label: "豚肉" },
+  { value: "鶏肉", label: "鶏肉" },
+  { value: "バナナ", label: "バナナ" },
+  { value: "ごま", label: "ごま" },
+  { value: "さけ", label: "さけ" },
+  { value: "さば", label: "さば" },
+  { value: "大豆", label: "大豆" },
+  { value: "マカダミアナッツ", label: "マカダミアナッツ" },
+  { value: "もも", label: "もも" },
+  { value: "やまいも", label: "やまいも" },
+  { value: "りんご", label: "りんご" },
+  { value: "ゼラチン", label: "ゼラチン" },
 ] as const;
 
 type FamilyMemberForm = {
+  localId: string;
   role: string;
   ageGroup: "adult" | "child" | "";
   allergens: string[];
@@ -57,13 +79,27 @@ type FamilyMemberPostItem = {
 type ApiError = {
   code: string;
   message: string;
-  details: string | null;
+  details: null;
 };
 
 type ApiResponse<T> = {
   data: T | null;
   error: ApiError | null;
 };
+
+function createLocalId() {
+  return crypto.randomUUID();
+}
+
+function createEmptyMember(): FamilyMemberForm {
+  return {
+    localId: createLocalId(),
+    role: "",
+    ageGroup: "",
+    allergens: [],
+    notes: "",
+  };
+}
 
 function normalizeRole(role: string): string {
   switch (role) {
@@ -85,6 +121,7 @@ function normalizeRole(role: string): string {
 
 function toFamilyMemberForm(member: FamilyMemberGetItem): FamilyMemberForm {
   return {
+    localId: createLocalId(),
     role: normalizeRole(member.role),
     ageGroup: member.age_group,
     allergens: member.allergens ?? [],
@@ -107,9 +144,7 @@ async function fetchFamilyMembers(): Promise<FamilyMemberGetItem[]> {
   return result.data;
 }
 
-async function createFamilyMember(
-  member: FamilyMemberForm,
-): Promise<FamilyMemberPostItem> {
+async function createFamilyMember(member: FamilyMemberForm): Promise<FamilyMemberPostItem> {
   const response = await fetch("/api/family-members", {
     method: "POST",
     headers: {
@@ -126,9 +161,7 @@ async function createFamilyMember(
   const result: ApiResponse<FamilyMemberPostItem> = await response.json();
 
   if (!response.ok || !result.data) {
-    throw new Error(
-      result.error?.message ?? "家族メンバーの登録に失敗しました。",
-    );
+    throw new Error(result.error?.message ?? "家族情報の登録に失敗しました。");
   }
 
   return result.data;
@@ -137,15 +170,7 @@ async function createFamilyMember(
 export default function FamilyPage() {
   const router = useRouter();
 
-  const [members, setMembers] = useState<FamilyMemberForm[]>([
-    {
-      role: "",
-      ageGroup: "",
-      allergens: [],
-      notes: "",
-    },
-  ]);
-
+  const [members, setMembers] = useState<FamilyMemberForm[]>([createEmptyMember()]);
   const [savedMembers, setSavedMembers] = useState<FamilyMemberGetItem[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -163,14 +188,7 @@ export default function FamilyPage() {
         setSavedMembers(fetchedMembers);
 
         if (fetchedMembers.length === 0) {
-          setMembers([
-            {
-              role: "",
-              ageGroup: "",
-              allergens: [],
-              notes: "",
-            },
-          ]);
+          setMembers([createEmptyMember()]);
           return;
         }
 
@@ -178,18 +196,11 @@ export default function FamilyPage() {
       } catch (error) {
         console.error(error);
         setSavedMembers([]);
-        setMembers([
-          {
-            role: "",
-            ageGroup: "",
-            allergens: [],
-            notes: "",
-          },
-        ]);
+        setMembers([createEmptyMember()]);
         setErrorMessage(
           error instanceof Error
             ? `${error.message} 新規の家族情報入力はこのまま続けられます。`
-            : "家族情報の取得に失敗しました。新規の家族情報入力はこのまま続けられます。",
+            : "家族情報の取得に失敗しました。新規の家族情報入力はこのまま続けられます。"
         );
       } finally {
         setIsLoading(false);
@@ -200,26 +211,23 @@ export default function FamilyPage() {
   }, []);
 
   const addMember = () => {
-    setMembers((prev) => [
-      ...prev,
-      {
-        role: "",
-        ageGroup: "",
-        allergens: [],
-        notes: "",
-      },
-    ]);
+    setMembers((prev) => [...prev, createEmptyMember()]);
   };
 
   const updateMemberField = (
     index: number,
     field: "role" | "ageGroup" | "notes",
-    value: string,
+    value: string
   ) => {
     setMembers((prev) =>
       prev.map((member, i) =>
-        i === index ? { ...member, [field]: value } : member,
-      ),
+        i === index
+          ? {
+              ...member,
+              [field]: field === "ageGroup" ? (value as "adult" | "child" | "") : value,
+            }
+          : member
+      )
     );
   };
 
@@ -236,13 +244,13 @@ export default function FamilyPage() {
             ? member.allergens.filter((item) => item !== allergen)
             : [...member.allergens, allergen],
         };
-      }),
+      })
     );
   };
 
   const validateMembers = () => {
     if (members.length === 0) {
-      return "家族メンバーを1人以上登録してください。";
+      return "家族情報を1人以上登録してください。";
     }
 
     for (const member of members) {
@@ -285,11 +293,7 @@ export default function FamilyPage() {
       router.push("/plan/new");
     } catch (error) {
       console.error(error);
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "家族情報の保存に失敗しました。",
-      );
+      setErrorMessage(error instanceof Error ? error.message : "家族情報の保存に失敗しました。");
     } finally {
       setIsSubmitting(false);
     }
@@ -298,24 +302,31 @@ export default function FamilyPage() {
   if (isLoading) {
     return (
       <main className="mx-auto max-w-3xl p-6">
+        <div className="mb-4">
+          <Link href="/dashboard" className="text-sm text-blue-600 underline">
+            ダッシュボードへ戻る
+          </Link>
+        </div>
         <h1 className="text-2xl font-bold">家族情報を登録</h1>
-        <p className="mt-4 text-sm text-gray-600">
-          家族情報を読み込み中です...
-        </p>
+        <p className="mt-4 text-sm text-gray-600">家族情報を読み込み中です...</p>
       </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-3xl p-6">
+      <div className="mb-4">
+        <Link href="/dashboard" className="text-sm text-blue-600 underline">
+          ダッシュボードへ戻る
+        </Link>
+      </div>
+
       <h1 className="text-2xl font-bold">家族情報を登録</h1>
-      <p className="mt-2 text-sm text-gray-600">
-        備えプラン作成の前提になる情報です。
-      </p>
+      <p className="mt-2 text-sm text-gray-600">備えプラン作成の前提になる情報です。</p>
 
       {hasExistingMembers ? (
         <div className="mt-4 rounded border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-          すでに登録済みの家族情報があります。続柄・年齢区分・メモは画面上で変更できますが、現在は更新API未実装のため保存すると新規登録になります。
+          すでに登録済みの家族情報があります。現在は更新API未実装のため、登録済みメンバーは編集できません。新しい家族メンバーのみ追加できます。
         </div>
       ) : null}
 
@@ -330,94 +341,80 @@ export default function FamilyPage() {
       ) : null}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
-        {members.map((member, index) => (
-          <section
-            key={
-              hasExistingMembers ? (savedMembers[index]?.id ?? index) : index
-            }
-            className="rounded-lg border p-4"
-          >
-            <h2 className="mb-4 text-lg font-semibold">
-              家族メンバー {index + 1}
-            </h2>
+        {members.map((member, index) => {
+          const isExistingMember = index < savedMembers.length;
 
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium">続柄</label>
-                <select
-                  className="w-full rounded border px-3 py-2"
-                  value={member.role}
-                  onChange={(e) =>
-                    updateMemberField(index, "role", e.target.value)
-                  }
-                  disabled={isFormDisabled}
-                >
-                  <option value="">選択してください</option>
-                  {RELATION_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          return (
+            <section key={member.localId} className="rounded-lg border p-4">
+              <h2 className="mb-4 text-lg font-semibold">家族情報 {index + 1}</h2>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  年齢区分
-                </label>
-                <select
-                  className="w-full rounded border px-3 py-2"
-                  value={member.ageGroup}
-                  onChange={(e) =>
-                    updateMemberField(index, "ageGroup", e.target.value)
-                  }
-                  disabled={isFormDisabled}
-                >
-                  <option value="">選択してください</option>
-                  {AGE_GROUP_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium">続柄</label>
+                  <select
+                    className="w-full rounded border px-3 py-2"
+                    value={member.role}
+                    onChange={(e) => updateMemberField(index, "role", e.target.value)}
+                    disabled={isFormDisabled || isExistingMember}
+                  >
+                    <option value="">選択してください</option>
+                    {RELATION_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <div>
-                <p className="mb-2 text-sm font-medium">アレルゲン</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {ALLERGEN_OPTIONS.map((allergen) => (
-                    <label
-                      key={allergen.value}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={member.allergens.includes(allergen.value)}
-                        onChange={() => toggleAllergen(index, allergen.value)}
-                        disabled={isFormDisabled}
-                      />
-                      <span>{allergen.label}</span>
-                    </label>
-                  ))}
+                <div>
+                  <label className="mb-1 block text-sm font-medium">年齢区分</label>
+                  <select
+                    className="w-full rounded border px-3 py-2"
+                    value={member.ageGroup}
+                    onChange={(e) => updateMemberField(index, "ageGroup", e.target.value)}
+                    disabled={isFormDisabled || isExistingMember}
+                  >
+                    <option value="">選択してください</option>
+                    {AGE_GROUP_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-sm font-medium">アレルゲン</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {ALLERGEN_OPTIONS.map((allergen) => (
+                      <label key={allergen.value} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={member.allergens.includes(allergen.value)}
+                          onChange={() => toggleAllergen(index, allergen.value)}
+                          disabled={isFormDisabled || isExistingMember}
+                        />
+                        <span>{allergen.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium">メモ</label>
+                  <textarea
+                    className="w-full rounded border px-3 py-2"
+                    rows={3}
+                    value={member.notes}
+                    onChange={(e) => updateMemberField(index, "notes", e.target.value)}
+                    disabled={isFormDisabled || isExistingMember}
+                    placeholder="任意でメモを入力"
+                  />
                 </div>
               </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium">メモ</label>
-                <textarea
-                  className="w-full rounded border px-3 py-2"
-                  rows={3}
-                  value={member.notes}
-                  onChange={(e) =>
-                    updateMemberField(index, "notes", e.target.value)
-                  }
-                  disabled={isFormDisabled}
-                  placeholder="任意でメモを入力"
-                />
-              </div>
-            </div>
-          </section>
-        ))}
+            </section>
+          );
+        })}
 
         <button
           type="button"
@@ -425,7 +422,7 @@ export default function FamilyPage() {
           className="rounded border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isFormDisabled}
         >
-          家族メンバーを追加
+          家族情報を追加
         </button>
 
         <div>
