@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "@/src/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 type FamilyMemberInput = {
   role?: string;
@@ -50,7 +50,7 @@ export async function GET() {
             details: null,
           },
         },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
@@ -67,7 +67,7 @@ export async function GET() {
         member_allergens (
           allergen_name
         )
-      `,
+      `
       )
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
@@ -90,7 +90,7 @@ export async function GET() {
             details: error.message,
           },
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -102,7 +102,7 @@ export async function GET() {
       created_at: member.created_at,
       updated_at: member.updated_at,
       allergens: (member.member_allergens ?? []).map(
-        (item: { allergen_name: string }) => item.allergen_name,
+        (item: { allergen_name: string }) => item.allergen_name
       ),
     }));
 
@@ -126,7 +126,7 @@ export async function GET() {
           details: error instanceof Error ? error.message : null,
         },
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -150,11 +150,27 @@ export async function POST(request: NextRequest) {
             details: null,
           },
         },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
-    const body = (await request.json()) as FamilyMemberInput;
+    let body: FamilyMemberInput;
+
+    try {
+      body = (await request.json()) as FamilyMemberInput;
+    } catch {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "BAD_REQUEST",
+            message: "JSON形式が不正です。",
+            details: null,
+          },
+        },
+        { status: 400 }
+      );
+    }
 
     const validationError = validateFamilyMember(body);
     if (validationError || !isValidFamilyMemberInput(body)) {
@@ -167,7 +183,7 @@ export async function POST(request: NextRequest) {
             details: null,
           },
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -200,7 +216,7 @@ export async function POST(request: NextRequest) {
             details: error.message,
           },
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -212,7 +228,7 @@ export async function POST(request: NextRequest) {
         },
         error: null,
       },
-      { status: 201 },
+      { status: 201 }
     );
   } catch (error) {
     console.error("POST /api/family-members unexpected error", {
@@ -230,7 +246,7 @@ export async function POST(request: NextRequest) {
           details: error instanceof Error ? error.message : null,
         },
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
