@@ -1,75 +1,115 @@
 import Link from "next/link";
 
 type PlanCondition = {
+  title: string;
   familyMemberCount: number;
   days: number;
   includeDailyItems: boolean;
-  priorityPolicy: string;
+  priorityPolicy: "minimum" | "balanced";
+  totalCost: number;
+  annualCost: number;
+  explanation: string;
+  warnings: string[];
 };
 
 type PlanItem = {
   id: string;
   name: string;
-  quantity: number;
   category: string;
-  productType: string;
+  productType: "emergency_food" | "daily_item";
+  isFreeFrom28: boolean;
   price: number;
   purchaseUrl: string;
+  shelfLifeMonths: number;
+  isActive: boolean;
+  quantity: number;
+  subtotal: number;
+  priority: "high" | "medium" | "low";
+  reason: string;
 };
 
 const mockPlanCondition: PlanCondition = {
+  title: "3日分プラン",
   familyMemberCount: 3,
   days: 3,
   includeDailyItems: true,
-  priorityPolicy: "バランス重視",
+  priorityPolicy: "balanced",
+  totalCost: 2240,
+  annualCost: 6200,
+  explanation:
+    "主食・飲料・おかず・汁物のバランスを見ながら、候補範囲に含まれる防災食と日常品を組み合わせて提案しています。",
+  warnings: [
+    "最終的な安全確認は、必ず商品ページや公式表示の原材料・アレルゲン情報を確認してください。",
+  ],
 };
 
 const mockPlanItems: PlanItem[] = [
   {
     id: "item-1",
     name: "アルファ米 白飯",
-    quantity: 3,
     category: "主食",
-    productType: "防災食",
+    productType: "emergency_food",
+    isFreeFrom28: true,
     price: 320,
     purchaseUrl: "https://example.com/item-1",
+    shelfLifeMonths: 60,
+    isActive: true,
+    quantity: 3,
+    subtotal: 960,
+    priority: "high",
+    reason: "防災食の中でも優先して持ちたい主食です。",
   },
   {
     id: "item-2",
     name: "レトルトカレー",
-    quantity: 2,
     category: "おかず",
-    productType: "日常転用品",
+    productType: "daily_item",
+    isFreeFrom28: true,
     price: 280,
     purchaseUrl: "https://example.com/item-2",
+    shelfLifeMonths: 12,
+    isActive: true,
+    quantity: 2,
+    subtotal: 560,
+    priority: "medium",
+    reason: "おかずを補って、備えのバランスを取りやすいです。",
   },
   {
     id: "item-3",
     name: "アレルギー対応ビスケット",
-    quantity: 4,
     category: "おやつ",
-    productType: "防災食",
+    productType: "emergency_food",
+    isFreeFrom28: true,
     price: 180,
     purchaseUrl: "https://example.com/item-3",
+    shelfLifeMonths: 24,
+    isActive: true,
+    quantity: 4,
+    subtotal: 720,
+    priority: "low",
+    reason: "防災食として余裕があれば加えたいおやつです。",
   },
 ];
 
-const mockAiComment = `
-優先度が高い主食とおかずを中心に、日常でも使いやすい商品を組み合わせています。
-防災食だけでなく日常転用品も含めることで、無理なく備えやすい構成にしています。
-`;
-
 export default function PlanDetailPage() {
-  const planCondition = mockPlanCondition;
+  const plan = mockPlanCondition;
   const planItems = mockPlanItems;
 
-  const initialCost = planItems.reduce(
-    (sum, item) => sum + item.quantity * item.price,
-    0,
-  );
+  const priorityPolicyLabel =
+    plan.priorityPolicy === "minimum" ? "最低限そろえる" : "バランス重視";
 
-  const annualCost = 6200;
+  const includeDailyItemsLabel = plan.includeDailyItems
+    ? "日常品含む"
+    : "防災食のみ";
 
+  const getProductTypeLabel = (productType: PlanItem["productType"]) =>
+    productType === "daily_item" ? "日常転用品" : "防災食";
+
+  const getPriorityLabel = (priority: PlanItem["priority"]) => {
+    if (priority === "high") return "高";
+    if (priority === "medium") return "中";
+    return "低";
+  };
   return (
     <main className="mx-auto max-w-5xl p-6">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -99,18 +139,16 @@ export default function PlanDetailPage() {
       <section className="mb-6 rounded-xl border p-5">
         <h2 className="text-lg font-semibold">プラン条件</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <p className="text-sm text-gray-700">プラン名: {plan.title}</p>
           <p className="text-sm text-gray-700">
-            家族人数: {planCondition.familyMemberCount}人
+            家族人数: {plan.familyMemberCount}人
+          </p>
+          <p className="text-sm text-gray-700">想定日数: {plan.days}日分</p>
+          <p className="text-sm text-gray-700">
+            候補の範囲: {includeDailyItemsLabel}
           </p>
           <p className="text-sm text-gray-700">
-            想定日数: {planCondition.days}日分
-          </p>
-          <p className="text-sm text-gray-700">
-            候補の範囲:{" "}
-            {planCondition.includeDailyItems ? "日常品含む" : "防災食のみ"}
-          </p>
-          <p className="text-sm text-gray-700">
-            優先方針: {planCondition.priorityPolicy}
+            優先方針: {priorityPolicyLabel}
           </p>
         </div>
       </section>
@@ -119,14 +157,14 @@ export default function PlanDetailPage() {
         <section className="rounded-xl border p-5">
           <h2 className="text-lg font-semibold">初期費用</h2>
           <p className="mt-3 text-2xl font-bold">
-            ¥{initialCost.toLocaleString()}
+            ¥{plan.totalCost.toLocaleString()}
           </p>
         </section>
 
         <section className="rounded-xl border p-5">
           <h2 className="text-lg font-semibold">年間維持コスト</h2>
           <p className="mt-3 text-2xl font-bold">
-            ¥{annualCost.toLocaleString()}
+            ¥{plan.annualCost.toLocaleString()}
           </p>
         </section>
       </div>
@@ -146,11 +184,18 @@ export default function PlanDetailPage() {
                   カテゴリ: {item.category}
                 </p>
                 <p className="text-sm text-gray-600">
-                  商品種別: {item.productType}
+                  商品種別: {getProductTypeLabel(item.productType)}
+                </p>
+                <p className="text-sm text-gray-600">
+                  優先度: {getPriorityLabel(item.priority)}
                 </p>
                 <p className="text-sm text-gray-600">
                   価格: ¥{item.price.toLocaleString()}
                 </p>
+                <p className="text-sm text-gray-600">
+                  小計: ¥{item.subtotal.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-600">提案理由: {item.reason}</p>
               </div>
 
               <div className="flex gap-2">
@@ -177,15 +222,19 @@ export default function PlanDetailPage() {
       <section className="mb-6 rounded-xl border p-5">
         <h2 className="text-lg font-semibold">AI説明補助</h2>
         <p className="mt-3 whitespace-pre-line text-sm text-gray-700">
-          {mockAiComment}
+          {plan.explanation}
         </p>
       </section>
 
       <section className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
         <h2 className="text-lg font-semibold">注意文</h2>
-        <p className="mt-3 text-sm text-gray-700">
-          商品情報やAIの提案は最終的な安全保証ではありません。購入前に必ず公式商品情報や表示内容を確認してください。
-        </p>
+        <div className="mt-3 space-y-2">
+          {plan.warnings.map((warning, index) => (
+            <p key={index} className="text-sm text-gray-700">
+              {warning}
+            </p>
+          ))}
+        </div>
       </section>
 
       <div className="flex flex-wrap gap-3">
