@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type SyntheticEvent } from "react";
 
 const DAYS_OPTIONS = [
   { value: 3, label: "3日" },
@@ -25,15 +25,6 @@ type PlanConditionInput = {
   priorityPolicy: "minimum" | "balanced";
 };
 
-type GeneratedPlanSummary = {
-  familyMemberCount: number;
-  days: number;
-  includeDailyItems: boolean;
-  priorityPolicy: string;
-  totalCost: number;
-  annualCost: number;
-};
-
 type GeneratedPlanItem = {
   id: string;
   name: string;
@@ -51,10 +42,16 @@ type GeneratedPlanItem = {
 };
 
 type GeneratedPlan = {
-  summary: GeneratedPlanSummary;
-  items: GeneratedPlanItem[];
+  title: string;
+  familyMemberCount: number;
+  days: 3 | 7;
+  includeDailyItems: boolean;
+  priorityPolicy: "minimum" | "balanced";
+  totalCost: number;
+  annualCost: number;
   explanation: string;
-  notice: string;
+  items: GeneratedPlanItem[];
+  warnings: string[];
 };
 
 type ApiError = {
@@ -65,7 +62,7 @@ type ApiError = {
 
 type GeneratePlanResponse = {
   data: {
-    plan: GeneratedPlan;
+    generatedPlan: GeneratedPlan;
   } | null;
   error: ApiError | null;
 };
@@ -103,6 +100,7 @@ export default function PlanNewPage() {
 
   useEffect(() => {
     const fetchFamilyMembers = async () => {
+      setIsCheckingFamily(true);
       try {
         const response = await fetch("/api/family-members", {
           method: "GET",
@@ -112,9 +110,7 @@ export default function PlanNewPage() {
         const result: FamilyMembersResponse = await response.json();
 
         if (!response.ok) {
-          throw new Error(
-            result.error?.message || "家族情報の確認に失敗しました。"
-          );
+          throw new Error(result.error?.message || "家族情報の確認に失敗しました。");
         }
 
         setHasFamily((result.data?.length ?? 0) > 0);
@@ -129,7 +125,7 @@ export default function PlanNewPage() {
     fetchFamilyMembers();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     e.preventDefault();
     setErrorMessage("");
     setNeedsFamilyRegistration(false);
@@ -161,14 +157,10 @@ export default function PlanNewPage() {
       const result: GeneratePlanResponse = await response.json();
 
       if (!response.ok) {
-        if (
-          response.status === 422 &&
-          result.error?.code === "FAMILY_MEMBERS_REQUIRED"
-        ) {
+        if (response.status === 422 && result.error?.code === "FAMILY_MEMBERS_REQUIRED") {
           setNeedsFamilyRegistration(true);
           setErrorMessage(
-            result.error.message ||
-              "家族情報が未登録です。先に家族情報を登録してください。"
+            result.error.message || "家族情報が未登録です。先に家族情報を登録してください。"
           );
           return;
         }
@@ -176,19 +168,17 @@ export default function PlanNewPage() {
         throw new Error(result.error?.message || "プラン生成に失敗しました。");
       }
 
-      if (!result.data?.plan) {
+      if (!result.data?.generatedPlan) {
         throw new Error("生成結果の取得に失敗しました。");
       }
 
-      sessionStorage.setItem("generatedPlan", JSON.stringify(result.data.plan));
+      sessionStorage.setItem("generatedPlan", JSON.stringify(result.data.generatedPlan));
       sessionStorage.setItem("planConditions", JSON.stringify(form));
 
       router.push("/plan/result");
     } catch (error) {
       console.error(error);
-      setErrorMessage(
-        error instanceof Error ? error.message : "プラン生成に失敗しました。"
-      );
+      setErrorMessage(error instanceof Error ? error.message : "プラン生成に失敗しました。");
     } finally {
       setIsSubmitting(false);
     }
@@ -197,9 +187,7 @@ export default function PlanNewPage() {
   return (
     <main className="mx-auto max-w-3xl p-6">
       <h1 className="text-2xl font-bold">備えプランを作成</h1>
-      <p className="mt-2 text-sm text-gray-600">
-        家族条件に合わせて、備え候補を提案します。
-      </p>
+      <p className="mt-2 text-sm text-gray-600">家族条件に合わせて、備え候補を提案します。</p>
 
       {hasFamily === false && !errorMessage ? (
         <div className="mt-4 rounded border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
@@ -272,10 +260,7 @@ export default function PlanNewPage() {
                 disabled={isSubmitting || isCheckingFamily}
               >
                 {SCOPE_OPTIONS.map((option) => (
-                  <option
-                    key={String(option.value)}
-                    value={String(option.value)}
-                  >
+                  <option key={String(option.value)} value={String(option.value)}>
                     {option.label}
                   </option>
                 ))}
@@ -314,8 +299,8 @@ export default function PlanNewPage() {
             {isCheckingFamily
               ? "家族情報を確認中..."
               : isSubmitting
-              ? "生成中..."
-              : "プランを生成する"}
+                ? "生成中..."
+                : "プランを生成する"}
           </button>
         </div>
       </form>
