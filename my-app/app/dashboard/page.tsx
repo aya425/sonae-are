@@ -75,7 +75,7 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
+        <div className="grid max-w-[1000px] grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <DashboardCard title="家族情報" href="/family" linkLabel="家族情報を見る">
             <div className="space-y-1 text-xs text-gray-700">
               <p className="font-semibold text-gray-900">登録人数: 3人</p>
@@ -90,27 +90,43 @@ export default function DashboardPage() {
           <DashboardCard title="コスト概要" href="/plans" linkLabel="保存済みプランを見る">
             <div className="space-y-1 text-xs text-gray-700">
               <p className="font-semibold text-gray-900">年間維持コスト: ¥12,800</p>
-              <p>算出元の保存済みプランをあとで参照できる想定</p>
+              <p>
+                保存済みプランをもとに
+                <br />
+                年間維持コストを
+                <br />
+                確認できます
+              </p>
             </div>
           </DashboardCard>
 
           <DashboardCard title="期限が近い商品" href="/inventory" linkLabel="確認する">
             <div className="space-y-1 text-xs text-gray-700">
               <p className="font-semibold text-gray-900">件数: {nearExpiryItems.length}件</p>
-              <ul className="space-y-0.5 text-center">
-                {nearExpiryItems.map((item) => (
-                  <li key={item.id} className="list-none">
-                    {item.productName}（あと{item.daysLeft}日）
-                  </li>
-                ))}
-              </ul>
+              {nearExpiryItems.length > 0 ? (
+                <ul className="space-y-0.5 text-center">
+                  {nearExpiryItems.map((item) => (
+                    <li key={item.id} className="list-none">
+                      {item.productName}
+                      <br />
+                      （あと{item.daysLeft}日）
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>期限が近い商品はありません</p>
+              )}
             </div>
           </DashboardCard>
 
-          <DashboardCard title="備蓄品一覧" href="/inventory" linkLabel="備蓄品一覧へ">
+          <DashboardCard title="備蓄品一覧" href="/inventory" linkLabel="備蓄品一覧を見る">
             <div className="space-y-1 text-xs text-gray-700">
               <p className="font-semibold text-gray-900">登録済み備蓄品: 6件</p>
-              <p>備蓄の登録・確認・削除ができます</p>
+              <p>
+                備蓄の登録・確認・削除が
+                <br />
+                できます
+              </p>
             </div>
           </DashboardCard>
 
@@ -129,13 +145,17 @@ export default function DashboardPage() {
 
           <div className="rounded-md bg-white/70 p-3">
             <h2 className="text-sm font-semibold leading-snug text-gray-900">期限が近い商品</h2>
-            <ul className="mt-2 space-y-1.5 text-sm text-gray-800">
-              {nearExpiryItems.map((item) => (
-                <li key={item.id} className="ml-5 list-disc leading-relaxed">
-                  {item.productName}（あと{item.daysLeft}日）
-                </li>
-              ))}
-            </ul>
+            {nearExpiryItems.length > 0 ? (
+              <ul className="mt-2 space-y-1.5 text-sm text-gray-800">
+                {nearExpiryItems.map((item) => (
+                  <li key={item.id} className="ml-5 list-disc leading-relaxed">
+                    {item.productName}（あと{item.daysLeft}日）
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-gray-700">期限が近い商品はありません</p>
+            )}
           </div>
         </section>
 
@@ -148,7 +168,7 @@ export default function DashboardPage() {
           </div>
 
           {savedPlans.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
+            <div className="grid max-w-[1000px] grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
               {savedPlans.map((plan) => (
                 <div
                   key={plan.id}
