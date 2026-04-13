@@ -36,11 +36,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(dashboardUrl);
   }
 
-  if (pathname.startsWith("/login") && user) {
-    const familyUrl = new URL("/family", request.url);
-    return NextResponse.redirect(familyUrl);
-  }
-
   return response;
 }
 
