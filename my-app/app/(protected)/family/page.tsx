@@ -290,6 +290,10 @@ export default function FamilyPage() {
         await createFamilyMember(member);
       }
 
+      const fetchedMembers = await fetchFamilyMembers();
+      setSavedMembers(fetchedMembers);
+      setMembers(fetchedMembers.map(toFamilyMemberForm));
+
       router.push("/plan/new");
     } catch (error) {
       console.error(error);

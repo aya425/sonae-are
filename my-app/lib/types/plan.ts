@@ -24,13 +24,21 @@ export type GeneratePlanSummary = {
   annualCost: number;
 };
 
+export type GeneratedPlan = {
+  title: string;
+  familyMemberCount: number;
+  days: 3 | 7;
+  includeDailyItems: boolean;
+  priorityPolicy: PriorityPolicy;
+  totalCost: number;
+  annualCost: number;
+  explanation: string;
+  items: GeneratedPlanItem[];
+  warnings: string[];
+};
+
 export type GeneratePlanData = {
-  plan: {
-    summary: GeneratePlanSummary;
-    items: GeneratedPlanItem[];
-    explanation: string;
-    notice: string;
-  };
+  generatedPlan: GeneratedPlan;
 };
 
 export type GeneratePlanResponse = {
