@@ -49,6 +49,7 @@ const ALLERGEN_OPTIONS = [
 ] as const;
 
 type FamilyMemberForm = {
+  localId: string;
   role: string;
   ageGroup: "adult" | "child" | "";
   allergens: string[];
@@ -86,6 +87,20 @@ type ApiResponse<T> = {
   error: ApiError | null;
 };
 
+function createLocalId() {
+  return crypto.randomUUID();
+}
+
+function createEmptyMember(): FamilyMemberForm {
+  return {
+    localId: createLocalId(),
+    role: "",
+    ageGroup: "",
+    allergens: [],
+    notes: "",
+  };
+}
+
 function normalizeRole(role: string): string {
   switch (role) {
     case "self":
@@ -106,6 +121,7 @@ function normalizeRole(role: string): string {
 
 function toFamilyMemberForm(member: FamilyMemberGetItem): FamilyMemberForm {
   return {
+    localId: createLocalId(),
     role: normalizeRole(member.role),
     ageGroup: member.age_group,
     allergens: member.allergens ?? [],
@@ -145,23 +161,16 @@ async function createFamilyMember(member: FamilyMemberForm): Promise<FamilyMembe
   const result: ApiResponse<FamilyMemberPostItem> = await response.json();
 
   if (!response.ok || !result.data) {
-    throw new Error(result.error?.message ?? "家族メンバーの登録に失敗しました。");
+    throw new Error(result.error?.message ?? "家族情報の登録に失敗しました。");
   }
 
   return result.data;
 }
 
-const EMPTY_MEMBER: FamilyMemberForm = {
-  role: "",
-  ageGroup: "",
-  allergens: [],
-  notes: "",
-};
-
 export default function FamilyPage() {
   const router = useRouter();
 
-  const [members, setMembers] = useState<FamilyMemberForm[]>([EMPTY_MEMBER]);
+  const [members, setMembers] = useState<FamilyMemberForm[]>([createEmptyMember()]);
   const [savedMembers, setSavedMembers] = useState<FamilyMemberGetItem[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -179,7 +188,7 @@ export default function FamilyPage() {
         setSavedMembers(fetchedMembers);
 
         if (fetchedMembers.length === 0) {
-          setMembers([EMPTY_MEMBER]);
+          setMembers([createEmptyMember()]);
           return;
         }
 
@@ -187,7 +196,7 @@ export default function FamilyPage() {
       } catch (error) {
         console.error(error);
         setSavedMembers([]);
-        setMembers([EMPTY_MEMBER]);
+        setMembers([createEmptyMember()]);
         setErrorMessage(
           error instanceof Error
             ? `${error.message} 新規の家族情報入力はこのまま続けられます。`
@@ -202,7 +211,7 @@ export default function FamilyPage() {
   }, []);
 
   const addMember = () => {
-    setMembers((prev) => [...prev, EMPTY_MEMBER]);
+    setMembers((prev) => [...prev, createEmptyMember()]);
   };
 
   const updateMemberField = (
@@ -241,7 +250,7 @@ export default function FamilyPage() {
 
   const validateMembers = () => {
     if (members.length === 0) {
-      return "家族メンバーを1人以上登録してください。";
+      return "家族情報を1人以上登録してください。";
     }
 
     for (const member of members) {
@@ -336,11 +345,8 @@ export default function FamilyPage() {
           const isExistingMember = index < savedMembers.length;
 
           return (
-            <section
-              key={hasExistingMembers ? (savedMembers[index]?.id ?? index) : index}
-              className="rounded-lg border p-4"
-            >
-              <h2 className="mb-4 text-lg font-semibold">家族メンバー {index + 1}</h2>
+            <section key={member.localId} className="rounded-lg border p-4">
+              <h2 className="mb-4 text-lg font-semibold">家族情報 {index + 1}</h2>
 
               <div className="space-y-4">
                 <div>
@@ -416,7 +422,7 @@ export default function FamilyPage() {
           className="rounded border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isFormDisabled}
         >
-          家族メンバーを追加
+          家族情報を追加
         </button>
 
         <div>
