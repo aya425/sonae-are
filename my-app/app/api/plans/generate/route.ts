@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
             details: null,
           },
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
             details: null,
           },
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
             details: null,
           },
         },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
@@ -91,12 +91,11 @@ export async function POST(request: NextRequest) {
             details: familyError.message,
           },
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
-    const familyMemberCount = ((familyMembers ?? []) as FamilyMemberRow[])
-      .length;
+    const familyMemberCount = ((familyMembers ?? []) as FamilyMemberRow[]).length;
 
     if (familyMemberCount === 0) {
       console.log("[plans/generate] family members not found");
@@ -109,14 +108,14 @@ export async function POST(request: NextRequest) {
             details: null,
           },
         },
-        { status: 422 },
+        { status: 422 }
       );
     }
 
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select(
-        "id, name, category, product_type, is_free_from_28, price, purchase_url, shelf_life_months, is_active",
+        "id, name, category, product_type, is_free_from_28, price, purchase_url, shelf_life_months, is_active"
       )
       .eq("is_active", true)
       .order("created_at", { ascending: true });
@@ -131,23 +130,21 @@ export async function POST(request: NextRequest) {
             details: productsError.message,
           },
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
-    const normalizedProducts = ((products ?? []) as ProductRow[]).map(
-      (product) => ({
-        id: product.id,
-        name: product.name,
-        category: product.category,
-        productType: product.product_type,
-        isFreeFrom28: product.is_free_from_28,
-        price: product.price,
-        purchaseUrl: product.purchase_url,
-        shelfLifeMonths: product.shelf_life_months,
-        isActive: product.is_active,
-      }),
-    );
+    const normalizedProducts = ((products ?? []) as ProductRow[]).map((product) => ({
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      productType: product.product_type,
+      isFreeFrom28: product.is_free_from_28,
+      price: product.price,
+      purchaseUrl: product.purchase_url,
+      shelfLifeMonths: product.shelf_life_months,
+      isActive: product.is_active,
+    }));
 
     // TODO:
     // 現状は familyMemberCount を使った最小版の生成ロジック。
@@ -162,19 +159,27 @@ export async function POST(request: NextRequest) {
 
     console.log("[plans/generate] success");
 
+    const generatedPlanTitle = `${generatedPlan.summary.days}日分プラン`;
+
     return NextResponse.json(
       {
         data: {
-          plan: {
-            summary: generatedPlan.summary,
-            items: generatedPlan.items,
+          generatedPlan: {
+            title: generatedPlanTitle,
+            familyMemberCount: generatedPlan.summary.familyMemberCount,
+            days: generatedPlan.summary.days,
+            includeDailyItems: generatedPlan.summary.includeDailyItems,
+            priorityPolicy: generatedPlan.summary.priorityPolicy,
+            totalCost: generatedPlan.summary.totalCost,
+            annualCost: generatedPlan.summary.annualCost,
             explanation: generatedPlan.explanation,
-            notice: generatedPlan.notice,
+            items: generatedPlan.items,
+            warnings: [generatedPlan.notice],
           },
         },
         error: null,
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     console.error("[plans/generate] unexpected error", error);
@@ -188,7 +193,7 @@ export async function POST(request: NextRequest) {
           details: error instanceof Error ? error.message : null,
         },
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
