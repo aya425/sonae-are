@@ -146,7 +146,7 @@ export default function DashboardPage() {
             </div>
           </DashboardCard>
 
-          <DashboardCard title="期限が近い商品" href="/inventory" linkLabel="確認する">
+          <DashboardCard title="期限が近い商品" href="/stock-items" linkLabel="確認する">
             <div className="space-y-1 text-xs text-gray-700">
               <p className="font-semibold text-gray-900">
                 {isLoading
@@ -173,7 +173,7 @@ export default function DashboardPage() {
             </div>
           </DashboardCard>
 
-          <DashboardCard title="備蓄品一覧" href="/inventory" linkLabel="備蓄品一覧を見る">
+          <DashboardCard title="備蓄品一覧" href="/stock-items" linkLabel="備蓄品一覧を見る">
             <div className="space-y-1 text-xs text-gray-700">
               <p className="font-semibold text-gray-900">
                 {isLoading
