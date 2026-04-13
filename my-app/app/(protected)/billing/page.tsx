@@ -36,7 +36,7 @@ export default function BillingPage() {
 
             <div className="space-y-3 text-sm text-slate-700">
               <p>保存可能な備えプラン数：複数可能</p>
-              <p>年額：500円</p>
+              <p>月額：300円</p>
             </div>
 
             <div className="mt-6">
