@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type PlanCondition = {
   title: string;
@@ -108,56 +108,40 @@ const mockPlanItems: PlanItem[] = [
 ];
 
 export default function PlanDetailPage() {
-  const getInitialPlanState = (): {
-    plan: PlanCondition;
-    planItems: PlanItem[];
-  } => {
-    if (typeof window === "undefined") {
-      return {
-        plan: mockPlanCondition,
-        planItems: mockPlanItems,
-      };
-    }
+  const [plan, setPlan] = useState<PlanCondition>(mockPlanCondition);
+  const [planItems, setPlanItems] = useState<PlanItem[]>(mockPlanItems);
+  const [isLoaded, setIsLoaded] = useState(false);
 
+  useEffect(() => {
     const storedPlan = sessionStorage.getItem("generatedPlan");
 
     if (!storedPlan) {
-      return {
-        plan: mockPlanCondition,
-        planItems: mockPlanItems,
-      };
+      setIsLoaded(true);
+      return;
     }
 
     try {
       const parsedPlan = JSON.parse(storedPlan) as StoredGeneratedPlan;
 
-      return {
-        plan: {
-          title: parsedPlan.title,
-          familyMemberCount: parsedPlan.familyMemberCount,
-          days: parsedPlan.days,
-          includeDailyItems: parsedPlan.includeDailyItems,
-          priorityPolicy: parsedPlan.priorityPolicy,
-          totalCost: parsedPlan.totalCost,
-          annualCost: parsedPlan.annualCost,
-          explanation: parsedPlan.explanation,
-          warnings: parsedPlan.warnings,
-        },
-        planItems: parsedPlan.items,
-      };
+      setPlan({
+        title: parsedPlan.title,
+        familyMemberCount: parsedPlan.familyMemberCount,
+        days: parsedPlan.days,
+        includeDailyItems: parsedPlan.includeDailyItems,
+        priorityPolicy: parsedPlan.priorityPolicy,
+        totalCost: parsedPlan.totalCost,
+        annualCost: parsedPlan.annualCost,
+        explanation: parsedPlan.explanation,
+        warnings: parsedPlan.warnings,
+      });
+
+      setPlanItems(parsedPlan.items);
     } catch (error) {
       console.error("generatedPlanの読み込みに失敗しました", error);
-
-      return {
-        plan: mockPlanCondition,
-        planItems: mockPlanItems,
-      };
+    } finally {
+      setIsLoaded(true);
     }
-  };
-
-  const initialState = getInitialPlanState();
-  const [plan] = useState<PlanCondition>(initialState.plan);
-  const [planItems] = useState<PlanItem[]>(initialState.planItems);
+  }, []);
 
   const priorityPolicyLabel =
     plan.priorityPolicy === "minimum" ? "最低限そろえる" : "バランス重視";
@@ -185,6 +169,17 @@ export default function PlanDetailPage() {
 
     alert("削除機能は次の工程で接続します。");
   };
+
+  if (!isLoaded) {
+    return (
+      <main className="mx-auto max-w-5xl p-6">
+        <div className="rounded-xl border p-5">
+          <p className="text-sm text-gray-600">プランを読み込んでいます...</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto max-w-5xl p-6">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
