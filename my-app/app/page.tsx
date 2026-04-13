@@ -26,12 +26,14 @@ export default function HomePage() {
 
           <div className="flex flex-col gap-4">
             <h1 className="text-4xl font-bold leading-tight md:text-5xl">そなえアレ</h1>
+
             <p className="max-w-3xl text-xl font-semibold leading-relaxed text-slate-700 md:text-2xl">
-              家族に合った“食べられる備え”を、 迷わず準備して続けられるように。
+              家族に合った“食べられる備え”を、迷わず準備して続けられるように。
             </p>
+
             <p className="max-w-3xl text-base leading-7 text-slate-600 md:text-lg">
-              そなえアレは、食物アレルギーのある家庭が 家族条件に合った備えを考え、商品を確認し、
-              備蓄の登録・期限管理・見直しまで一気通貫で進められる Webアプリです。
+              そなえアレは、食物アレルギーのある家庭が家族条件に合った備えを考え、
+              商品を確認し、備蓄の登録・期限管理・見直しまで一気通貫で進められる Webアプリです。
             </p>
           </div>
 
@@ -67,6 +69,7 @@ export default function HomePage() {
         <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
           <div className="flex flex-col gap-4">
             <h2 className="text-2xl font-bold text-slate-900">こんな悩みはありませんか？</h2>
+
             <ul className="space-y-3 text-sm leading-6 text-slate-600 md:text-base">
               <li>・家族に合う非常食をどう選べばよいか分からない</li>
               <li>・防災食だけでは選択肢が少なく、日常品をどう備蓄に回すか迷う</li>
@@ -74,8 +77,7 @@ export default function HomePage() {
             </ul>
 
             <p className="pt-2 text-sm leading-6 text-slate-600 md:text-base">
-              そなえアレは、提案だけで終わらず、
-              購入・登録・期限確認までつながる体験を目指しています。
+              そなえアレは、提案だけで終わらず、購入・登録・期限確認までつながる体験を目指しています。
             </p>
           </div>
         </section>
