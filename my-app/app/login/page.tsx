@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/src/lib/supabase/client";
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,12 +12,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMessage("");
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -25,58 +26,81 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setErrorMessage(error.message || "ログインに失敗しました。");
+        setErrorMessage(error.message);
         return;
       }
 
-      router.push("/family");
-    } catch (error) {
-      console.error("unexpected login error", error);
-      setErrorMessage("ログイン中に予期しないエラーが発生しました。");
+      router.push("/dashboard");
+    } catch {
+      setErrorMessage("ログインに失敗しました。");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <main className="mx-auto max-w-md p-6">
-      <h1 className="mb-6 text-2xl font-bold">ログイン</h1>
-
-      <form onSubmit={handleLogin} className="space-y-4">
-        <div>
-          <label htmlFor="email">メールアドレス</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full rounded border px-3 py-2"
-          />
+    <main className="min-h-screen bg-slate-50 px-6 py-16 text-slate-900">
+      <div className="mx-auto w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold">ログイン</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            登録済みのメールアドレスとパスワードでログインします。
+          </p>
         </div>
 
-        <div>
-          <label htmlFor="password">パスワード</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full rounded border px-3 py-2"
-          />
-        </div>
+        <form className="space-y-5" onSubmit={handleLogin}>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="email" className="text-sm font-medium">
+              メールアドレス
+            </label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-green-600"
+              placeholder="example@email.com"
+            />
+          </div>
 
-        {errorMessage && <p className="text-red-600">{errorMessage}</p>}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="password" className="text-sm font-medium">
+              パスワード
+            </label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-green-600"
+              placeholder="パスワードを入力"
+            />
+          </div>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full rounded bg-black px-4 py-2 text-white disabled:opacity-50"
-        >
-          {isLoading ? "ログイン中..." : "ログインする"}
-        </button>
-      </form>
+          {errorMessage ? (
+            <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="inline-flex w-full items-center justify-center rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting ? "ログイン中..." : "ログインする"}
+          </button>
+        </form>
+
+        <p className="mt-6 text-sm text-slate-600">
+          はじめてご利用の方は{" "}
+          <Link href="/signup" className="font-semibold text-green-700 hover:underline">
+            会員登録
+          </Link>
+        </p>
+      </div>
     </main>
   );
 }
