@@ -13,7 +13,7 @@ const navItems = [
   { href: "/plan/new", label: "プラン作成" },
   { href: "/plans", label: "保存済みプラン" },
   { href: "/stock-items", label: "備蓄品一覧" },
-  { href: "/payments", label: "料金プラン" },
+  { href: "/billing", label: "料金プラン" },
 ];
 
 export default async function ProtectedLayout({ children }: ProtectedLayoutProps) {
