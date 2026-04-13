@@ -189,14 +189,22 @@ export default function PlanNewPage() {
       router.push("/plans/temp");
     } catch (error) {
       console.error(error);
-      setErrorMessage(
-        error instanceof Error ? error.message : "プラン生成に失敗しました。",
-      );
+
+      if (error instanceof Error && error.message === "Failed to fetch") {
+        setErrorMessage(
+          "通信に失敗しました。ネットワーク接続を確認して、もう一度お試しください。",
+        );
+      } else {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "プラン生成に失敗しました。時間をおいて再度お試しください。",
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
-
   return (
     <main className="mx-auto max-w-3xl p-6">
       <h1 className="text-2xl font-bold">備えプランを作成</h1>
