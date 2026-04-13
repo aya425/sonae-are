@@ -7,28 +7,24 @@ type FamilyMemberInput = {
   notes?: string | null;
 };
 
-function isValidFamilyMemberInput(input: FamilyMemberInput): input is {
+function validateFamilyMember(input: FamilyMemberInput): input is {
   role: string;
   age_group: "adult" | "child";
   notes?: string | null;
 } {
-  return (
-    typeof input.role === "string" &&
-    input.role.trim() !== "" &&
-    (input.age_group === "adult" || input.age_group === "child")
-  );
-}
-
-function validateFamilyMember(input: FamilyMemberInput) {
-  if (!input.role || input.role.trim() === "") {
-    return "続柄は必須です";
+  if (typeof input.role !== "string" || input.role.trim() === "") {
+    return false;
   }
 
-  if (!input.age_group || !["adult", "child"].includes(input.age_group)) {
-    return "区分は大人または子どもを選択してください";
+  if (typeof input.age_group !== "string" || !["adult", "child"].includes(input.age_group)) {
+    return false;
   }
 
-  return null;
+  if (!(typeof input.notes === "string" || input.notes == null)) {
+    return false;
+  }
+
+  return true;
 }
 
 export async function GET() {
@@ -87,7 +83,7 @@ export async function GET() {
           error: {
             code: "INTERNAL_SERVER_ERROR",
             message: "家族情報の取得に失敗しました。",
-            details: error.message,
+            details: null,
           },
         },
         { status: 500 }
@@ -123,7 +119,7 @@ export async function GET() {
         error: {
           code: "INTERNAL_SERVER_ERROR",
           message: "予期しないエラーが発生しました。",
-          details: error instanceof Error ? error.message : null,
+          details: null,
         },
       },
       { status: 500 }
@@ -172,14 +168,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const validationError = validateFamilyMember(body);
-    if (validationError || !isValidFamilyMemberInput(body)) {
+    if (!validateFamilyMember(body)) {
       return NextResponse.json(
         {
           data: null,
           error: {
             code: "BAD_REQUEST",
-            message: validationError ?? "家族情報の入力値が不正です。",
+            message: "家族情報の入力値が不正です。",
             details: null,
           },
         },
@@ -213,7 +208,7 @@ export async function POST(request: NextRequest) {
           error: {
             code: "INTERNAL_SERVER_ERROR",
             message: "家族情報の登録に失敗しました。",
-            details: error.message,
+            details: null,
           },
         },
         { status: 500 }
@@ -243,7 +238,7 @@ export async function POST(request: NextRequest) {
         error: {
           code: "INTERNAL_SERVER_ERROR",
           message: "予期しないエラーが発生しました。",
-          details: error instanceof Error ? error.message : null,
+          details: null,
         },
       },
       { status: 500 }
