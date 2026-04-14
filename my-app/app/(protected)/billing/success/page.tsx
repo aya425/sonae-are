@@ -1,42 +1,55 @@
-import Link from "next/link";
+"use client";
+
+import { CheckCircle2 } from "lucide-react";
 
 export default function BillingSuccessPage() {
   return (
-    <main className="px-6 py-10 md:px-8">
-      <div className="mx-auto max-w-3xl">
-        <section className="rounded-2xl border border-green-200 bg-white p-8 shadow-sm">
-          <div className="mb-6">
-            <p className="text-sm font-semibold text-green-700">決済完了</p>
-            <h1 className="mt-2 text-2xl font-bold text-slate-900">
-              有料プランの申し込みが完了しました
-            </h1>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              保存できる備えプラン数が増え、複数の備えプランを比較しながら 管理しやすくなります。
-            </p>
+    <main className="px-4 py-6">
+      <div className="mx-auto w-full max-w-md">
+        <section className="animate-[fadeUp_0.5s_ease-out] text-center">
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-blue-100 shadow-[0_10px_24px_rgba(30,58,138,0.18)]">
+            <CheckCircle2 className="h-12 w-12 text-[#1E3A8A]" strokeWidth={2.4} />
           </div>
 
-          <div className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
-            <p>・有料プランの利用状態は今後ホームで確認できる想定です。</p>
-            <p className="mt-2">・必要に応じて、引き続き家族情報や備えプランの作成に進めます。</p>
-          </div>
+          <p className="mt-4 text-xs font-semibold tracking-[0.2em] text-[#1E3A8A]">完了</p>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/home"
-              className="inline-flex items-center justify-center rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
-            >
-              ホームへ戻る
-            </Link>
+          <h1 className="mt-3 text-3xl font-bold leading-tight text-slate-900">
+            有料プランの申し込みが
+            <br />
+            完了しました
+          </h1>
 
-            <Link
-              href="/billing"
-              className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-            >
-              料金プラン画面へ戻る
-            </Link>
+          <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
+            保存できる備えプラン数が増え、
+            <br />
+            複数の備えプランを比較しながら
+            <br />
+            管理しやすくなります。
+          </p>
+        </section>
+
+        <section className="mt-8 animate-[fadeUp_0.7s_ease-out] rounded-3xl bg-blue-50 p-5 text-left ring-1 ring-[rgba(30,58,138,0.18)] shadow-[0_8px_22px_rgba(30,58,138,0.12)]">
+          <p className="text-lg font-semibold text-[#1E3A8A]">ご案内</p>
+
+          <div className="mt-3 space-y-3 text-lg font-medium leading-8 text-slate-700">
+            <p>・決済情報の反映まで、少し時間がかかることがあります。</p>
+            <p>・反映されない場合は、少し時間をおいてからもう一度ご確認ください。</p>
           </div>
         </section>
       </div>
+
+      <style jsx>{`
+        @keyframes fadeUp {
+          0% {
+            opacity: 0;
+            transform: translateY(12px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </main>
   );
 }
