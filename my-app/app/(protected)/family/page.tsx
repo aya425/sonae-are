@@ -190,6 +190,32 @@ async function updateAllergens(memberId: string, allergens: string[]): Promise<v
   }
 }
 
+async function updateFamilyMember(
+  memberId: string,
+  member: FamilyMemberForm
+): Promise<FamilyMemberPostItem> {
+  const response = await fetch(`/api/family-members/${memberId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      role: member.role,
+      age_group: member.ageGroup,
+      notes: member.notes,
+    }),
+  });
+
+  const result: ApiResponse<FamilyMemberPostItem> = await response.json();
+
+  if (!response.ok || !result.data) {
+    throw new Error(result.error?.message ?? "家族情報の更新に失敗しました。");
+  }
+
+  return result.data;
+}
+
 async function deleteFamilyMember(memberId: string): Promise<DeleteFamilyMemberResponse> {
   const response = await fetch(`/api/family-members/${memberId}`, {
     method: "DELETE",
@@ -345,19 +371,20 @@ export default function FamilyPage() {
       return;
     }
 
-    const newMembers = members.slice(savedMembers.length);
-
-    if (newMembers.length === 0) {
-      router.push("/plan/new");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      for (const member of newMembers) {
-        const createdMember = await createFamilyMember(member);
-        await updateAllergens(createdMember.id, member.allergens);
+      for (let index = 0; index < members.length; index += 1) {
+        const member = members[index];
+        const savedMember = savedMembers[index];
+
+        if (savedMember) {
+          await updateFamilyMember(savedMember.id, member);
+          await updateAllergens(savedMember.id, member.allergens);
+        } else {
+          const createdMember = await createFamilyMember(member);
+          await updateAllergens(createdMember.id, member.allergens);
+        }
       }
 
       router.push("/plan/new");
@@ -384,7 +411,7 @@ export default function FamilyPage() {
 
       {hasExistingMembers ? (
         <div className="mt-4 rounded border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-          登録済みの家族情報があります（現在は編集未対応）
+          登録済みの家族情報を編集できます
         </div>
       ) : null}
 
@@ -426,7 +453,7 @@ export default function FamilyPage() {
                       className="w-full rounded border px-3 py-2"
                       value={member.role}
                       onChange={(e) => updateMemberField(index, "role", e.target.value)}
-                      disabled={isFormDisabled || isExistingMember || isDeleting}
+                      disabled={isFormDisabled || isDeleting}
                     >
                       <option value="">選択してください</option>
                       {RELATION_OPTIONS.map((option) => (
@@ -443,7 +470,7 @@ export default function FamilyPage() {
                       className="w-full rounded border px-3 py-2"
                       value={member.ageGroup}
                       onChange={(e) => updateMemberField(index, "ageGroup", e.target.value)}
-                      disabled={isFormDisabled || isExistingMember || isDeleting}
+                      disabled={isFormDisabled || isDeleting}
                     >
                       <option value="">選択してください</option>
                       {AGE_GROUP_OPTIONS.map((option) => (
@@ -463,7 +490,7 @@ export default function FamilyPage() {
                             type="checkbox"
                             checked={member.allergens.includes(allergen.value)}
                             onChange={() => toggleAllergen(index, allergen.value)}
-                            disabled={isFormDisabled || isExistingMember || isDeleting}
+                            disabled={isFormDisabled || isDeleting}
                           />
                           <span>{allergen.label}</span>
                         </label>
@@ -478,7 +505,7 @@ export default function FamilyPage() {
                       rows={3}
                       value={member.notes}
                       onChange={(e) => updateMemberField(index, "notes", e.target.value)}
-                      disabled={isFormDisabled || isExistingMember || isDeleting}
+                      disabled={isFormDisabled || isDeleting}
                       placeholder="任意でメモを入力"
                     />
                   </div>
