@@ -86,34 +86,32 @@ export default async function PlansPage() {
               key={plan.id}
               className="w-full rounded-xl border p-5 shadow-sm sm:w-[calc(50%-0.5rem)]"
             >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="space-y-2">
-                  <h2 className="text-lg font-semibold">{plan.title}</h2>
-                  <p className="text-sm text-gray-600">
-                    家族人数: {plan.familyMemberCount}人
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    初期費用: ¥{plan.totalEstimatedCost.toLocaleString()}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    更新日: {plan.updatedAt}
-                  </p>
-                </div>
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold">{plan.title}</h2>
+                <p className="text-sm text-gray-600">
+                  家族人数: {plan.familyMemberCount}人
+                </p>
+                <p className="text-sm text-gray-600">
+                  初期費用: ¥{plan.totalEstimatedCost.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-600">
+                  更新日: {new Date(plan.updatedAt).toLocaleDateString("ja-JP")}
+                </p>
+              </div>
 
-                <div className="flex gap-2">
-                  <Link
-                    href={`/plans/${plan.id}`}
-                    className="rounded-md bg-[#1E3A8A] px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
-                  >
-                    詳細を見る
-                  </Link>
-                  <button
-                    type="button"
-                    className="rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                  >
-                    削除
-                  </button>
-                </div>
+              <div className="mt-4 flex gap-2">
+                <Link
+                  href={`/plans/${plan.id}`}
+                  className="rounded-md bg-[#1E3A8A] px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+                >
+                  詳細を見る
+                </Link>
+                <button
+                  type="button"
+                  className="rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                >
+                  削除
+                </button>
               </div>
             </article>
           ))}
