@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
@@ -15,7 +15,7 @@ export default function SignupPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSignup: NonNullable<ComponentProps<"form">["onSubmit"]> = async (e) => {
     e.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
@@ -42,16 +42,21 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-16 text-slate-900">
-      <div className="mx-auto w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-        <div className="mb-8">
+    <main className="min-h-screen bg-slate-100 text-slate-900">
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center bg-slate-50 px-4 py-8">
+        <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold">会員登録</h1>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            メールアドレスとパスワードを入力して、そなえアレを始めましょう。
+            メールアドレスとパスワードを入力して、
+            <br />
+            そなえアレを始めましょう。
           </p>
         </div>
 
-        <form className="space-y-5" onSubmit={handleSignup}>
+        <form
+          className="space-y-5 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
+          onSubmit={handleSignup}
+        >
           <div className="flex flex-col gap-2">
             <label htmlFor="email" className="text-sm font-medium">
               メールアドレス
@@ -63,7 +68,7 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-green-600"
+              className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#1E3A8A]"
               placeholder="example@email.com"
             />
           </div>
@@ -80,7 +85,7 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-green-600"
+              className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#1E3A8A]"
               placeholder="6文字以上で入力"
             />
           </div>
@@ -90,7 +95,7 @@ export default function SignupPage() {
           ) : null}
 
           {successMessage ? (
-            <p className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+            <p className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-800">
               {successMessage}
             </p>
           ) : null}
@@ -98,15 +103,18 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex w-full items-center justify-center rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-[#1E3A8A] px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "登録中..." : "会員登録する"}
           </button>
         </form>
 
-        <p className="mt-6 text-sm text-slate-600">
+        <p className="mt-6 text-center text-sm text-slate-600">
           すでにアカウントをお持ちの方は{" "}
-          <Link href="/login" className="font-semibold text-green-700 hover:underline">
+          <Link
+            href="/login"
+            className="font-semibold text-[#1E3A8A] hover:text-blue-800 hover:underline"
+          >
             ログイン
           </Link>
         </p>
