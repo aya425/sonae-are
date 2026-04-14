@@ -49,6 +49,7 @@ const ALLERGEN_OPTIONS = [
 ] as const;
 
 type FamilyMemberForm = {
+  id?: string;
   localId: string;
   role: string;
   ageGroup: "adult" | "child" | "";
@@ -125,6 +126,7 @@ function normalizeRole(role: string): string {
 
 function toFamilyMemberForm(member: FamilyMemberGetItem): FamilyMemberForm {
   return {
+    id: member.id,
     localId: createLocalId(),
     role: normalizeRole(member.role),
     ageGroup: member.age_group,
@@ -331,8 +333,8 @@ export default function FamilyPage() {
     return "";
   };
 
-  const handleDelete = async (index: number) => {
-    const target = savedMembers[index];
+  const handleDelete = async (memberId: string) => {
+    const target = savedMembers.find((member) => member.id === memberId);
 
     if (!target) return;
 
@@ -348,10 +350,12 @@ export default function FamilyPage() {
       const nextSavedMembers = savedMembers.filter((member) => member.id !== target.id);
       setSavedMembers(nextSavedMembers);
 
-      if (nextSavedMembers.length === 0) {
+      const nextMembers = members.filter((member) => member.id !== target.id);
+
+      if (nextMembers.length === 0) {
         setMembers([createEmptyMember()]);
       } else {
-        setMembers(nextSavedMembers.map(toFamilyMemberForm));
+        setMembers(nextMembers);
       }
     } catch (error) {
       console.error(error);
@@ -374,13 +378,10 @@ export default function FamilyPage() {
     setIsSubmitting(true);
 
     try {
-      for (let index = 0; index < members.length; index += 1) {
-        const member = members[index];
-        const savedMember = savedMembers[index];
-
-        if (savedMember) {
-          await updateFamilyMember(savedMember.id, member);
-          await updateAllergens(savedMember.id, member.allergens);
+      for (const member of members) {
+        if (member.id) {
+          await updateFamilyMember(member.id, member);
+          await updateAllergens(member.id, member.allergens);
         } else {
           const createdMember = await createFamilyMember(member);
           await updateAllergens(createdMember.id, member.allergens);
@@ -390,7 +391,11 @@ export default function FamilyPage() {
       router.push("/plan/new");
     } catch (error) {
       console.error(error);
-      setErrorMessage(error instanceof Error ? error.message : "家族情報の保存に失敗しました。");
+      setErrorMessage(
+        error instanceof Error
+          ? `${error.message} 家族情報とアレルゲン情報は順番に保存しているため、一部のみ更新される場合があります。`
+          : "家族情報の保存に失敗しました。家族情報とアレルゲン情報は順番に保存しているため、一部のみ更新される場合があります。"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -424,8 +429,8 @@ export default function FamilyPage() {
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {members.map((member, index) => {
-            const isExistingMember = index < savedMembers.length;
-            const deletingMemberId = isExistingMember ? savedMembers[index]?.id : undefined;
+            const isExistingMember = Boolean(member.id);
+            const deletingMemberId = member.id;
             const isDeleting = deletingMemberId ? deletingIds.includes(deletingMemberId) : false;
 
             return (
@@ -436,7 +441,7 @@ export default function FamilyPage() {
                   {isExistingMember ? (
                     <button
                       type="button"
-                      onClick={() => handleDelete(index)}
+                      onClick={() => member.id && handleDelete(member.id)}
                       disabled={isDeleting || isSubmitting}
                       className="flex items-center gap-1 rounded border border-red-300 px-3 py-1 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
