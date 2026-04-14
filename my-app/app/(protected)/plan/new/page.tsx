@@ -7,12 +7,12 @@ import { useEffect, useState, type SyntheticEvent } from "react";
 const DAYS_OPTIONS = [
   {
     value: 3,
-    label: "まずはこれ（3日）",
+    label: "3日",
     helpText: "災害直後を乗り切る最低限の備え",
   },
   {
     value: 7,
-    label: "安心して備える（7日）",
+    label: "7日",
     helpText: "ライフライン停止も想定した安心の備え",
   },
 ] as const;
@@ -20,12 +20,12 @@ const DAYS_OPTIONS = [
 const SCOPE_OPTIONS = [
   {
     value: false,
-    label: "防災食だけで選ぶ",
+    label: "防災食のみ",
     helpText: "長期保存できる専用食品だけで備えます",
   },
   {
     value: true,
-    label: "ふだんの食品も含める",
+    label: "日常品を含む",
     helpText: "普段食べている食品も活用して備えます",
   },
 ] as const;
@@ -33,12 +33,12 @@ const SCOPE_OPTIONS = [
 const PRIORITY_OPTIONS = [
   {
     value: "minimum",
-    label: "必要なものを優先する",
+    label: "最低限そろえる",
     helpText: "主食や水など、重要なものから優先して提案します",
   },
   {
     value: "balanced",
-    label: "いろいろバランスよくそろえる",
+    label: "バランス重視",
     helpText: "主食・おかず・おやつなどをバランスよく提案します",
   },
 ] as const;
