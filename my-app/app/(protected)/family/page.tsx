@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 
 const RELATION_OPTIONS = [
   { value: "本人", label: "本人" },
@@ -86,6 +87,10 @@ type ApiResponse<T> = {
   error: ApiError | null;
 };
 
+type DeleteFamilyMemberResponse = {
+  id: string;
+};
+
 function createLocalId() {
   return crypto.randomUUID();
 }
@@ -166,6 +171,40 @@ async function createFamilyMember(member: FamilyMemberForm): Promise<FamilyMembe
   return result.data;
 }
 
+async function updateAllergens(memberId: string, allergens: string[]): Promise<void> {
+  const response = await fetch(`/api/family-members/${memberId}/allergens`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      allergens,
+    }),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error?.message ?? "アレルゲン情報の保存に失敗しました。");
+  }
+}
+
+async function deleteFamilyMember(memberId: string): Promise<DeleteFamilyMemberResponse> {
+  const response = await fetch(`/api/family-members/${memberId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  const result: ApiResponse<DeleteFamilyMemberResponse> = await response.json();
+
+  if (!response.ok || !result.data) {
+    throw new Error(result.error?.message ?? "家族情報の削除に失敗しました。");
+  }
+
+  return result.data;
+}
+
 export default function FamilyPage() {
   const router = useRouter();
 
@@ -174,6 +213,7 @@ export default function FamilyPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<string[]>([]);
 
   const hasExistingMembers = savedMembers.length > 0;
   const isFormDisabled = isSubmitting;
@@ -265,6 +305,36 @@ export default function FamilyPage() {
     return "";
   };
 
+  const handleDelete = async (index: number) => {
+    const target = savedMembers[index];
+
+    if (!target) return;
+
+    const confirmed = window.confirm("この家族情報を削除しますか？");
+    if (!confirmed) return;
+
+    setErrorMessage("");
+    setDeletingIds((prev) => [...prev, target.id]);
+
+    try {
+      await deleteFamilyMember(target.id);
+
+      const nextSavedMembers = savedMembers.filter((member) => member.id !== target.id);
+      setSavedMembers(nextSavedMembers);
+
+      if (nextSavedMembers.length === 0) {
+        setMembers([createEmptyMember()]);
+      } else {
+        setMembers(nextSavedMembers.map(toFamilyMemberForm));
+      }
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(error instanceof Error ? error.message : "家族情報の削除に失敗しました。");
+    } finally {
+      setDeletingIds((prev) => prev.filter((id) => id !== target.id));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMessage("");
@@ -286,7 +356,8 @@ export default function FamilyPage() {
 
     try {
       for (const member of newMembers) {
-        await createFamilyMember(member);
+        const createdMember = await createFamilyMember(member);
+        await updateAllergens(createdMember.id, member.allergens);
       }
 
       router.push("/plan/new");
@@ -327,10 +398,26 @@ export default function FamilyPage() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {members.map((member, index) => {
             const isExistingMember = index < savedMembers.length;
+            const deletingMemberId = isExistingMember ? savedMembers[index]?.id : undefined;
+            const isDeleting = deletingMemberId ? deletingIds.includes(deletingMemberId) : false;
 
             return (
               <section key={member.localId} className="rounded-lg border bg-white p-4 shadow-sm">
-                <h2 className="mb-4 text-lg font-semibold">家族情報 {index + 1}</h2>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold">家族情報 {index + 1}</h2>
+
+                  {isExistingMember ? (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(index)}
+                      disabled={isDeleting || isSubmitting}
+                      className="flex items-center gap-1 rounded border border-red-300 px-3 py-1 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Trash2 size={16} />
+                      <span>{isDeleting ? "削除中..." : "削除"}</span>
+                    </button>
+                  ) : null}
+                </div>
 
                 <div className="space-y-4">
                   <div>
@@ -339,7 +426,7 @@ export default function FamilyPage() {
                       className="w-full rounded border px-3 py-2"
                       value={member.role}
                       onChange={(e) => updateMemberField(index, "role", e.target.value)}
-                      disabled={isFormDisabled || isExistingMember}
+                      disabled={isFormDisabled || isExistingMember || isDeleting}
                     >
                       <option value="">選択してください</option>
                       {RELATION_OPTIONS.map((option) => (
@@ -356,7 +443,7 @@ export default function FamilyPage() {
                       className="w-full rounded border px-3 py-2"
                       value={member.ageGroup}
                       onChange={(e) => updateMemberField(index, "ageGroup", e.target.value)}
-                      disabled={isFormDisabled || isExistingMember}
+                      disabled={isFormDisabled || isExistingMember || isDeleting}
                     >
                       <option value="">選択してください</option>
                       {AGE_GROUP_OPTIONS.map((option) => (
@@ -376,7 +463,7 @@ export default function FamilyPage() {
                             type="checkbox"
                             checked={member.allergens.includes(allergen.value)}
                             onChange={() => toggleAllergen(index, allergen.value)}
-                            disabled={isFormDisabled || isExistingMember}
+                            disabled={isFormDisabled || isExistingMember || isDeleting}
                           />
                           <span>{allergen.label}</span>
                         </label>
@@ -391,7 +478,7 @@ export default function FamilyPage() {
                       rows={3}
                       value={member.notes}
                       onChange={(e) => updateMemberField(index, "notes", e.target.value)}
-                      disabled={isFormDisabled || isExistingMember}
+                      disabled={isFormDisabled || isExistingMember || isDeleting}
                       placeholder="任意でメモを入力"
                     />
                   </div>
