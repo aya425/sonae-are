@@ -19,11 +19,44 @@ type PlansResponse = {
     details: string | null;
   } | null;
 };
+type DeletePlanResponse = {
+  data: {
+    success: boolean;
+  } | null;
+  error: {
+    code: string;
+    message: string;
+    details: string | null;
+  } | null;
+};
 
 export default function PlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const handleDelete = async (planId: string) => {
+    const confirmed = window.confirm("このプランを削除しますか？");
+
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`/api/plans?id=${planId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      const result: DeletePlanResponse = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error?.message || "削除に失敗しました。");
+      }
+
+      setPlans((prev) => prev.filter((plan) => plan.id !== planId));
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : "削除に失敗しました。");
+    }
+  };
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -140,6 +173,7 @@ export default function PlansPage() {
                 </Link>
                 <button
                   type="button"
+                  onClick={() => handleDelete(plan.id)}
                   className="rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
                 >
                   削除

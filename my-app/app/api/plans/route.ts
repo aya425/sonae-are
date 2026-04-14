@@ -80,3 +80,81 @@ export async function GET() {
     );
   }
 }
+export async function DELETE(request: Request) {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "認証が必要です。",
+            details: null,
+          },
+        },
+        { status: 401 },
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const planId = searchParams.get("id");
+
+    if (!planId) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "INVALID_REQUEST",
+            message: "planIdが必要です。",
+            details: null,
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    const { error } = await supabase
+      .from("plans")
+      .delete()
+      .eq("id", planId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "DELETE_FAILED",
+            message: "削除に失敗しました。",
+            details: error.message,
+          },
+        },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      data: { success: true },
+      error: null,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        data: null,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "予期しないエラーが発生しました。",
+          details: error instanceof Error ? error.message : null,
+        },
+      },
+      { status: 500 },
+    );
+  }
+}
