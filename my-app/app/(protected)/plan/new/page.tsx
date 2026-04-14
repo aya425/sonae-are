@@ -86,9 +86,9 @@ export default function PlanNewPage() {
   const router = useRouter();
 
   const [form, setForm] = useState<PlanConditionInput>({
-    days: 3,
+    days: 7,
     includeDailyItems: true,
-    priorityPolicy: "balanced",
+    priorityPolicy: "minimum",
   });
 
   const [errorMessage, setErrorMessage] = useState("");
