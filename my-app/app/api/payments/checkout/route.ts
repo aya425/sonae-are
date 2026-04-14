@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
@@ -20,8 +20,33 @@ export async function POST() {
       );
     }
 
+    const body = await req.json();
+    const userId = body.userId;
+
+    if (!userId || typeof userId !== "string") {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "BAD_REQUEST",
+            message: "userId is required",
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
+      client_reference_id: userId,
+      metadata: {
+        userId,
+      },
+      subscription_data: {
+        metadata: {
+          userId,
+        },
+      },
       line_items: [
         {
           price_data: {
