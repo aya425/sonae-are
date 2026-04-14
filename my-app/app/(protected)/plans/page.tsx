@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import { createClient } from "@/src/lib/supabase/server";
+import { useEffect, useState } from "react";
 
 type Plan = {
   id: string;
@@ -9,49 +11,82 @@ type Plan = {
   updatedAt: string;
 };
 
-type PlanRow = {
-  id: string;
-  title: string;
-  family_member_count: number;
-  total_estimated_cost: number;
-  updated_at: string;
+type PlansResponse = {
+  data: Plan[] | null;
+  error: {
+    code: string;
+    message: string;
+    details: string | null;
+  } | null;
 };
 
-async function getPlans(): Promise<Plan[]> {
-  const supabase = await createClient();
+export default function PlansPage() {
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  useEffect(() => {
+    const fetchPlans = async () => {
+      setIsLoading(true);
+      setErrorMessage("");
 
-  if (userError || !user) {
-    return [];
-  }
+      try {
+        const response = await fetch("/api/plans", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
 
-  const { data: plans, error } = await supabase
-    .from("plans")
-    .select("id, title, family_member_count, total_estimated_cost, updated_at")
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending: false });
+        const result: PlansResponse = await response.json();
 
-  if (error) {
-    console.error("保存済みプラン一覧の取得に失敗しました:", error.message);
-    return [];
-  }
+        if (!response.ok) {
+          throw new Error(
+            result.error?.message || "保存済みプラン一覧の取得に失敗しました。",
+          );
+        }
 
-  return ((plans ?? []) as PlanRow[]).map((plan) => ({
-    id: plan.id,
-    title: plan.title,
-    familyMemberCount: plan.family_member_count,
-    totalEstimatedCost: plan.total_estimated_cost,
-    updatedAt: plan.updated_at,
-  }));
-}
+        setPlans(result.data ?? []);
+      } catch (error) {
+        console.error(error);
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "保存済みプラン一覧の取得に失敗しました。",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-export default async function PlansPage() {
-  const plans = await getPlans();
+    fetchPlans();
+  }, []);
+
   const hasPlans = plans.length > 0;
+
+  if (isLoading) {
+    return (
+      <main className="mx-auto max-w-5xl p-6">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-bold">保存済みプラン一覧</h1>
+          <p className="mt-1 text-sm text-gray-600">読み込み中...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <main className="mx-auto max-w-5xl p-6">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-bold">保存済みプラン一覧</h1>
+        </div>
+
+        <div className="rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {errorMessage}
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-5xl p-6">
@@ -80,12 +115,9 @@ export default async function PlansPage() {
           </div>
         </section>
       ) : (
-        <section className="flex flex-wrap gap-4">
+        <section className="grid gap-4 sm:grid-cols-2">
           {plans.map((plan) => (
-            <article
-              key={plan.id}
-              className="w-full rounded-xl border p-5 shadow-sm sm:w-[calc(50%-0.5rem)]"
-            >
+            <article key={plan.id} className="rounded-xl border p-5 shadow-sm">
               <div className="space-y-2">
                 <h2 className="text-lg font-semibold">{plan.title}</h2>
                 <p className="text-sm text-gray-600">
