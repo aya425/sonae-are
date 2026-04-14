@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { createClient } from "@/src/lib/supabase/server";
 
 type Plan = {
   id: string;
@@ -8,25 +9,48 @@ type Plan = {
   updatedAt: string;
 };
 
-const mockPlans: Plan[] = [
-  {
-    id: "plan-1",
-    title: "3日分プラン",
-    familyMemberCount: 3,
-    totalEstimatedCost: 6800,
-    updatedAt: "2026-04-13",
-  },
-  {
-    id: "plan-2",
-    title: "7日分プラン",
-    familyMemberCount: 4,
-    totalEstimatedCost: 12800,
-    updatedAt: "2026-04-12",
-  },
-];
+type PlanRow = {
+  id: string;
+  title: string;
+  family_member_count: number;
+  total_estimated_cost: number;
+  updated_at: string;
+};
 
-export default function PlansPage() {
-  const plans = mockPlans;
+async function getPlans(): Promise<Plan[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return [];
+  }
+
+  const { data: plans, error } = await supabase
+    .from("plans")
+    .select("id, title, family_member_count, total_estimated_cost, updated_at")
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    console.error("保存済みプラン一覧の取得に失敗しました:", error.message);
+    return [];
+  }
+
+  return ((plans ?? []) as PlanRow[]).map((plan) => ({
+    id: plan.id,
+    title: plan.title,
+    familyMemberCount: plan.family_member_count,
+    totalEstimatedCost: plan.total_estimated_cost,
+    updatedAt: plan.updated_at,
+  }));
+}
+
+export default async function PlansPage() {
+  const plans = await getPlans();
   const hasPlans = plans.length > 0;
 
   return (
@@ -49,7 +73,7 @@ export default function PlansPage() {
           <div className="mt-4">
             <Link
               href="/plan/new"
-              className="inline-block rounded-md bg-black px-4 py-2 text-sm font-medium text-white"
+              className="inline-block rounded-md bg-[#1E3A8A] px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
             >
               備えプランを作る
             </Link>
