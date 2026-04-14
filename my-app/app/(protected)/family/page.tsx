@@ -289,10 +289,6 @@ export default function FamilyPage() {
         await createFamilyMember(member);
       }
 
-      const fetchedMembers = await fetchFamilyMembers();
-      setSavedMembers(fetchedMembers);
-      setMembers(fetchedMembers.map(toFamilyMemberForm));
-
       router.push("/plan/new");
     } catch (error) {
       console.error(error);
@@ -409,7 +405,7 @@ export default function FamilyPage() {
           <button
             type="button"
             onClick={addMember}
-            className="rounded bg-blue-900 px-4 py-2 text-white font-semibold hover:bg-blue-800 hover:opacity-90 transition disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded bg-blue-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isFormDisabled}
           >
             家族情報を追加
@@ -420,7 +416,7 @@ export default function FamilyPage() {
           <button
             type="submit"
             disabled={isFormDisabled}
-            className="rounded bg-blue-900 px-4 py-2 text-white font-semibold hover:bg-blue-800 hover:opacity-90 transition disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded bg-blue-900 px-4 py-2 font-semibold text-white transition hover:bg-blue-800 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "保存中..." : "保存してプラン作成へ"}
           </button>
