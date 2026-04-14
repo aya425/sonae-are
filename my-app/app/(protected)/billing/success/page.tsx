@@ -16,16 +16,16 @@ export default function BillingSuccessPage() {
           </div>
 
           <div className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
-            <p>・有料プランの利用状態は今後ダッシュボードで確認できる想定です。</p>
+            <p>・有料プランの利用状態は今後ホームで確認できる想定です。</p>
             <p className="mt-2">・必要に応じて、引き続き家族情報や備えプランの作成に進めます。</p>
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/dashboard"
+              href="/home"
               className="inline-flex items-center justify-center rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
             >
-              ダッシュボードへ戻る
+              ホームへ戻る
             </Link>
 
             <Link

@@ -30,7 +30,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push("/home");
     } catch {
       setErrorMessage("ログインに失敗しました。");
     } finally {

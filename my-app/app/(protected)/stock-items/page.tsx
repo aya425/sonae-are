@@ -42,7 +42,7 @@ export default function StockItemsPage() {
 
   const totalEstimatedCost = stockItems.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
-    0,
+    0
   );
 
   return (
@@ -63,10 +63,10 @@ export default function StockItemsPage() {
             保存済みプラン一覧へ
           </Link>
           <Link
-            href="/dashboard"
+            href="/home"
             className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
           >
-            ダッシュボードへ戻る
+            ホームへ戻る
           </Link>
         </div>
       </div>
@@ -76,19 +76,12 @@ export default function StockItemsPage() {
           <h2 className="text-lg font-semibold">期限が近い商品</h2>
           <div className="mt-4 space-y-3">
             {expiringItems.length === 0 ? (
-              <p className="text-sm text-gray-600">
-                期限が近い商品はありません。
-              </p>
+              <p className="text-sm text-gray-600">期限が近い商品はありません。</p>
             ) : (
               expiringItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-lg border border-amber-200 bg-amber-50 p-3"
-                >
+                <div key={item.id} className="rounded-lg border border-amber-200 bg-amber-50 p-3">
                   <p className="font-medium">{item.name}</p>
-                  <p className="mt-1 text-sm text-gray-700">
-                    残り {item.daysLeft} 日
-                  </p>
+                  <p className="mt-1 text-sm text-gray-700">残り {item.daysLeft} 日</p>
                 </div>
               ))
             )}
@@ -118,10 +111,7 @@ export default function StockItemsPage() {
 
             <div>
               <label className="mb-1 block text-sm font-medium">賞味期限</label>
-              <input
-                type="date"
-                className="w-full rounded-md border px-3 py-2"
-              />
+              <input type="date" className="w-full rounded-md border px-3 py-2" />
             </div>
 
             <div>
@@ -167,12 +157,8 @@ export default function StockItemsPage() {
                 <div className="space-y-1">
                   <p className="font-medium">{item.name}</p>
                   <p className="text-sm text-gray-600">数量: {item.quantity}</p>
-                  <p className="text-sm text-gray-600">
-                    賞味期限: {item.expiresAt}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    単価: ¥{item.unitPrice.toLocaleString()}
-                  </p>
+                  <p className="text-sm text-gray-600">賞味期限: {item.expiresAt}</p>
+                  <p className="text-sm text-gray-600">単価: ¥{item.unitPrice.toLocaleString()}</p>
                 </div>
 
                 <button
