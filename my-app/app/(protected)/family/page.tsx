@@ -49,6 +49,7 @@ const ALLERGEN_OPTIONS = [
 ] as const;
 
 type FamilyMemberForm = {
+  id?: string;
   localId: string;
   role: string;
   ageGroup: "adult" | "child" | "";
@@ -125,6 +126,7 @@ function normalizeRole(role: string): string {
 
 function toFamilyMemberForm(member: FamilyMemberGetItem): FamilyMemberForm {
   return {
+    id: member.id,
     localId: createLocalId(),
     role: normalizeRole(member.role),
     ageGroup: member.age_group,
@@ -188,6 +190,32 @@ async function updateAllergens(memberId: string, allergens: string[]): Promise<v
   if (!response.ok) {
     throw new Error(result.error?.message ?? "アレルゲン情報の保存に失敗しました。");
   }
+}
+
+async function updateFamilyMember(
+  memberId: string,
+  member: FamilyMemberForm
+): Promise<FamilyMemberPostItem> {
+  const response = await fetch(`/api/family-members/${memberId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      role: member.role,
+      age_group: member.ageGroup,
+      notes: member.notes,
+    }),
+  });
+
+  const result: ApiResponse<FamilyMemberPostItem> = await response.json();
+
+  if (!response.ok || !result.data) {
+    throw new Error(result.error?.message ?? "家族情報の更新に失敗しました。");
+  }
+
+  return result.data;
 }
 
 async function deleteFamilyMember(memberId: string): Promise<DeleteFamilyMemberResponse> {
@@ -305,8 +333,8 @@ export default function FamilyPage() {
     return "";
   };
 
-  const handleDelete = async (index: number) => {
-    const target = savedMembers[index];
+  const handleDelete = async (memberId: string) => {
+    const target = savedMembers.find((member) => member.id === memberId);
 
     if (!target) return;
 
@@ -322,10 +350,12 @@ export default function FamilyPage() {
       const nextSavedMembers = savedMembers.filter((member) => member.id !== target.id);
       setSavedMembers(nextSavedMembers);
 
-      if (nextSavedMembers.length === 0) {
+      const nextMembers = members.filter((member) => member.id !== target.id);
+
+      if (nextMembers.length === 0) {
         setMembers([createEmptyMember()]);
       } else {
-        setMembers(nextSavedMembers.map(toFamilyMemberForm));
+        setMembers(nextMembers);
       }
     } catch (error) {
       console.error(error);
@@ -345,25 +375,27 @@ export default function FamilyPage() {
       return;
     }
 
-    const newMembers = members.slice(savedMembers.length);
-
-    if (newMembers.length === 0) {
-      router.push("/plan/new");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      for (const member of newMembers) {
-        const createdMember = await createFamilyMember(member);
-        await updateAllergens(createdMember.id, member.allergens);
+      for (const member of members) {
+        if (member.id) {
+          await updateFamilyMember(member.id, member);
+          await updateAllergens(member.id, member.allergens);
+        } else {
+          const createdMember = await createFamilyMember(member);
+          await updateAllergens(createdMember.id, member.allergens);
+        }
       }
 
       router.push("/plan/new");
     } catch (error) {
       console.error(error);
-      setErrorMessage(error instanceof Error ? error.message : "家族情報の保存に失敗しました。");
+      setErrorMessage(
+        error instanceof Error
+          ? `${error.message} 家族情報とアレルゲン情報は順番に保存しているため、一部のみ更新される場合があります。`
+          : "家族情報の保存に失敗しました。家族情報とアレルゲン情報は順番に保存しているため、一部のみ更新される場合があります。"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -384,7 +416,7 @@ export default function FamilyPage() {
 
       {hasExistingMembers ? (
         <div className="mt-4 rounded border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-          登録済みの家族情報があります（現在は編集未対応）
+          登録済みの家族情報を編集できます
         </div>
       ) : null}
 
@@ -397,8 +429,8 @@ export default function FamilyPage() {
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {members.map((member, index) => {
-            const isExistingMember = index < savedMembers.length;
-            const deletingMemberId = isExistingMember ? savedMembers[index]?.id : undefined;
+            const isExistingMember = Boolean(member.id);
+            const deletingMemberId = member.id;
             const isDeleting = deletingMemberId ? deletingIds.includes(deletingMemberId) : false;
 
             return (
@@ -409,7 +441,7 @@ export default function FamilyPage() {
                   {isExistingMember ? (
                     <button
                       type="button"
-                      onClick={() => handleDelete(index)}
+                      onClick={() => member.id && handleDelete(member.id)}
                       disabled={isDeleting || isSubmitting}
                       className="flex items-center gap-1 rounded border border-red-300 px-3 py-1 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -426,7 +458,7 @@ export default function FamilyPage() {
                       className="w-full rounded border px-3 py-2"
                       value={member.role}
                       onChange={(e) => updateMemberField(index, "role", e.target.value)}
-                      disabled={isFormDisabled || isExistingMember || isDeleting}
+                      disabled={isFormDisabled || isDeleting}
                     >
                       <option value="">選択してください</option>
                       {RELATION_OPTIONS.map((option) => (
@@ -443,7 +475,7 @@ export default function FamilyPage() {
                       className="w-full rounded border px-3 py-2"
                       value={member.ageGroup}
                       onChange={(e) => updateMemberField(index, "ageGroup", e.target.value)}
-                      disabled={isFormDisabled || isExistingMember || isDeleting}
+                      disabled={isFormDisabled || isDeleting}
                     >
                       <option value="">選択してください</option>
                       {AGE_GROUP_OPTIONS.map((option) => (
@@ -463,7 +495,7 @@ export default function FamilyPage() {
                             type="checkbox"
                             checked={member.allergens.includes(allergen.value)}
                             onChange={() => toggleAllergen(index, allergen.value)}
-                            disabled={isFormDisabled || isExistingMember || isDeleting}
+                            disabled={isFormDisabled || isDeleting}
                           />
                           <span>{allergen.label}</span>
                         </label>
@@ -478,7 +510,7 @@ export default function FamilyPage() {
                       rows={3}
                       value={member.notes}
                       onChange={(e) => updateMemberField(index, "notes", e.target.value)}
-                      disabled={isFormDisabled || isExistingMember || isDeleting}
+                      disabled={isFormDisabled || isDeleting}
                       placeholder="任意でメモを入力"
                     />
                   </div>
