@@ -5,18 +5,42 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type SyntheticEvent } from "react";
 
 const DAYS_OPTIONS = [
-  { value: 3, label: "3日" },
-  { value: 7, label: "7日" },
+  {
+    value: 3,
+    label: "まずはこれ（3日）",
+    helpText: "災害直後を乗り切る最低限の備え",
+  },
+  {
+    value: 7,
+    label: "安心して備える（7日）",
+    helpText: "ライフライン停止も想定した安心の備え",
+  },
 ] as const;
 
 const SCOPE_OPTIONS = [
-  { value: false, label: "防災食のみ" },
-  { value: true, label: "日常品を含む" },
+  {
+    value: false,
+    label: "防災食だけで選ぶ",
+    helpText: "長期保存できる専用食品だけで備えます",
+  },
+  {
+    value: true,
+    label: "ふだんの食品も含める",
+    helpText: "普段食べている食品も活用して備えます",
+  },
 ] as const;
 
 const PRIORITY_OPTIONS = [
-  { value: "minimum", label: "最低限そろえる" },
-  { value: "balanced", label: "バランス重視" },
+  {
+    value: "minimum",
+    label: "必要なものを優先する",
+    helpText: "主食や水など、重要なものから優先して提案します",
+  },
+  {
+    value: "balanced",
+    label: "いろいろバランスよくそろえる",
+    helpText: "主食・おかず・おやつなどをバランスよく提案します",
+  },
 ] as const;
 
 type PlanConditionInput = {
@@ -90,6 +114,14 @@ export default function PlanNewPage() {
     includeDailyItems: true,
     priorityPolicy: "minimum",
   });
+
+  const selectedDaysOption = DAYS_OPTIONS.find((option) => option.value === form.days);
+  const selectedScopeOption = SCOPE_OPTIONS.find(
+    (option) => option.value === form.includeDailyItems
+  );
+  const selectedPriorityOption = PRIORITY_OPTIONS.find(
+    (option) => option.value === form.priorityPolicy
+  );
 
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
