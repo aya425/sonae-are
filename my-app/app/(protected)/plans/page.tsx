@@ -19,6 +19,7 @@ type PlansResponse = {
     details: string | null;
   } | null;
 };
+
 type DeletePlanResponse = {
   data: {
     success: boolean;
@@ -34,13 +35,14 @@ export default function PlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+
   const handleDelete = async (planId: string) => {
     const confirmed = window.confirm("このプランを削除しますか？");
 
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`/api/plans?id=${planId}`, {
+      const response = await fetch(`/api/plans/${planId}`, {
         method: "DELETE",
         credentials: "include",
       });

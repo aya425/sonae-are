@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 
-type PlanRow = {
-  id: string;
-  title: string;
-  family_member_count: number;
-  total_estimated_cost: number;
-  updated_at: string;
+type RouteContext = {
+  params: Promise<{
+    id: string;
+  }>;
 };
 
-export async function GET() {
+export async function DELETE(_request: Request, context: RouteContext) {
   try {
     const supabase = await createClient();
 
@@ -32,38 +30,59 @@ export async function GET() {
       );
     }
 
-    const { data: plans, error: plansError } = await supabase
-      .from("plans")
-      .select(
-        "id, title, family_member_count, total_estimated_cost, updated_at",
-      )
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false });
+    const { id: planId } = await context.params;
 
-    if (plansError) {
+    if (!planId) {
       return NextResponse.json(
         {
           data: null,
           error: {
-            code: "PLANS_FETCH_FAILED",
-            message: "保存済みプラン一覧の取得に失敗しました。",
-            details: plansError.message,
+            code: "INVALID_REQUEST",
+            message: "planIdが必要です。",
+            details: null,
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    const { data: deletedPlans, error } = await supabase
+      .from("plans")
+      .delete()
+      .eq("id", planId)
+      .eq("user_id", user.id)
+      .select("id");
+
+    if (error) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "DELETE_FAILED",
+            message: "削除に失敗しました。",
+            details: error.message,
           },
         },
         { status: 500 },
       );
     }
 
-    const normalizedPlans = ((plans ?? []) as PlanRow[]).map((plan) => ({
-      id: plan.id,
-      title: plan.title,
-      familyMemberCount: plan.family_member_count,
-      totalEstimatedCost: plan.total_estimated_cost,
-      updatedAt: plan.updated_at,
-    }));
+    if (!deletedPlans || deletedPlans.length === 0) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "PLAN_NOT_FOUND",
+            message: "対象のプランが見つかりません。",
+            details: null,
+          },
+        },
+        { status: 404 },
+      );
+    }
 
     return NextResponse.json({
-      data: normalizedPlans,
+      data: { success: true },
       error: null,
     });
   } catch (error) {
