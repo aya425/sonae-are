@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 type ExpiringItem = {
   id: string;
   name: string;
@@ -138,7 +136,7 @@ export default function StockItemsPage() {
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {stockItems.length === 0 ? (
-            <p className="text-sm text-gray-600">
+            <p className="sm:col-span-2 text-sm text-gray-600">
               登録済みの備蓄商品はまだありません。上のフォームから備蓄商品を登録してください。
             </p>
           ) : (
