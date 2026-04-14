@@ -66,6 +66,10 @@ export async function GET() {
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
+  if (process.env.NODE_ENV === "development") {
+    console.log("[dashboard] plans", plans);
+  }
+
   if (plansError) {
     return NextResponse.json(
       {
@@ -107,7 +111,6 @@ export async function GET() {
         planCode: "free",
         maxSavedPlans: 1,
       },
-      savedPlans: [],
     },
     error: null,
   };

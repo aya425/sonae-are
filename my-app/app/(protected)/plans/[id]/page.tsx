@@ -157,6 +157,16 @@ export default function PlanDetailPage() {
   };
 
   const handleSave = async () => {
+    console.log("save start", {
+      title: plan.title,
+      familyMemberCount: plan.familyMemberCount,
+      days: plan.days,
+      priorityPolicy: plan.priorityPolicy,
+      includeDailyItems: plan.includeDailyItems,
+      totalCost: plan.totalCost,
+      explanation: plan.explanation,
+    });
+
     try {
       const response = await fetch("/api/plans", {
         method: "POST",
@@ -167,20 +177,26 @@ export default function PlanDetailPage() {
           title: plan.title,
           familyMemberCount: plan.familyMemberCount,
           days: plan.days,
+          priorityPolicy: plan.priorityPolicy,
+          includeDailyItems: plan.includeDailyItems,
           totalCost: plan.totalCost,
+          explanation: plan.explanation,
         }),
       });
 
       const result = await response.json();
 
+      console.log("save response.status", response.status);
+      console.log("save result", result);
+
       if (!response.ok) {
-        throw new Error(result.error?.message || "保存に失敗しました");
+        throw new Error(result.error?.message || "保存に失敗しました。");
       }
 
       alert("保存しました！");
     } catch (error) {
-      alert("保存に失敗しました");
-      console.error(error);
+      console.error("save failed", error);
+      alert(error instanceof Error ? error.message : "保存に失敗しました。");
     }
   };
 
