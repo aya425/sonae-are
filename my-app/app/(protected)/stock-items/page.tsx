@@ -42,53 +42,43 @@ export default function StockItemsPage() {
 
   const totalEstimatedCost = stockItems.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
-    0
+    0,
   );
 
   return (
     <main className="mx-auto max-w-5xl p-6">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">備蓄品一覧</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            登録済み備蓄品を確認し、期限やコストを管理できます。
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          <Link
-            href="/plans"
-            className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
-          >
-            保存済みプラン一覧へ
-          </Link>
-          <Link
-            href="/home"
-            className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
-          >
-            ホームへ戻る
-          </Link>
-        </div>
+      <div className="mb-8 text-center">
+        <h1 className="text-2xl font-bold">備蓄品一覧</h1>
+        <p className="mt-1 text-sm text-gray-600">
+          登録済み備蓄品を確認し、期限やコストを管理できます。
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <section className="rounded-xl border p-5 lg:col-span-1">
+        <section className="rounded-xl border bg-white p-5 lg:col-span-1">
           <h2 className="text-lg font-semibold">期限が近い商品</h2>
           <div className="mt-4 space-y-3">
             {expiringItems.length === 0 ? (
-              <p className="text-sm text-gray-600">期限が近い商品はありません。</p>
+              <p className="text-sm text-gray-600">
+                期限が近い商品はありません。
+              </p>
             ) : (
               expiringItems.map((item) => (
-                <div key={item.id} className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <div
+                  key={item.id}
+                  className="rounded-lg border border-amber-200 bg-amber-50 p-3"
+                >
                   <p className="font-medium">{item.name}</p>
-                  <p className="mt-1 text-sm text-gray-700">残り {item.daysLeft} 日</p>
+                  <p className="mt-1 text-sm text-gray-700">
+                    残り {item.daysLeft} 日
+                  </p>
                 </div>
               ))
             )}
           </div>
         </section>
 
-        <section className="rounded-xl border p-5 lg:col-span-2">
+        <section className="rounded-xl border bg-white p-5 lg:col-span-2">
           <h2 className="text-lg font-semibold">備蓄登録フォーム</h2>
           <form className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
@@ -111,7 +101,10 @@ export default function StockItemsPage() {
 
             <div>
               <label className="mb-1 block text-sm font-medium">賞味期限</label>
-              <input type="date" className="w-full rounded-md border px-3 py-2" />
+              <input
+                type="date"
+                className="w-full rounded-md border px-3 py-2"
+              />
             </div>
 
             <div>
@@ -126,7 +119,7 @@ export default function StockItemsPage() {
             <div className="sm:col-span-2">
               <button
                 type="button"
-                className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white"
+                className="rounded-md bg-[#1E3A8A] px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
               >
                 登録する
               </button>
@@ -135,7 +128,7 @@ export default function StockItemsPage() {
         </section>
       </div>
 
-      <section className="mt-6 rounded-xl border p-5">
+      <section className="mt-6 rounded-xl border bg-white p-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold">登録済み備蓄商品一覧</h2>
           <p className="text-sm text-gray-600">
@@ -143,27 +136,28 @@ export default function StockItemsPage() {
           </p>
         </div>
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {stockItems.length === 0 ? (
             <p className="text-sm text-gray-600">
               登録済みの備蓄商品はまだありません。上のフォームから備蓄商品を登録してください。
             </p>
           ) : (
             stockItems.map((item) => (
-              <article
-                key={item.id}
-                className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
+              <article key={item.id} className="rounded-lg border p-4">
                 <div className="space-y-1">
                   <p className="font-medium">{item.name}</p>
                   <p className="text-sm text-gray-600">数量: {item.quantity}</p>
-                  <p className="text-sm text-gray-600">賞味期限: {item.expiresAt}</p>
-                  <p className="text-sm text-gray-600">単価: ¥{item.unitPrice.toLocaleString()}</p>
+                  <p className="text-sm text-gray-600">
+                    賞味期限: {item.expiresAt}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    単価: ¥{item.unitPrice.toLocaleString()}
+                  </p>
                 </div>
 
                 <button
                   type="button"
-                  className="rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                  className="mt-4 rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
                 >
                   削除
                 </button>
