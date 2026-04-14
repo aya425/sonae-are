@@ -31,28 +31,11 @@ export default function PlansPage() {
 
   return (
     <main className="mx-auto max-w-5xl p-6">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">保存済みプラン一覧</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            保存済みプラン数: {plans.length}件
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          <Link
-            href="/billing"
-            className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
-          >
-            料金プランを見る
-          </Link>
-          <Link
-            href="/dashboard"
-            className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
-          >
-            ダッシュボードへ戻る
-          </Link>
-        </div>
+      <div className="mb-8 text-center">
+        <h1 className="text-2xl font-bold">保存済みプラン一覧</h1>
+        <p className="mt-1 text-sm text-gray-600">
+          保存済みプラン数: {plans.length}件
+        </p>
       </div>
 
       {!hasPlans ? (
@@ -73,9 +56,12 @@ export default function PlansPage() {
           </div>
         </section>
       ) : (
-        <section className="grid gap-4">
+        <section className="flex flex-wrap gap-4">
           {plans.map((plan) => (
-            <article key={plan.id} className="rounded-xl border p-5 shadow-sm">
+            <article
+              key={plan.id}
+              className="w-full rounded-xl border p-5 shadow-sm sm:w-[calc(50%-0.5rem)]"
+            >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-2">
                   <h2 className="text-lg font-semibold">{plan.title}</h2>
@@ -93,7 +79,7 @@ export default function PlansPage() {
                 <div className="flex gap-2">
                   <Link
                     href={`/plans/${plan.id}`}
-                    className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                    className="rounded-md bg-[#1E3A8A] px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
                   >
                     詳細を見る
                   </Link>
