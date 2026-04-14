@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "../../../../src/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 type RouteContext = {
   params: Promise<{
@@ -59,7 +59,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
           error: {
             code: "NOT_FOUND",
             message: "Family member not found",
-            details: memberError?.message ?? null,
+            details: null,
           },
         },
         { status: 404 }
@@ -77,25 +77,6 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
           },
         },
         { status: 403 }
-      );
-    }
-
-    const { error: allergensError } = await supabase
-      .from("member_allergens")
-      .delete()
-      .eq("family_member_id", id);
-
-    if (allergensError) {
-      return NextResponse.json(
-        {
-          data: null,
-          error: {
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to delete member allergens",
-            details: allergensError.message,
-          },
-        },
-        { status: 500 }
       );
     }
 
@@ -117,9 +98,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
 
     return NextResponse.json(
       {
-        data: {
-          id,
-        },
+        data: { id },
         error: null,
       },
       { status: 200 }
