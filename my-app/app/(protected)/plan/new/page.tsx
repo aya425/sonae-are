@@ -5,43 +5,34 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type SyntheticEvent } from "react";
 
 const DAYS_OPTIONS = [
-  {
-    value: 3,
-    label: "3日",
-    helpText: "災害直後を乗り切る最低限の備え",
-  },
-  {
-    value: 7,
-    label: "7日",
-    helpText: "ライフライン停止も想定した安心の備え",
-  },
+  { value: 3, label: "3日" },
+  { value: 7, label: "7日" },
 ] as const;
+
+const DAYS_HELP_TEXT: Record<3 | 7, string> = {
+  3: "災害直後を乗り切る最低限の備え",
+  7: "ライフライン停止も想定した安心の備え",
+};
 
 const SCOPE_OPTIONS = [
-  {
-    value: false,
-    label: "防災食のみ",
-    helpText: "長期保存できる専用食品だけで備えます",
-  },
-  {
-    value: true,
-    label: "日常品を含む",
-    helpText: "普段食べている食品も活用して備えます",
-  },
+  { value: false, label: "防災食のみ" },
+  { value: true, label: "日常品を含む" },
 ] as const;
 
+const SCOPE_HELP_TEXT: Record<"false" | "true", string> = {
+  false: "長期保存できる専用食品だけで備えます",
+  true: "普段食べている食品も活用して備えます",
+};
+
 const PRIORITY_OPTIONS = [
-  {
-    value: "minimum",
-    label: "最低限そろえる",
-    helpText: "主食や水など、重要なものから優先して提案します",
-  },
-  {
-    value: "balanced",
-    label: "バランス重視",
-    helpText: "主食・おかず・おやつなどをバランスよく提案します",
-  },
+  { value: "minimum", label: "最低限そろえる" },
+  { value: "balanced", label: "バランス重視" },
 ] as const;
+
+const PRIORITY_HELP_TEXT: Record<"minimum" | "balanced", string> = {
+  minimum: "主食や水など、重要なものから優先して提案します",
+  balanced: "主食・おかず・おやつなどをバランスよく提案します",
+};
 
 type PlanConditionInput = {
   days: 3 | 7;
@@ -115,13 +106,9 @@ export default function PlanNewPage() {
     priorityPolicy: "minimum",
   });
 
-  const selectedDaysOption = DAYS_OPTIONS.find((option) => option.value === form.days);
-  const selectedScopeOption = SCOPE_OPTIONS.find(
-    (option) => option.value === form.includeDailyItems
-  );
-  const selectedPriorityOption = PRIORITY_OPTIONS.find(
-    (option) => option.value === form.priorityPolicy
-  );
+  const selectedDaysHelpText = DAYS_HELP_TEXT[form.days];
+  const selectedScopeHelpText = SCOPE_HELP_TEXT[String(form.includeDailyItems) as "false" | "true"];
+  const selectedPriorityHelpText = PRIORITY_HELP_TEXT[form.priorityPolicy];
 
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -305,9 +292,9 @@ export default function PlanNewPage() {
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">想定日数</label>
 
-                  {selectedDaysOption?.helpText && (
+                  {selectedDaysHelpText && (
                     <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
-                      {selectedDaysOption.helpText}
+                      {selectedDaysHelpText}
                     </p>
                   )}
 
@@ -333,9 +320,9 @@ export default function PlanNewPage() {
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">候補範囲</label>
 
-                  {selectedScopeOption?.helpText && (
+                  {selectedScopeHelpText && (
                     <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
-                      {selectedScopeOption.helpText}
+                      {selectedScopeHelpText}
                     </p>
                   )}
 
@@ -361,9 +348,9 @@ export default function PlanNewPage() {
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">優先方針</label>
 
-                  {selectedPriorityOption?.helpText && (
+                  {selectedPriorityHelpText && (
                     <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
-                      {selectedPriorityOption.helpText}
+                      {selectedPriorityHelpText}
                     </p>
                   )}
 
