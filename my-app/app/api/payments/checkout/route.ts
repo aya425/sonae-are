@@ -21,17 +21,9 @@ export async function POST() {
     }
 
     const session = await stripe.checkout.sessions.create({
-      // 継続課金前提なら subscription の方が自然
       mode: "subscription",
       line_items: [
         {
-          // 本来は env などから price_id を渡す想定
-          // まだ Price ID を作っていない場合は一旦コメントアウトして
-          // 下の暫定実装を使う
-          // price: process.env.STRIPE_PRICE_ID_PREMIUM,
-          // quantity: 1,
-
-          // 暫定実装（ローカル検証用）
           price_data: {
             currency: "jpy",
             product_data: {
@@ -45,8 +37,8 @@ export async function POST() {
           quantity: 1,
         },
       ],
-      success_url: `${appUrl}/payments/success`,
-      cancel_url: `${appUrl}/payments/cancel`,
+      success_url: `${appUrl}/billing/success`,
+      cancel_url: `${appUrl}/billing`,
     });
 
     if (!session.url) {

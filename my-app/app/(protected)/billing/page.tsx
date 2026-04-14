@@ -5,6 +5,38 @@ import { useState } from "react";
 
 export default function BillingPage() {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleCheckout = async () => {
+    try {
+      setIsLoading(true);
+
+      const res = await fetch("/api/payments/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: "仮のユーザーID",
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.data?.url) {
+        console.error("Failed to create checkout session", json.error);
+        alert("決済画面への遷移に失敗しました。");
+        return;
+      }
+
+      window.location.href = json.data.url;
+    } catch (error) {
+      console.error("Checkout request failed", error);
+      alert("決済画面への遷移に失敗しました。");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <main className="px-4 py-6">
@@ -51,20 +83,32 @@ export default function BillingPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirm(false)}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  disabled={isLoading}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   やめる
                 </button>
 
-                <Link
-                  href="/billing/success"
-                  className="inline-flex items-center justify-center rounded-xl bg-[#1E3A8A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={isLoading}
+                  className="inline-flex items-center justify-center rounded-xl bg-[#1E3A8A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  決済へ進む
-                </Link>
+                  {isLoading ? "遷移中..." : "決済へ進む"}
+                </button>
               </div>
             </section>
           ) : null}
+
+          <div>
+            <Link
+              href="/dashboard"
+              className="text-sm font-medium text-slate-600 underline underline-offset-4 hover:text-slate-900"
+            >
+              ダッシュボードへ戻る
+            </Link>
+          </div>
         </div>
       </div>
     </main>
