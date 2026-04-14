@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -305,38 +304,22 @@ export default function FamilyPage() {
 
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-3xl p-6">
-        <div className="mb-4">
-          <Link href="/dashboard" className="text-sm text-blue-600 underline">
-            ダッシュボードへ戻る
-          </Link>
-        </div>
-        <h1 className="text-2xl font-bold">家族情報を登録</h1>
-        <p className="mt-4 text-sm text-gray-600">家族情報を読み込み中です...</p>
+      <main className="mx-auto max-w-5xl p-6">
+        <h1 className="text-center text-2xl font-bold">家族情報を登録</h1>
+        <p className="mt-4 text-center text-sm text-gray-600">家族情報を読み込み中です...</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      <div className="mb-4">
-        <Link href="/dashboard" className="text-sm text-blue-600 underline">
-          ダッシュボードへ戻る
-        </Link>
-      </div>
-
-      <h1 className="text-2xl font-bold">家族情報を登録</h1>
-      <p className="mt-2 text-sm text-gray-600">備えプラン作成の前提になる情報です。</p>
+    <main className="mx-auto max-w-5xl p-6">
+      <h1 className="text-center text-2xl font-bold">家族情報を登録</h1>
 
       {hasExistingMembers ? (
         <div className="mt-4 rounded border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-          すでに登録済みの家族情報があります。現在は更新API未実装のため、登録済みメンバーは編集できません。新しい家族メンバーのみ追加できます。
+          登録済みの家族情報があります（現在は編集未対応）
         </div>
       ) : null}
-
-      <div className="mt-4 rounded border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
-        現在のバックエンド実装では、アレルゲン情報は表示・選択はできますが保存未対応です。家族情報の取得に失敗した場合でも、新規入力はこのまま続けられます。
-      </div>
 
       {errorMessage ? (
         <div className="mt-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -345,95 +328,99 @@ export default function FamilyPage() {
       ) : null}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
-        {members.map((member, index) => {
-          const isExistingMember = index < savedMembers.length;
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {members.map((member, index) => {
+            const isExistingMember = index < savedMembers.length;
 
-          return (
-            <section key={member.localId} className="rounded-lg border p-4">
-              <h2 className="mb-4 text-lg font-semibold">家族情報 {index + 1}</h2>
+            return (
+              <section key={member.localId} className="rounded-lg border bg-white p-4 shadow-sm">
+                <h2 className="mb-4 text-lg font-semibold">家族情報 {index + 1}</h2>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium">続柄</label>
-                  <select
-                    className="w-full rounded border px-3 py-2"
-                    value={member.role}
-                    onChange={(e) => updateMemberField(index, "role", e.target.value)}
-                    disabled={isFormDisabled || isExistingMember}
-                  >
-                    <option value="">選択してください</option>
-                    {RELATION_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">続柄</label>
+                    <select
+                      className="w-full rounded border px-3 py-2"
+                      value={member.role}
+                      onChange={(e) => updateMemberField(index, "role", e.target.value)}
+                      disabled={isFormDisabled || isExistingMember}
+                    >
+                      <option value="">選択してください</option>
+                      {RELATION_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="mb-1 block text-sm font-medium">年齢区分</label>
-                  <select
-                    className="w-full rounded border px-3 py-2"
-                    value={member.ageGroup}
-                    onChange={(e) => updateMemberField(index, "ageGroup", e.target.value)}
-                    disabled={isFormDisabled || isExistingMember}
-                  >
-                    <option value="">選択してください</option>
-                    {AGE_GROUP_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">年齢区分</label>
+                    <select
+                      className="w-full rounded border px-3 py-2"
+                      value={member.ageGroup}
+                      onChange={(e) => updateMemberField(index, "ageGroup", e.target.value)}
+                      disabled={isFormDisabled || isExistingMember}
+                    >
+                      <option value="">選択してください</option>
+                      {AGE_GROUP_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div>
-                  <p className="mb-2 text-sm font-medium">アレルゲン</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {ALLERGEN_OPTIONS.map((allergen) => (
-                      <label key={allergen.value} className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={member.allergens.includes(allergen.value)}
-                          onChange={() => toggleAllergen(index, allergen.value)}
-                          disabled={isFormDisabled || isExistingMember}
-                        />
-                        <span>{allergen.label}</span>
-                      </label>
-                    ))}
+                  <div>
+                    <p className="mb-2 text-sm font-medium">アレルゲン</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {ALLERGEN_OPTIONS.map((allergen) => (
+                        <label key={allergen.value} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={member.allergens.includes(allergen.value)}
+                            onChange={() => toggleAllergen(index, allergen.value)}
+                            disabled={isFormDisabled || isExistingMember}
+                          />
+                          <span>{allergen.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">メモ</label>
+                    <textarea
+                      className="w-full rounded border px-3 py-2"
+                      rows={3}
+                      value={member.notes}
+                      onChange={(e) => updateMemberField(index, "notes", e.target.value)}
+                      disabled={isFormDisabled || isExistingMember}
+                      placeholder="任意でメモを入力"
+                    />
                   </div>
                 </div>
+              </section>
+            );
+          })}
+        </div>
 
-                <div>
-                  <label className="mb-1 block text-sm font-medium">メモ</label>
-                  <textarea
-                    className="w-full rounded border px-3 py-2"
-                    rows={3}
-                    value={member.notes}
-                    onChange={(e) => updateMemberField(index, "notes", e.target.value)}
-                    disabled={isFormDisabled || isExistingMember}
-                    placeholder="任意でメモを入力"
-                  />
-                </div>
-              </div>
-            </section>
-          );
-        })}
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={addMember}
+            className="rounded bg-blue-900 px-4 py-2 text-white font-semibold hover:bg-blue-800 hover:opacity-90 transition disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isFormDisabled}
+          >
+            家族情報を追加
+          </button>
+        </div>
 
-        <button
-          type="button"
-          onClick={addMember}
-          className="rounded border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={isFormDisabled}
-        >
-          家族情報を追加
-        </button>
-
-        <div>
+        <div className="flex justify-center">
           <button
             type="submit"
             disabled={isFormDisabled}
-            className="rounded bg-green-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded bg-blue-900 px-4 py-2 text-white font-semibold hover:bg-blue-800 hover:opacity-90 transition disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "保存中..." : "保存してプラン作成へ"}
           </button>
