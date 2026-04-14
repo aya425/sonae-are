@@ -22,7 +22,7 @@ export default function BillingSuccessPage() {
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/dashboard"
+              href="/home"
               className="inline-flex items-center justify-center rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
             >
               ダッシュボードへ戻る

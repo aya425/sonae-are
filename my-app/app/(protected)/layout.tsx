@@ -8,7 +8,7 @@ type ProtectedLayoutProps = {
 };
 
 const navItems = [
-  { href: "/dashboard", label: "ダッシュボード" },
+  { href: "/home", label: "ホーム" },
   { href: "/family", label: "家族情報" },
   { href: "/plan/new", label: "プラン作成" },
   { href: "/plans", label: "保存済みプラン" },
@@ -31,7 +31,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 md:px-8 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <Link href="/dashboard" className="text-lg font-bold text-slate-900">
+            <Link href="/home" className="text-lg font-bold text-slate-900">
               そなえアレ
             </Link>
             <p className="text-sm text-slate-600">食物アレルギー家庭向け防災備蓄支援アプリ</p>

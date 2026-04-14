@@ -33,7 +33,7 @@ export default function SignupPage() {
       }
 
       setSuccessMessage("会員登録が完了しました。ダッシュボードへ移動します。");
-      router.push("/dashboard");
+      router.push("/home");
     } catch {
       setErrorMessage("会員登録に失敗しました。");
     } finally {

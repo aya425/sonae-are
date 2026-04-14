@@ -34,9 +34,7 @@ export default function PlansPage() {
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">保存済みプラン一覧</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            保存済みプラン数: {plans.length}件
-          </p>
+          <p className="mt-1 text-sm text-gray-600">保存済みプラン数: {plans.length}件</p>
         </div>
 
         <div className="flex gap-2">
@@ -47,7 +45,7 @@ export default function PlansPage() {
             料金プランを見る
           </Link>
           <Link
-            href="/dashboard"
+            href="/home"
             className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
           >
             ダッシュボードへ戻る
@@ -57,9 +55,7 @@ export default function PlansPage() {
 
       {!hasPlans ? (
         <section className="rounded-xl border border-dashed p-8 text-center">
-          <h2 className="text-lg font-semibold">
-            保存済みプランはまだありません
-          </h2>
+          <h2 className="text-lg font-semibold">保存済みプランはまだありません</h2>
           <p className="mt-2 text-sm text-gray-600">
             新しく備えプランを作成して保存すると、ここに一覧表示されます。
           </p>
@@ -79,15 +75,11 @@ export default function PlansPage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-2">
                   <h2 className="text-lg font-semibold">{plan.title}</h2>
-                  <p className="text-sm text-gray-600">
-                    家族人数: {plan.familyMemberCount}人
-                  </p>
+                  <p className="text-sm text-gray-600">家族人数: {plan.familyMemberCount}人</p>
                   <p className="text-sm text-gray-600">
                     初期費用: ¥{plan.totalEstimatedCost.toLocaleString()}
                   </p>
-                  <p className="text-sm text-gray-600">
-                    更新日: {plan.updatedAt}
-                  </p>
+                  <p className="text-sm text-gray-600">更新日: {plan.updatedAt}</p>
                 </div>
 
                 <div className="flex gap-2">

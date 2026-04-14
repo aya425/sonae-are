@@ -307,7 +307,7 @@ export default function FamilyPage() {
     return (
       <main className="mx-auto max-w-3xl p-6">
         <div className="mb-4">
-          <Link href="/dashboard" className="text-sm text-blue-600 underline">
+          <Link href="/home" className="text-sm text-blue-600 underline">
             ダッシュボードへ戻る
           </Link>
         </div>
@@ -320,7 +320,7 @@ export default function FamilyPage() {
   return (
     <main className="mx-auto max-w-3xl p-6">
       <div className="mb-4">
-        <Link href="/dashboard" className="text-sm text-blue-600 underline">
+        <Link href="/home" className="text-sm text-blue-600 underline">
           ダッシュボードへ戻る
         </Link>
       </div>
