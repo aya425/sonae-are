@@ -28,13 +28,15 @@ export async function GET() {
             details: null,
           },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const { data: plans, error: plansError } = await supabase
       .from("plans")
-      .select("id, title, family_member_count, total_estimated_cost, updated_at")
+      .select(
+        "id, title, family_member_count, total_estimated_cost, updated_at",
+      )
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
 
@@ -48,7 +50,7 @@ export async function GET() {
             details: plansError.message,
           },
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -74,12 +76,11 @@ export async function GET() {
           details: error instanceof Error ? error.message : null,
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-export async function POST(request: Request) {
+export async function DELETE(request: Request) {
   try {
     const supabase = await createClient();
 
@@ -93,43 +94,54 @@ export async function POST(request: Request) {
         {
           data: null,
           error: {
+            code: "UNAUTHORIZED",
             message: "認証が必要です。",
+            details: null,
           },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
-    const body = await request.json();
+    const { searchParams } = new URL(request.url);
+    const planId = searchParams.get("id");
 
-    const { title, familyMemberCount, days, totalCost } = body;
+    if (!planId) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "INVALID_REQUEST",
+            message: "planIdが必要です。",
+            details: null,
+          },
+        },
+        { status: 400 },
+      );
+    }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("plans")
-      .insert({
-        user_id: user.id,
-        title,
-        family_member_count: familyMemberCount,
-        days,
-        total_estimated_cost: totalCost,
-      })
-      .select()
-      .single();
+      .delete()
+      .eq("id", planId)
+      .eq("user_id", user.id);
 
     if (error) {
       return NextResponse.json(
         {
           data: null,
           error: {
-            message: "プランの保存に失敗しました。",
+            code: "DELETE_FAILED",
+            message: "削除に失敗しました。",
+            details: error.message,
           },
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     return NextResponse.json({
-      data,
+      data: { success: true },
       error: null,
     });
   } catch (error) {
@@ -137,10 +149,12 @@ export async function POST(request: Request) {
       {
         data: null,
         error: {
-          message: "予期しないエラー",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "予期しないエラーが発生しました。",
+          details: error instanceof Error ? error.message : null,
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
