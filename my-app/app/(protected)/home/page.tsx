@@ -57,7 +57,7 @@ export default function DashboardPage() {
           await response.json();
 
         if (!response.ok || !result.data) {
-          throw new Error(result.error?.message || "ダッシュボード情報の取得に失敗しました。");
+          throw new Error(result.error?.message || "ホーム情報の取得に失敗しました。");
         }
 
         console.log("[dashboard] data", result.data);
@@ -65,7 +65,7 @@ export default function DashboardPage() {
       } catch (error) {
         console.error("[dashboard] fetch failed", error);
         setErrorMessage(
-          error instanceof Error ? error.message : "ダッシュボード情報の取得に失敗しました。"
+          error instanceof Error ? error.message : "ホーム情報の取得に失敗しました。"
         );
       } finally {
         setIsLoading(false);
@@ -91,7 +91,7 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-[1800px]">
         <div className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">ダッシュボード</h1>
+            <h1 className="text-xl font-bold text-gray-900">ホーム</h1>
             <p className="mt-1 text-xs text-gray-600">
               家族情報、備えの費用、期限が近い商品、保存済みプランをまとめて確認できます。
             </p>

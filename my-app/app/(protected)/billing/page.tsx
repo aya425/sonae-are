@@ -79,7 +79,7 @@ export default function BillingPage() {
             href="/home"
             className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
           >
-            ダッシュボードへ戻る
+            ホームへ戻る
           </Link>
         </div>
       </div>

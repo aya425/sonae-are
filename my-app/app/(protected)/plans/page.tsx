@@ -48,7 +48,7 @@ export default function PlansPage() {
             href="/home"
             className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
           >
-            ダッシュボードへ戻る
+            ホームへ戻る
           </Link>
         </div>
       </div>
