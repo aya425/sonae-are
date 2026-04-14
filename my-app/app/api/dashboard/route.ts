@@ -60,6 +60,24 @@ export async function GET() {
     );
   }
 
+  const { data: plans, error: plansError } = await supabase
+    .from("plans")
+    .select("id, title, days, total_estimated_cost, updated_at")
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false });
+
+  if (plansError) {
+    return NextResponse.json(
+      {
+        data: null,
+        error: {
+          message: "保存済みプランの取得に失敗しました。",
+        },
+      },
+      { status: 500 }
+    );
+  }
+
   const response: DashboardResponse = {
     data: {
       familySummary: {
@@ -77,6 +95,14 @@ export async function GET() {
       stockSummary: {
         count: stockCount ?? 0,
       },
+      savedPlans:
+        plans?.map((plan) => ({
+          id: plan.id,
+          title: plan.title,
+          days: plan.days,
+          totalEstimatedCost: plan.total_estimated_cost,
+          updatedAt: plan.updated_at,
+        })) ?? [],
       billingSummary: {
         planCode: "free",
         maxSavedPlans: 1,

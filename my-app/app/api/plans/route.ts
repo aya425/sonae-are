@@ -28,15 +28,13 @@ export async function GET() {
             details: null,
           },
         },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
     const { data: plans, error: plansError } = await supabase
       .from("plans")
-      .select(
-        "id, title, family_member_count, total_estimated_cost, updated_at",
-      )
+      .select("id, title, family_member_count, total_estimated_cost, updated_at")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
 
@@ -50,7 +48,7 @@ export async function GET() {
             details: plansError.message,
           },
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -76,7 +74,73 @@ export async function GET() {
           details: error instanceof Error ? error.message : null,
         },
       },
-      { status: 500 },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            message: "認証が必要です。",
+          },
+        },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+
+    const { title, familyMemberCount, days, totalCost } = body;
+
+    const { data, error } = await supabase
+      .from("plans")
+      .insert({
+        user_id: user.id,
+        title,
+        family_member_count: familyMemberCount,
+        days,
+        total_estimated_cost: totalCost,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            message: "プランの保存に失敗しました。",
+          },
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      data,
+      error: null,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        data: null,
+        error: {
+          message: "予期しないエラー",
+        },
+      },
+      { status: 500 }
     );
   }
 }

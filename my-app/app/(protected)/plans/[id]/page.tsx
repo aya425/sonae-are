@@ -156,8 +156,32 @@ export default function PlanDetailPage() {
     return "低";
   };
 
-  const handleSave = () => {
-    alert("保存機能は次の工程で接続します。");
+  const handleSave = async () => {
+    try {
+      const response = await fetch("/api/plans", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: plan.title,
+          familyMemberCount: plan.familyMemberCount,
+          days: plan.days,
+          totalCost: plan.totalCost,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error?.message || "保存に失敗しました");
+      }
+
+      alert("保存しました！");
+    } catch (error) {
+      alert("保存に失敗しました");
+      console.error(error);
+    }
   };
 
   const handleDelete = () => {
