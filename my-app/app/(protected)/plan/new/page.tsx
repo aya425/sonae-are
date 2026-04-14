@@ -304,6 +304,13 @@ export default function PlanNewPage() {
               <div className="mt-5 space-y-4">
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">想定日数</label>
+
+                  {selectedDaysOption?.helpText && (
+                    <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
+                      {selectedDaysOption.helpText}
+                    </p>
+                  )}
+
                   <select
                     className="w-full rounded-md border px-3 py-2 text-sm"
                     value={form.days}
@@ -325,6 +332,13 @@ export default function PlanNewPage() {
 
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">候補範囲</label>
+
+                  {selectedScopeOption?.helpText && (
+                    <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
+                      {selectedScopeOption.helpText}
+                    </p>
+                  )}
+
                   <select
                     className="w-full rounded-md border px-3 py-2 text-sm"
                     value={String(form.includeDailyItems)}
@@ -346,6 +360,13 @@ export default function PlanNewPage() {
 
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">優先方針</label>
+
+                  {selectedPriorityOption?.helpText && (
+                    <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
+                      {selectedPriorityOption.helpText}
+                    </p>
+                  )}
+
                   <select
                     className="w-full rounded-md border px-3 py-2 text-sm"
                     value={form.priorityPolicy}
