@@ -192,126 +192,165 @@ export default function PlanNewPage() {
       setIsSubmitting(false);
     }
   };
+
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      <h1 className="text-2xl font-bold">備えプランを作成</h1>
-      <p className="mt-2 text-sm text-gray-600">家族条件に合わせて、備え候補を提案します。</p>
-
-      {hasFamily === false && !errorMessage ? (
-        <div className="mt-4 rounded border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
-          <p>家族情報がまだ登録されていません。</p>
-          <div className="mt-3">
-            <Link
-              href="/family"
-              className="inline-block rounded bg-yellow-700 px-3 py-2 text-white no-underline"
-            >
-              家族情報を登録する
-            </Link>
-          </div>
+    <main className="min-h-screen bg-gray-50 px-4 py-8">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <h1 className="text-2xl font-bold text-gray-900">備えプランを作成</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            家族条件に合わせて、備え候補を迷わず選べるように条件を設定します。
+          </p>
         </div>
-      ) : null}
 
-      {errorMessage ? (
-        <div className="mt-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <p>{errorMessage}</p>
-
-          {needsFamilyRegistration ? (
+        {hasFamily === false && !errorMessage ? (
+          <div className="mb-6 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+            <p>家族情報がまだ登録されていません。</p>
             <div className="mt-3">
               <Link
                 href="/family"
-                className="inline-block rounded bg-red-700 px-3 py-2 text-white no-underline"
+                className="inline-block rounded-md bg-yellow-700 px-3 py-2 text-white no-underline hover:bg-yellow-800"
               >
                 家族情報を登録する
               </Link>
             </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      <form onSubmit={handleSubmit} className="mt-6 space-y-6">
-        <section className="rounded-lg border p-4">
-          <h2 className="mb-4 text-lg font-semibold">プラン生成条件</h2>
-
-          <div className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium">想定日数</label>
-              <select
-                className="w-full rounded border px-3 py-2"
-                value={form.days}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    days: Number(e.target.value) as 3 | 7,
-                  }))
-                }
-                disabled={isSubmitting || isCheckingFamily}
-              >
-                {DAYS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium">候補範囲</label>
-              <select
-                className="w-full rounded border px-3 py-2"
-                value={String(form.includeDailyItems)}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    includeDailyItems: e.target.value === "true",
-                  }))
-                }
-                disabled={isSubmitting || isCheckingFamily}
-              >
-                {SCOPE_OPTIONS.map((option) => (
-                  <option key={String(option.value)} value={String(option.value)}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium">優先方針</label>
-              <select
-                className="w-full rounded border px-3 py-2"
-                value={form.priorityPolicy}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    priorityPolicy: e.target.value as "minimum" | "balanced",
-                  }))
-                }
-                disabled={isSubmitting || isCheckingFamily}
-              >
-                {PRIORITY_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
-        </section>
+        ) : null}
 
-        <div>
-          <button
-            type="submit"
-            disabled={isSubmitting || isCheckingFamily}
-            className="rounded bg-green-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isCheckingFamily
-              ? "家族情報を確認中..."
-              : isSubmitting
-                ? "生成中..."
-                : "プランを生成する"}
-          </button>
+        {errorMessage ? (
+          <div className="mb-6 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p>{errorMessage}</p>
+
+            {needsFamilyRegistration ? (
+              <div className="mt-3">
+                <Link
+                  href="/family"
+                  className="inline-block rounded-md bg-red-700 px-3 py-2 text-white no-underline hover:bg-red-800"
+                >
+                  家族情報を登録する
+                </Link>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,680px)]">
+          <aside className="h-fit rounded-xl border border-blue-100 bg-blue-50 p-5 shadow-sm">
+            <h2 className="text-sm font-semibold text-gray-900">選び方のヒント</h2>
+
+            <div className="mt-4 space-y-4 text-sm text-gray-700">
+              <div>
+                <p className="font-medium text-gray-900">想定日数</p>
+                <p className="mt-1">
+                  まずは3日分から始めると、最小構成で無理なく備えやすくなります。
+                </p>
+              </div>
+
+              <div>
+                <p className="font-medium text-gray-900">候補範囲</p>
+                <p className="mt-1">
+                  日常品も含めると、普段使いしながら備えを維持しやすくなります。
+                </p>
+              </div>
+
+              <div>
+                <p className="font-medium text-gray-900">優先方針</p>
+                <p className="mt-1">
+                  迷う場合は「バランス重視」を選ぶと、主食・飲料・おかずを偏りなく確認できます。
+                </p>
+              </div>
+            </div>
+          </aside>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <section className="rounded-xl border bg-white p-5 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900">プラン生成条件</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                必要な条件を選ぶと、家族に合わせた備え候補を生成できます。
+              </p>
+
+              <div className="mt-5 space-y-4">
+                <div className="rounded-lg border p-4">
+                  <label className="mb-2 block text-sm font-medium text-gray-900">想定日数</label>
+                  <select
+                    className="w-full rounded-md border px-3 py-2 text-sm"
+                    value={form.days}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        days: Number(e.target.value) as 3 | 7,
+                      }))
+                    }
+                    disabled={isSubmitting || isCheckingFamily}
+                  >
+                    {DAYS_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <label className="mb-2 block text-sm font-medium text-gray-900">候補範囲</label>
+                  <select
+                    className="w-full rounded-md border px-3 py-2 text-sm"
+                    value={String(form.includeDailyItems)}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        includeDailyItems: e.target.value === "true",
+                      }))
+                    }
+                    disabled={isSubmitting || isCheckingFamily}
+                  >
+                    {SCOPE_OPTIONS.map((option) => (
+                      <option key={String(option.value)} value={String(option.value)}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <label className="mb-2 block text-sm font-medium text-gray-900">優先方針</label>
+                  <select
+                    className="w-full rounded-md border px-3 py-2 text-sm"
+                    value={form.priorityPolicy}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        priorityPolicy: e.target.value as "minimum" | "balanced",
+                      }))
+                    }
+                    disabled={isSubmitting || isCheckingFamily}
+                  >
+                    {PRIORITY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <button
+                  type="submit"
+                  disabled={isSubmitting || isCheckingFamily}
+                  className="rounded-xl bg-[#1E3A8A] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isCheckingFamily
+                    ? "家族情報を確認中..."
+                    : isSubmitting
+                      ? "生成中..."
+                      : "プランを生成する"}
+                </button>
+              </div>
+            </section>
+          </form>
         </div>
-      </form>
+      </div>
     </main>
   );
 }
