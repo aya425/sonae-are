@@ -32,8 +32,8 @@ export default function SignupPage() {
         return;
       }
 
-      setSuccessMessage("会員登録が完了しました。ダッシュボードへ移動します。");
-      router.push("/dashboard");
+      setSuccessMessage("会員登録が完了しました。ホームへ移動します。");
+      router.push("/home");
     } catch {
       setErrorMessage("会員登録に失敗しました。");
     } finally {

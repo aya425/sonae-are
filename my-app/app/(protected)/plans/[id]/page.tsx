@@ -143,12 +143,9 @@ export default function PlanDetailPage() {
     }
   }, []);
 
-  const priorityPolicyLabel =
-    plan.priorityPolicy === "minimum" ? "最低限そろえる" : "バランス重視";
+  const priorityPolicyLabel = plan.priorityPolicy === "minimum" ? "最低限そろえる" : "バランス重視";
 
-  const includeDailyItemsLabel = plan.includeDailyItems
-    ? "日常品含む"
-    : "防災食のみ";
+  const includeDailyItemsLabel = plan.includeDailyItems ? "日常品含む" : "防災食のみ";
 
   const getProductTypeLabel = (productType: PlanItem["productType"]) =>
     productType === "daily_item" ? "日常転用品" : "防災食";
@@ -185,9 +182,7 @@ export default function PlanDetailPage() {
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">商品確認</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            提案された備えプランの内容を確認できます。
-          </p>
+          <p className="mt-1 text-sm text-gray-600">提案された備えプランの内容を確認できます。</p>
         </div>
 
         <div className="flex gap-2">
@@ -198,10 +193,10 @@ export default function PlanDetailPage() {
             備蓄確認へ
           </Link>
           <Link
-            href="/dashboard"
+            href="/home"
             className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
           >
-            ダッシュボードへ戻る
+            ホームへ戻る
           </Link>
         </div>
       </div>
@@ -210,32 +205,22 @@ export default function PlanDetailPage() {
         <h2 className="text-lg font-semibold">プラン条件</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <p className="text-sm text-gray-700">プラン名: {plan.title}</p>
-          <p className="text-sm text-gray-700">
-            家族人数: {plan.familyMemberCount}人
-          </p>
+          <p className="text-sm text-gray-700">家族人数: {plan.familyMemberCount}人</p>
           <p className="text-sm text-gray-700">想定日数: {plan.days}日分</p>
-          <p className="text-sm text-gray-700">
-            候補の範囲: {includeDailyItemsLabel}
-          </p>
-          <p className="text-sm text-gray-700">
-            優先方針: {priorityPolicyLabel}
-          </p>
+          <p className="text-sm text-gray-700">候補の範囲: {includeDailyItemsLabel}</p>
+          <p className="text-sm text-gray-700">優先方針: {priorityPolicyLabel}</p>
         </div>
       </section>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2">
         <section className="rounded-xl border p-5">
           <h2 className="text-lg font-semibold">初期費用</h2>
-          <p className="mt-3 text-2xl font-bold">
-            ¥{plan.totalCost.toLocaleString()}
-          </p>
+          <p className="mt-3 text-2xl font-bold">¥{plan.totalCost.toLocaleString()}</p>
         </section>
 
         <section className="rounded-xl border p-5">
           <h2 className="text-lg font-semibold">年間維持コスト</h2>
-          <p className="mt-3 text-2xl font-bold">
-            ¥{plan.annualCost.toLocaleString()}
-          </p>
+          <p className="mt-3 text-2xl font-bold">¥{plan.annualCost.toLocaleString()}</p>
         </section>
       </div>
 
@@ -250,21 +235,13 @@ export default function PlanDetailPage() {
               <div className="space-y-1">
                 <p className="font-medium">{item.name}</p>
                 <p className="text-sm text-gray-600">数量: {item.quantity}</p>
-                <p className="text-sm text-gray-600">
-                  カテゴリ: {item.category}
-                </p>
+                <p className="text-sm text-gray-600">カテゴリ: {item.category}</p>
                 <p className="text-sm text-gray-600">
                   商品種別: {getProductTypeLabel(item.productType)}
                 </p>
-                <p className="text-sm text-gray-600">
-                  優先度: {getPriorityLabel(item.priority)}
-                </p>
-                <p className="text-sm text-gray-600">
-                  価格: ¥{item.price.toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-600">
-                  小計: ¥{item.subtotal.toLocaleString()}
-                </p>
+                <p className="text-sm text-gray-600">優先度: {getPriorityLabel(item.priority)}</p>
+                <p className="text-sm text-gray-600">価格: ¥{item.price.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">小計: ¥{item.subtotal.toLocaleString()}</p>
                 <p className="text-sm text-gray-600">提案理由: {item.reason}</p>
               </div>
 
@@ -291,9 +268,7 @@ export default function PlanDetailPage() {
 
       <section className="mb-6 rounded-xl border p-5">
         <h2 className="text-lg font-semibold">AI説明補助</h2>
-        <p className="mt-3 whitespace-pre-line text-sm text-gray-700">
-          {plan.explanation}
-        </p>
+        <p className="mt-3 whitespace-pre-line text-sm text-gray-700">{plan.explanation}</p>
       </section>
 
       <section className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
