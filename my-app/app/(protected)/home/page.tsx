@@ -89,7 +89,7 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-gray-50 px-3 py-6">
       <div className="mx-auto max-w-[1800px]">
-        <div className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+        <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <div>
             <h1 className="text-xl font-bold text-gray-900">ホーム</h1>
             <p className="mt-1 text-xs text-gray-600">
@@ -99,7 +99,7 @@ export default function DashboardPage() {
 
           <Link
             href="/plan/new"
-            className="inline-flex w-full items-center justify-center rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 xl:w-auto"
+            className="inline-flex items-center justify-center rounded-xl bg-blue-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-800"
           >
             新しく備えプランを作る
           </Link>
