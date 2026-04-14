@@ -1,10 +1,37 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 export default function BillingPage() {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleCheckout = async () => {
+    try {
+      setErrorMessage("");
+      setIsRedirecting(true);
+
+      const response = await fetch("/api/payments/checkout", {
+        method: "POST",
+      });
+
+      const result: {
+        data: { url?: string } | null;
+        error?: { message?: string } | null;
+      } = await response.json();
+
+      if (!response.ok || !result.data?.url) {
+        throw new Error(result.error?.message || "決済画面への遷移に失敗しました。");
+      }
+
+      window.location.href = result.data.url;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "決済画面への遷移に失敗しました。";
+      setErrorMessage(message);
+      setIsRedirecting(false);
+    }
+  };
 
   return (
     <main className="px-4 py-6">
@@ -29,13 +56,16 @@ export default function BillingPage() {
 
             <div className="space-y-3 text-base font-medium text-slate-700">
               <p>保存可能な備えプラン数：複数可能</p>
-              <p>月額：300円</p>
+              <p>月額：500円</p>
             </div>
 
             <div className="mt-6">
               <button
                 type="button"
-                onClick={() => setShowConfirm(true)}
+                onClick={() => {
+                  setErrorMessage("");
+                  setShowConfirm(true);
+                }}
                 className="inline-flex w-full items-center justify-center rounded-xl bg-[#1E3A8A] px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
               >
                 有料プランに変更する
@@ -47,21 +77,33 @@ export default function BillingPage() {
             <section className="rounded-2xl bg-slate-50 p-5 shadow-sm ring-1 ring-slate-200">
               <p className="text-sm font-medium text-slate-900">決済画面へ進みますか？</p>
 
+              {errorMessage ? (
+                <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {errorMessage}
+                </p>
+              ) : null}
+
               <div className="mt-4 flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowConfirm(false)}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  onClick={() => {
+                    setErrorMessage("");
+                    setShowConfirm(false);
+                  }}
+                  disabled={isRedirecting}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   やめる
                 </button>
 
-                <Link
-                  href="/billing/success"
-                  className="inline-flex items-center justify-center rounded-xl bg-[#1E3A8A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={isRedirecting}
+                  className="inline-flex items-center justify-center rounded-xl bg-[#1E3A8A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  決済へ進む
-                </Link>
+                  {isRedirecting ? "遷移中..." : "決済へ進む"}
+                </button>
               </div>
             </section>
           ) : null}
