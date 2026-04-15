@@ -9,15 +9,30 @@ const DAYS_OPTIONS = [
   { value: 7, label: "7日" },
 ] as const;
 
+const DAYS_HELP_TEXT: Record<3 | 7, string> = {
+  3: "災害直後を乗り切る最低限の備え",
+  7: "ライフライン停止も想定した安心の備え",
+};
+
 const SCOPE_OPTIONS = [
   { value: false, label: "防災食のみ" },
   { value: true, label: "日常品を含む" },
 ] as const;
 
+const SCOPE_HELP_TEXT: Record<"false" | "true", string> = {
+  false: "長期保存できる専用食品だけで備えます",
+  true: "普段食べている食品も活用して備えます",
+};
+
 const PRIORITY_OPTIONS = [
   { value: "minimum", label: "最低限そろえる" },
   { value: "balanced", label: "バランス重視" },
 ] as const;
+
+const PRIORITY_HELP_TEXT: Record<"minimum" | "balanced", string> = {
+  minimum: "主食や水など、重要なものから優先して提案します",
+  balanced: "主食・おかず・おやつなどをバランスよく提案します",
+};
 
 type PlanConditionInput = {
   days: 3 | 7;
@@ -90,6 +105,10 @@ export default function PlanNewPage() {
     includeDailyItems: true,
     priorityPolicy: "minimum",
   });
+
+  const selectedDaysHelpText = DAYS_HELP_TEXT[form.days];
+  const selectedScopeHelpText = SCOPE_HELP_TEXT[String(form.includeDailyItems) as "false" | "true"];
+  const selectedPriorityHelpText = PRIORITY_HELP_TEXT[form.priorityPolicy];
 
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -272,6 +291,13 @@ export default function PlanNewPage() {
               <div className="mt-5 space-y-4">
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">想定日数</label>
+
+                  {selectedDaysHelpText && (
+                    <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
+                      {selectedDaysHelpText}
+                    </p>
+                  )}
+
                   <select
                     className="w-full rounded-md border px-3 py-2 text-sm"
                     value={form.days}
@@ -293,6 +319,13 @@ export default function PlanNewPage() {
 
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">候補範囲</label>
+
+                  {selectedScopeHelpText && (
+                    <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
+                      {selectedScopeHelpText}
+                    </p>
+                  )}
+
                   <select
                     className="w-full rounded-md border px-3 py-2 text-sm"
                     value={String(form.includeDailyItems)}
@@ -314,6 +347,13 @@ export default function PlanNewPage() {
 
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">優先方針</label>
+
+                  {selectedPriorityHelpText && (
+                    <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
+                      {selectedPriorityHelpText}
+                    </p>
+                  )}
+
                   <select
                     className="w-full rounded-md border px-3 py-2 text-sm"
                     value={form.priorityPolicy}
