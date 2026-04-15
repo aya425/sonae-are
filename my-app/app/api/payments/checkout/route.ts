@@ -71,16 +71,7 @@ export async function POST() {
       },
       line_items: [
         {
-          price_data: {
-            currency: "jpy",
-            product_data: {
-              name: "プレミアムプラン（テスト）",
-            },
-            unit_amount: 500,
-            recurring: {
-              interval: "month",
-            },
-          },
+          price: premiumPriceId,
           quantity: 1,
         },
       ],
@@ -110,14 +101,20 @@ export async function POST() {
       error: null,
     });
   } catch (error) {
-    console.error("Failed to create Stripe Checkout session", error);
+    console.error("Failed to create Stripe Checkout session", {
+      message: error instanceof Error ? error.message : error,
+      raw: error,
+    });
 
     return NextResponse.json(
       {
         data: null,
         error: {
           code: "CHECKOUT_SESSION_CREATE_FAILED",
-          message: "決済画面への遷移に失敗しました。時間をおいて再度お試しください。",
+          message:
+            error instanceof Error
+              ? error.message
+              : "決済画面への遷移に失敗しました。時間をおいて再度お試しください。",
         },
       },
       { status: 500 }
