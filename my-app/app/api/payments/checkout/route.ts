@@ -60,15 +60,30 @@ export async function POST() {
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      line_items: [
-        {
-          price: premiumPriceId,
-          quantity: 1,
-        },
-      ],
+      client_reference_id: user.id,
       metadata: {
         user_id: user.id,
       },
+      subscription_data: {
+        metadata: {
+          user_id: user.id,
+        },
+      },
+      line_items: [
+        {
+          price_data: {
+            currency: "jpy",
+            product_data: {
+              name: "プレミアムプラン（テスト）",
+            },
+            unit_amount: 500,
+            recurring: {
+              interval: "month",
+            },
+          },
+          quantity: 1,
+        },
+      ],
       success_url: `${appUrl}/billing/success`,
       cancel_url: `${appUrl}/billing`,
     });
