@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
 
 const RELATION_OPTIONS = [
   { value: "本人", label: "本人" },
@@ -244,7 +243,7 @@ export default function FamilyPage() {
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
   const [isAllergenModalOpen, setIsAllergenModalOpen] = useState(false);
   const [activeMemberIndex, setActiveMemberIndex] = useState<number | null>(null);
-
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const openAllergenModal = (index: number) => {
     setActiveMemberIndex(index);
     setIsAllergenModalOpen(true);
@@ -255,7 +254,6 @@ export default function FamilyPage() {
     setActiveMemberIndex(null);
   };
 
-  const hasExistingMembers = savedMembers.length > 0;
   const isFormDisabled = isSubmitting;
 
   useEffect(() => {
@@ -288,6 +286,20 @@ export default function FamilyPage() {
 
     load();
   }, []);
+
+  useEffect(() => {
+    if (!isAllergenModalOpen) {
+      document.body.style.overflow = "";
+      return;
+    }
+
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isAllergenModalOpen]);
 
   const addMember = () => {
     setMembers((prev) => [...prev, createEmptyMember()]);
@@ -416,7 +428,6 @@ export default function FamilyPage() {
   if (isLoading) {
     return (
       <main className="mx-auto max-w-5xl p-6">
-        <h1 className="text-center text-2xl font-bold">家族情報登録</h1>
         <p className="mt-4 text-center text-sm text-gray-600">家族情報を読み込み中です...</p>
       </main>
     );
@@ -424,13 +435,15 @@ export default function FamilyPage() {
 
   return (
     <main className="mx-auto max-w-3xl p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-center text-2xl font-bold">家族情報</h1>
-
       {errorMessage ? (
         <div className="mt-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
         </div>
       ) : null}
+
+      {savedMembers.length === 0 && (
+        <p className="mt-4 text-center text-sm text-gray-600">家族情報を登録しましょう</p>
+      )}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -453,7 +466,6 @@ export default function FamilyPage() {
                       disabled={isDeleting || isSubmitting}
                       className="flex items-center gap-1 rounded border border-red-300 px-3 py-1 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <Trash2 size={16} />
                       <span>{isDeleting ? "削除中..." : "削除"}</span>
                     </button>
                   ) : null}
@@ -526,7 +538,7 @@ export default function FamilyPage() {
                     <label className="mb-1 block text-sm font-medium">メモ</label>
                     <textarea
                       className="w-full rounded border px-3 py-2"
-                      rows={3}
+                      rows={2}
                       value={member.notes}
                       onChange={(e) => updateMemberField(index, "notes", e.target.value)}
                       disabled={isFormDisabled || isDeleting}
@@ -568,11 +580,21 @@ export default function FamilyPage() {
         >
           <div
             className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg"
-            onClick={(e) => e.stopPropagation()} // 👈 追加（これ重要）
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="allergen-modal-title"
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">アレルゲンを選択</h2>
-              <button type="button" onClick={closeAllergenModal} className="text-sm text-gray-500">
+              <h2 id="allergen-modal-title" className="text-lg font-semibold">
+                アレルゲンを選択
+              </h2>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                onClick={closeAllergenModal}
+                className="text-sm text-gray-500"
+              >
                 閉じる
               </button>
             </div>
