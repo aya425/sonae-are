@@ -209,6 +209,10 @@ export default function StockItemsPage() {
         },
         credentials: "include",
         body: JSON.stringify({
+          productId:
+            selectedProductId && selectedProductId !== "manual"
+              ? selectedProductId
+              : null,
           productName: form.productName,
           quantity: Number(form.quantity),
           expiresAt: form.expiresAt,

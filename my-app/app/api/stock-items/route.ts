@@ -10,6 +10,7 @@ type StockItemRow = {
 };
 
 type CreateStockItemRequest = {
+  productId: string | null;
   productName: string;
   quantity: number;
   expiresAt: string;
@@ -110,7 +111,7 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json()) as CreateStockItemRequest;
-    const { productName, quantity, expiresAt, unitPrice } = body;
+    const { productId, productName, quantity, expiresAt, unitPrice } = body;
 
     if (!productName || !expiresAt) {
       return NextResponse.json(
@@ -156,11 +157,25 @@ export async function POST(request: Request) {
 
     const today = new Date().toISOString().split("T")[0];
 
+    if (expiresAt <= today) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "INVALID_EXPIRES_AT",
+            message: "賞味期限は登録日より後の日付を入力してください。",
+            details: null,
+          },
+        },
+        { status: 400 },
+      );
+    }
+
     const { data, error } = await supabase
       .from("stock_items")
       .insert({
         user_id: user.id,
-        product_id: null,
+        product_id: productId,
         product_name: productName,
         quantity,
         purchased_at: today,
