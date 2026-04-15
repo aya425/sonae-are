@@ -434,7 +434,7 @@ export default function FamilyPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl min-h-screen bg-white p-6">
+    <main className="mx-auto max-w-4xl min-h-screen px-3 py-4">
       {errorMessage ? (
         <div className="mt-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
