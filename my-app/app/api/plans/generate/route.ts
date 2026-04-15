@@ -46,6 +46,63 @@ type AiPlanResponse = {
   items: AiPlanItem[];
 };
 
+function getReasonByCategory(category: string): string {
+  if (category === "主食") {
+    return "災害時のエネルギー確保の中心になる主食として選びました。";
+  }
+  if (category === "飲料") {
+    return "水分補給に必要な飲料として優先して入れています。";
+  }
+  if (category === "おかず") {
+    return "主食だけでは不足しやすい満足感や栄養を補うために入れています。";
+  }
+  if (category === "汁物") {
+    return "食べやすさや温かさを補うために入れています。";
+  }
+  if (category === "おやつ") {
+    return "食べやすさや気持ちの負担軽減につながる備えとして入れています。";
+  }
+  return "家族条件と備えのバランスを見て提案しています。";
+}
+
+function getQuantityByCategory(params: {
+  category: string;
+  familyMemberCount: number;
+  days: PlanDays;
+  priorityPolicy: PriorityPolicy;
+}): number {
+  const base = params.familyMemberCount * params.days;
+
+  if (params.category === "主食" || params.category === "飲料") {
+    return base;
+  }
+
+  if (params.priorityPolicy === "minimum") {
+    if (params.category === "おかず") {
+      return Math.max(1, Math.ceil(base * 0.6));
+    }
+    if (params.category === "汁物") {
+      return Math.max(1, Math.ceil(base * 0.5));
+    }
+    if (params.category === "おやつ") {
+      return Math.max(1, Math.ceil(base * 0.3));
+    }
+    return 1;
+  }
+
+  if (params.category === "おかず") {
+    return Math.max(1, Math.ceil(base * 0.8));
+  }
+  if (params.category === "汁物") {
+    return Math.max(1, Math.ceil(base * 0.7));
+  }
+  if (params.category === "おやつ") {
+    return Math.max(1, Math.ceil(base * 0.5));
+  }
+
+  return 1;
+}
+
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
 function isValidPlanDays(days: number): days is PlanDays {
@@ -264,7 +321,12 @@ async function generatePlanWithOpenAI(params: {
 
       usedProductIds.add(product.id);
 
-      const quantity = Math.max(1, Math.floor(item.quantity));
+      const quantity = getQuantityByCategory({
+        category: product.category,
+        familyMemberCount: params.familyMemberCount,
+        days: params.days,
+        priorityPolicy: params.priorityPolicy,
+      });
       const subtotal = product.price * quantity;
 
       return {
@@ -275,10 +337,7 @@ async function generatePlanWithOpenAI(params: {
           item.priority === "high" || item.priority === "medium" || item.priority === "low"
             ? item.priority
             : "medium",
-        reason:
-          typeof item.reason === "string" && item.reason.trim().length > 0
-            ? item.reason
-            : "家族条件と備えのバランスを見て提案しています。",
+        reason: getReasonByCategory(product.category),
       };
     })
     .filter((item) => item !== null);
