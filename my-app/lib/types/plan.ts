@@ -1,9 +1,10 @@
 import type { ProductResponseItem } from "@/lib/types/product";
 
+export type PlanDays = 3 | 7 | 14;
 export type PriorityPolicy = "minimum" | "balanced";
 
 export type GeneratePlanRequest = {
-  days: 3 | 7;
+  days: PlanDays;
   includeDailyItems: boolean;
   priorityPolicy: PriorityPolicy;
 };
@@ -17,7 +18,7 @@ export type GeneratedPlanItem = ProductResponseItem & {
 
 export type GeneratePlanSummary = {
   familyMemberCount: number;
-  days: 3 | 7;
+  days: PlanDays;
   includeDailyItems: boolean;
   priorityPolicy: PriorityPolicy;
   totalCost: number;
@@ -27,7 +28,7 @@ export type GeneratePlanSummary = {
 export type GeneratedPlan = {
   title: string;
   familyMemberCount: number;
-  days: 3 | 7;
+  days: PlanDays;
   includeDailyItems: boolean;
   priorityPolicy: PriorityPolicy;
   totalCost: number;
