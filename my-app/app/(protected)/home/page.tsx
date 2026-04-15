@@ -25,7 +25,7 @@ function DashboardCard({
 
       {href && linkLabel ? (
         <div className="mt-3 pt-2 text-center">
-          <Link href={href} className="text-xs font-semibold text-blue-600 hover:underline">
+          <Link href={href} className="text-xs font-semibold text-[#1E3A8A] hover:underline">
             {linkLabel}
           </Link>
         </div>
@@ -225,7 +225,7 @@ export default function DashboardPage() {
         <section className="mt-4">
           <div className="mb-3 flex items-center gap-2">
             <h2 className="text-sm font-semibold leading-snug text-gray-900">保存済みプラン</h2>
-            <Link href="/plans" className="text-xs font-semibold text-blue-600 hover:underline">
+            <Link href="/plans" className="text-xs font-semibold text-[#1E3A8A] hover:underline">
               一覧へ
             </Link>
           </div>
@@ -249,7 +249,7 @@ export default function DashboardPage() {
                   <div className="mt-3 text-center">
                     <Link
                       href={`/plans/${plan.id}`}
-                      className="text-xs font-semibold text-blue-600 hover:underline"
+                      className="text-xs font-semibold text-[#1E3A8A] hover:underline"
                     >
                       詳細を見る
                     </Link>
