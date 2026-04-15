@@ -12,9 +12,6 @@ export default function BillingPage() {
 
       const res = await fetch("/api/payments/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         credentials: "include",
       });
 
