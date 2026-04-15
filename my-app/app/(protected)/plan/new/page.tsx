@@ -10,16 +10,10 @@ const DAYS_OPTIONS = [
   { value: 14, label: "14日" },
 ] as const;
 
-<<<<<<< HEAD
 const DAYS_HELP_TEXT: Record<3 | 7 | 14, string> = {
   3: "災害直後を乗り切る最低限の備え",
   7: "ライフライン停止も想定した安心の備え",
   14: "長期化にも対応できる余裕ある備え",
-=======
-const DAYS_HELP_TEXT: Record<3 | 7, string> = {
-  3: "災害直後を乗り切る最低限の備え",
-  7: "ライフライン停止も想定した安心の備え",
->>>>>>> develop
 };
 
 const SCOPE_OPTIONS = [
@@ -27,17 +21,10 @@ const SCOPE_OPTIONS = [
   { value: true, label: "日常品を含む" },
 ] as const;
 
-<<<<<<< HEAD
 const SCOPE_HELP_TEXT = {
   false: "長期保存できる専用食品だけで備えます",
   true: "普段食べている食品も活用して備えます",
 } as const;
-=======
-const SCOPE_HELP_TEXT: Record<"false" | "true", string> = {
-  false: "長期保存できる専用食品だけで備えます",
-  true: "普段食べている食品も活用して備えます",
-};
->>>>>>> develop
 
 const PRIORITY_OPTIONS = [
   { value: "minimum", label: "最低限そろえる" },
@@ -120,10 +107,6 @@ export default function PlanNewPage() {
     includeDailyItems: true,
     priorityPolicy: "minimum",
   });
-
-  const selectedDaysHelpText = DAYS_HELP_TEXT[form.days];
-  const selectedScopeHelpText = SCOPE_HELP_TEXT[String(form.includeDailyItems) as "false" | "true"];
-  const selectedPriorityHelpText = PRIORITY_HELP_TEXT[form.priorityPolicy];
 
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -313,17 +296,9 @@ export default function PlanNewPage() {
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">想定日数</label>
 
-<<<<<<< HEAD
                   <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
                     {selectedDaysHelpText}
                   </p>
-=======
-                  {selectedDaysHelpText && (
-                    <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
-                      {selectedDaysHelpText}
-                    </p>
-                  )}
->>>>>>> develop
 
                   <select
                     className="w-full rounded-md border px-3 py-2 text-sm"
@@ -347,17 +322,9 @@ export default function PlanNewPage() {
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">候補範囲</label>
 
-<<<<<<< HEAD
                   <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
                     {selectedScopeHelpText}
                   </p>
-=======
-                  {selectedScopeHelpText && (
-                    <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
-                      {selectedScopeHelpText}
-                    </p>
-                  )}
->>>>>>> develop
 
                   <select
                     className="w-full rounded-md border px-3 py-2 text-sm"
@@ -381,17 +348,9 @@ export default function PlanNewPage() {
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">優先方針</label>
 
-<<<<<<< HEAD
                   <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
                     {selectedPriorityHelpText}
                   </p>
-=======
-                  {selectedPriorityHelpText && (
-                    <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
-                      {selectedPriorityHelpText}
-                    </p>
-                  )}
->>>>>>> develop
 
                   <select
                     className="w-full rounded-md border px-3 py-2 text-sm"
