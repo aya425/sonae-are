@@ -36,7 +36,7 @@ export default function ProtectedShell({ children }: ProtectedShellProps) {
   const supabase = useMemo(() => createClient(), []);
 
   const pageTitle = getPageTitle(pathname);
-  const isHomePage = pathname === "/home" || pathname === "/dashboard";
+  const isHomePage = pathname === "/home";
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();

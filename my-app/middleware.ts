@@ -32,8 +32,8 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/login") && user) {
-    const dashboardUrl = new URL("/dashboard", request.url);
-    return NextResponse.redirect(dashboardUrl);
+    const homeUrl = new URL("/home", request.url);
+    return NextResponse.redirect(homeUrl);
   }
 
   return response;
