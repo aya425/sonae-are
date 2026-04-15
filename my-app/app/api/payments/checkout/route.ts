@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
@@ -20,18 +20,35 @@ export async function POST() {
       );
     }
 
+    const body = await req.json();
+    const userId = body.userId;
+
+    if (!userId || typeof userId !== "string") {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "BAD_REQUEST",
+            message: "userId is required",
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     const session = await stripe.checkout.sessions.create({
-      // 継続課金前提なら subscription の方が自然
       mode: "subscription",
+      client_reference_id: userId,
+      metadata: {
+        userId,
+      },
+      subscription_data: {
+        metadata: {
+          userId,
+        },
+      },
       line_items: [
         {
-          // 本来は env などから price_id を渡す想定
-          // まだ Price ID を作っていない場合は一旦コメントアウトして
-          // 下の暫定実装を使う
-          // price: process.env.STRIPE_PRICE_ID_PREMIUM,
-          // quantity: 1,
-
-          // 暫定実装（ローカル検証用）
           price_data: {
             currency: "jpy",
             product_data: {
@@ -45,8 +62,8 @@ export async function POST() {
           quantity: 1,
         },
       ],
-      success_url: `${appUrl}/payments/success`,
-      cancel_url: `${appUrl}/payments/cancel`,
+      success_url: `${appUrl}/billing/success`,
+      cancel_url: `${appUrl}/billing`,
     });
 
     if (!session.url) {

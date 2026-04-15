@@ -1,10 +1,76 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 
 export default function BillingPage() {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error("Supabase env is not set");
+        return;
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error) {
+        console.error("Failed to get user", error);
+        return;
+      }
+
+      setUserId(user?.id ?? null);
+    };
+
+    void fetchUser();
+  }, []);
+
+  const handleCheckout = async () => {
+    if (!userId) {
+      alert("ユーザー情報を取得できませんでした。ログインし直してください。");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const res = await fetch("/api/payments/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.data?.url) {
+        console.error("Failed to create checkout session", json.error);
+        alert("決済画面への遷移に失敗しました。");
+        return;
+      }
+
+      window.location.href = json.data.url;
+    } catch (error) {
+      console.error("Checkout request failed", error);
+      alert("決済画面への遷移に失敗しました。");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <main className="px-4 py-6">
@@ -29,7 +95,7 @@ export default function BillingPage() {
 
             <div className="space-y-3 text-base font-medium text-slate-700">
               <p>保存可能な備えプラン数：複数可能</p>
-              <p>月額：300円</p>
+              <p>月額：500円</p>
             </div>
 
             <div className="mt-6">
@@ -51,20 +117,32 @@ export default function BillingPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirm(false)}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  disabled={isLoading}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   やめる
                 </button>
 
-                <Link
-                  href="/billing/success"
-                  className="inline-flex items-center justify-center rounded-xl bg-[#1E3A8A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={isLoading}
+                  className="inline-flex items-center justify-center rounded-xl bg-[#1E3A8A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  決済へ進む
-                </Link>
+                  {isLoading ? "遷移中..." : "決済へ進む"}
+                </button>
               </div>
             </section>
           ) : null}
+
+          <div>
+            <Link
+              href="/dashboard"
+              className="text-sm font-medium text-slate-600 underline underline-offset-4 hover:text-slate-900"
+            >
+              ダッシュボードへ戻る
+            </Link>
+          </div>
         </div>
       </div>
     </main>
