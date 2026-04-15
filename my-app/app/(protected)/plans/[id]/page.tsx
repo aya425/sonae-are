@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type PlanCondition = {
@@ -109,6 +110,8 @@ const mockPlanItems: PlanItem[] = [
 ];
 
 export default function PlanDetailPage() {
+  const router = useRouter();
+
   const [plan, setPlan] = useState<PlanCondition>(mockPlanCondition);
   const [planItems, setPlanItems] = useState<PlanItem[]>(mockPlanItems);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -144,9 +147,12 @@ export default function PlanDetailPage() {
     }
   }, []);
 
-  const priorityPolicyLabel = plan.priorityPolicy === "minimum" ? "最低限そろえる" : "バランス重視";
+  const priorityPolicyLabel =
+    plan.priorityPolicy === "minimum" ? "最低限そろえる" : "バランス重視";
 
-  const includeDailyItemsLabel = plan.includeDailyItems ? "日常品含む" : "防災食のみ";
+  const includeDailyItemsLabel = plan.includeDailyItems
+    ? "日常品含む"
+    : "防災食のみ";
 
   const getProductTypeLabel = (productType: PlanItem["productType"]) =>
     productType === "daily_item" ? "日常転用品" : "防災食";
@@ -173,9 +179,6 @@ export default function PlanDetailPage() {
       })),
     };
 
-    console.log("planItems", planItems);
-    console.log("mapped items", payload.items);
-
     try {
       const response = await fetch("/api/plans", {
         method: "POST",
@@ -187,14 +190,13 @@ export default function PlanDetailPage() {
 
       const result = await response.json();
 
-      console.log("save response.status", response.status);
-      console.log("save result", result);
-
       if (!response.ok) {
         throw new Error(result.error?.message || "保存に失敗しました。");
       }
 
-      alert("保存しました！");
+      sessionStorage.removeItem("generatedPlan");
+      sessionStorage.removeItem("planConditions");
+      router.push("/plans");
     } catch (error) {
       console.error("save failed", error);
       alert(error instanceof Error ? error.message : "保存に失敗しました。");
@@ -224,10 +226,16 @@ export default function PlanDetailPage() {
         <h2 className="text-lg font-semibold text-[#1E3A8A]">プラン条件</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <p className="text-base text-[#1E3A8A]">プラン名: {plan.title}</p>
-          <p className="text-base text-[#1E3A8A]">家族人数: {plan.familyMemberCount}人</p>
+          <p className="text-base text-[#1E3A8A]">
+            家族人数: {plan.familyMemberCount}人
+          </p>
           <p className="text-base text-[#1E3A8A]">想定日数: {plan.days}日分</p>
-          <p className="text-base text-[#1E3A8A]">候補の範囲: {includeDailyItemsLabel}</p>
-          <p className="text-base text-[#1E3A8A]">優先方針: {priorityPolicyLabel}</p>
+          <p className="text-base text-[#1E3A8A]">
+            候補の範囲: {includeDailyItemsLabel}
+          </p>
+          <p className="text-base text-[#1E3A8A]">
+            優先方針: {priorityPolicyLabel}
+          </p>
         </div>
       </section>
 
@@ -240,7 +248,9 @@ export default function PlanDetailPage() {
         </section>
 
         <section className="rounded-xl border border-blue-200 bg-blue-50 p-5">
-          <h2 className="text-lg font-semibold text-[#1E3A8A]">年間維持コスト</h2>
+          <h2 className="text-lg font-semibold text-[#1E3A8A]">
+            年間維持コスト
+          </h2>
           <p className="mt-3 text-2xl font-bold text-[#1E3A8A]">
             ¥{plan.annualCost.toLocaleString()}
           </p>
@@ -251,17 +261,28 @@ export default function PlanDetailPage() {
         <h2 className="text-lg font-semibold">商品一覧</h2>
         <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-1">
           {planItems.map((item) => (
-            <article key={item.id} className="flex flex-col gap-4 rounded-lg border p-4">
+            <article
+              key={item.id}
+              className="flex flex-col gap-4 rounded-lg border p-4"
+            >
               <div className="space-y-1">
                 <p className="font-medium">{item.name}</p>
                 <p className="text-sm text-gray-600">数量: {item.quantity}</p>
-                <p className="text-sm text-gray-600">カテゴリ: {item.category}</p>
+                <p className="text-sm text-gray-600">
+                  カテゴリ: {item.category}
+                </p>
                 <p className="text-sm text-gray-600">
                   商品種別: {getProductTypeLabel(item.productType)}
                 </p>
-                <p className="text-sm text-gray-600">優先度: {getPriorityLabel(item.priority)}</p>
-                <p className="text-sm text-gray-600">価格: ¥{item.price.toLocaleString()}</p>
-                <p className="text-sm text-gray-600">小計: ¥{item.subtotal.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">
+                  優先度: {getPriorityLabel(item.priority)}
+                </p>
+                <p className="text-sm text-gray-600">
+                  価格: ¥{item.price.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-600">
+                  小計: ¥{item.subtotal.toLocaleString()}
+                </p>
                 <p className="text-sm text-gray-600">提案理由: {item.reason}</p>
               </div>
 
@@ -288,7 +309,9 @@ export default function PlanDetailPage() {
 
       <section className="mb-6 rounded-xl border p-5">
         <h2 className="text-lg font-semibold">AI説明補助</h2>
-        <p className="mt-3 whitespace-pre-line text-sm text-gray-700">{plan.explanation}</p>
+        <p className="mt-3 whitespace-pre-line text-sm text-gray-700">
+          {plan.explanation}
+        </p>
       </section>
 
       <section className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
