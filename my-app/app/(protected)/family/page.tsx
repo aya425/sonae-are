@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
 
 const RELATION_OPTIONS = [
   { value: "本人", label: "本人" },
@@ -242,8 +241,19 @@ export default function FamilyPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
+  const [isAllergenModalOpen, setIsAllergenModalOpen] = useState(false);
+  const [activeMemberIndex, setActiveMemberIndex] = useState<number | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const openAllergenModal = (index: number) => {
+    setActiveMemberIndex(index);
+    setIsAllergenModalOpen(true);
+  };
 
-  const hasExistingMembers = savedMembers.length > 0;
+  const closeAllergenModal = () => {
+    setIsAllergenModalOpen(false);
+    setActiveMemberIndex(null);
+  };
+
   const isFormDisabled = isSubmitting;
 
   useEffect(() => {
@@ -276,6 +286,20 @@ export default function FamilyPage() {
 
     load();
   }, []);
+
+  useEffect(() => {
+    if (!isAllergenModalOpen) {
+      document.body.style.overflow = "";
+      return;
+    }
+
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isAllergenModalOpen]);
 
   const addMember = () => {
     setMembers((prev) => [...prev, createEmptyMember()]);
@@ -404,27 +428,22 @@ export default function FamilyPage() {
   if (isLoading) {
     return (
       <main className="mx-auto max-w-5xl p-6">
-        <h1 className="text-center text-2xl font-bold">家族情報を登録</h1>
         <p className="mt-4 text-center text-sm text-gray-600">家族情報を読み込み中です...</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-5xl p-6">
-      <h1 className="text-center text-2xl font-bold">家族情報を登録</h1>
-
-      {hasExistingMembers ? (
-        <div className="mt-4 rounded border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-          登録済みの家族情報を編集できます
-        </div>
-      ) : null}
-
+    <main className="mx-auto max-w-3xl p-6 bg-gray-50 min-h-screen">
       {errorMessage ? (
         <div className="mt-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
         </div>
       ) : null}
+
+      {savedMembers.length === 0 && (
+        <p className="mt-4 text-center text-sm text-gray-600">家族情報を登録しましょう</p>
+      )}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -436,7 +455,9 @@ export default function FamilyPage() {
             return (
               <section key={member.localId} className="rounded-lg border bg-white p-4 shadow-sm">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-semibold">家族情報 {index + 1}</h2>
+                  <h2 className="text-lg font-semibold text-gray-800 whitespace-nowrap">
+                    {index + 1}人目
+                  </h2>
 
                   {isExistingMember ? (
                     <button
@@ -445,7 +466,6 @@ export default function FamilyPage() {
                       disabled={isDeleting || isSubmitting}
                       className="flex items-center gap-1 rounded border border-red-300 px-3 py-1 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <Trash2 size={16} />
                       <span>{isDeleting ? "削除中..." : "削除"}</span>
                     </button>
                   ) : null}
@@ -488,26 +508,37 @@ export default function FamilyPage() {
 
                   <div>
                     <p className="mb-2 text-sm font-medium">アレルゲン</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {ALLERGEN_OPTIONS.map((allergen) => (
-                        <label key={allergen.value} className="flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={member.allergens.includes(allergen.value)}
-                            onChange={() => toggleAllergen(index, allergen.value)}
-                            disabled={isFormDisabled || isDeleting}
-                          />
-                          <span>{allergen.label}</span>
-                        </label>
-                      ))}
+
+                    <div className="flex flex-wrap gap-2">
+                      {member.allergens.length > 0 ? (
+                        member.allergens.map((allergen) => (
+                          <span
+                            key={allergen}
+                            className="rounded-full bg-gray-100 px-3 py-1 text-sm"
+                          >
+                            {allergen}
+                          </span>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">未選択</p>
+                      )}
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => openAllergenModal(index)}
+                      className="mt-3 rounded bg-blue-900 px-4 py-2 text-sm font-semibold text-white whitespace-nowrap"
+                      disabled={isFormDisabled || isDeleting}
+                    >
+                      アレルゲンを選択
+                    </button>
                   </div>
 
                   <div>
                     <label className="mb-1 block text-sm font-medium">メモ</label>
                     <textarea
                       className="w-full rounded border px-3 py-2"
-                      rows={3}
+                      rows={2}
                       value={member.notes}
                       onChange={(e) => updateMemberField(index, "notes", e.target.value)}
                       disabled={isFormDisabled || isDeleting}
@@ -541,6 +572,61 @@ export default function FamilyPage() {
           </button>
         </div>
       </form>
+
+      {isAllergenModalOpen && activeMemberIndex !== null ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={closeAllergenModal} // 👈 追加
+        >
+          <div
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="allergen-modal-title"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h2 id="allergen-modal-title" className="text-lg font-semibold">
+                アレルゲンを選択
+              </h2>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                onClick={closeAllergenModal}
+                className="text-sm text-gray-500"
+              >
+                閉じる
+              </button>
+            </div>
+
+            <div className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto">
+              {ALLERGEN_OPTIONS.map((allergen) => (
+                <label
+                  key={allergen.value}
+                  className="flex items-center gap-2 rounded border px-3 py-2 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    checked={members[activeMemberIndex].allergens.includes(allergen.value)}
+                    onChange={() => toggleAllergen(activeMemberIndex, allergen.value)}
+                  />
+                  <span>{allergen.label}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={closeAllergenModal}
+                className="rounded bg-blue-900 px-4 py-2 font-semibold text-white"
+              >
+                選択を完了
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
