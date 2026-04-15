@@ -133,7 +133,6 @@ export default function PlanDetailPage() {
         annualCost: parsedPlan.annualCost,
         explanation: parsedPlan.explanation,
         warnings: parsedPlan.warnings,
-         items: PlanItem[];
       });
 
       setPlanItems(parsedPlan.items);
@@ -166,11 +165,14 @@ export default function PlanDetailPage() {
       includeDailyItems: plan.includeDailyItems,
       totalEstimatedCost: plan.totalCost,
       aiComment: plan.explanation,
-      items: plan.items ?? [],
+      items: (planItems ?? []).map((item, index) => ({
+        productId: item.productId ?? `temp-${index}`,
+        quantity: item.quantity,
+      })),
     };
 
-    console.log("save payload", payload);
-    console.log("save payload.items", payload.items);
+    console.log("planItems", planItems);
+    console.log("mapped items", payload.items);
 
     try {
       const response = await fetch("/api/plans", {
