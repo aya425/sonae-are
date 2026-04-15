@@ -14,6 +14,7 @@ type SavePlanRequest = {
   title: string;
   days: number;
   totalEstimatedCost: number;
+  annualCost?: number | null;
   familyMemberCount: number;
   priorityPolicy?: string | null;
   includeDailyItems?: boolean;
@@ -126,6 +127,7 @@ export async function POST(request: Request) {
       title,
       days,
       totalEstimatedCost,
+      annualCost,
       familyMemberCount,
       priorityPolicy,
       includeDailyItems,
@@ -171,9 +173,10 @@ export async function POST(request: Request) {
         priority_policy: priorityPolicy ?? null,
         include_daily_items: includeDailyItems ?? false,
         total_estimated_cost: totalEstimatedCost ?? 0,
+        annual_cost: annualCost ?? null,
         ai_comment: aiComment ?? null,
       })
-      .select("id, title, family_member_count, total_estimated_cost, updated_at")
+      .select("id, title, family_member_count, total_estimated_cost, annual_cost, updated_at")
       .single();
 
     if (planError || !savedPlan) {
@@ -223,6 +226,7 @@ export async function POST(request: Request) {
           title: savedPlan.title,
           familyMemberCount: savedPlan.family_member_count,
           totalEstimatedCost: savedPlan.total_estimated_cost,
+          annualCost: savedPlan.annual_cost,
           updatedAt: savedPlan.updated_at,
         },
         error: null,

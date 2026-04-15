@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/src/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 type RouteContext = {
   params: Promise<{
@@ -26,7 +26,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
             details: null,
           },
         },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
@@ -42,7 +42,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
             details: null,
           },
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -63,7 +63,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
             details: error.message,
           },
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -77,7 +77,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
             details: null,
           },
         },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -95,7 +95,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
           details: error instanceof Error ? error.message : null,
         },
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

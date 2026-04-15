@@ -165,6 +165,7 @@ export default function PlanDetailPage() {
       priorityPolicy: plan.priorityPolicy,
       includeDailyItems: plan.includeDailyItems,
       totalEstimatedCost: plan.totalCost,
+      annualCost: plan.annualCost,
       aiComment: plan.explanation,
       items: (planItems ?? []).map((item) => ({
         productId: item.productId ?? null,

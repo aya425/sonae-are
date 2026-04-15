@@ -85,6 +85,10 @@ export async function GET() {
   const latestPlanWithAnnualCost =
     plans?.find((plan) => plan.annual_cost !== null && plan.annual_cost !== undefined) ?? null;
 
+  if (process.env.NODE_ENV === "development") {
+    console.log("[dashboard] latestPlanWithAnnualCost", latestPlanWithAnnualCost);
+  }
+
   const response: DashboardResponse = {
     data: {
       familySummary: {
@@ -108,6 +112,7 @@ export async function GET() {
           title: plan.title,
           days: plan.days,
           totalEstimatedCost: plan.total_estimated_cost,
+          annualCost: plan.annual_cost,
           updatedAt: plan.updated_at,
         })) ?? [],
       billingSummary: {
