@@ -427,7 +427,7 @@ export default function FamilyPage() {
 
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-5xl bg-white px-2 py-2">
+      <main className=" max-w-5xl bg-white px-2 py-2">
         <p className="mt-4 text-center text-sm text-gray-600">家族情報を読み込み中です...</p>
       </main>
     );
@@ -445,7 +445,7 @@ export default function FamilyPage() {
         <p className="mt-4 text-center text-sm text-gray-600">家族情報を登録しましょう</p>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-1 space-y-1">
+      <form onSubmit={handleSubmit} className="mt-0 space-y-3">
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
           {members.map((member, index) => {
             const isExistingMember = Boolean(member.id);

@@ -52,7 +52,7 @@ export default function ProtectedShell({ children }: ProtectedShellProps) {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-white text-slate-900">
-      <header className="flex h-16 shrink-0 items-center border-b border-slate-200 bg-white px-4">
+      <header className="flex h-14 shrink-0 items-center border-b border-slate-200 bg-white px-4">
         <div className="relative flex w-full items-center justify-center">
           <h1 className="text-center text-lg font-bold text-[#1E3A8A]">{pageTitle}</h1>
           {isHomePage ? (
@@ -67,7 +67,7 @@ export default function ProtectedShell({ children }: ProtectedShellProps) {
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4">{children}</main>
+      <main className="min-h-0 flex-1 overflow-y-auto px-0.5 py-0">{children}</main>
 
       <footer className="h-20 shrink-0 border-t border-slate-200 bg-white">
         <nav className="grid h-full grid-cols-5">
