@@ -23,6 +23,7 @@ type PlanItem = {
   isFreeFrom28: boolean;
   price: number;
   purchaseUrl: string;
+  productId?: string;
   shelfLifeMonths: number;
   isActive: boolean;
   quantity: number;
@@ -165,8 +166,8 @@ export default function PlanDetailPage() {
       includeDailyItems: plan.includeDailyItems,
       totalEstimatedCost: plan.totalCost,
       aiComment: plan.explanation,
-      items: (planItems ?? []).map((item, index) => ({
-        productId: item.productId ?? `temp-${index}`,
+      items: (planItems ?? []).map((item) => ({
+        productId: item.productId ?? null,
         quantity: item.quantity,
       })),
     };

@@ -190,7 +190,7 @@ export async function POST(request: Request) {
 
     const planItemsToInsert = items.map((item) => ({
       plan_id: savedPlan.id,
-      product_id: item.productId,
+      product_id: item.productId ?? null,
       quantity: item.quantity,
       priority: item.priority ?? null,
       purpose_note: item.purposeNote ?? null,
