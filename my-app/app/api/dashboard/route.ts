@@ -62,7 +62,7 @@ export async function GET() {
 
   const { data: plans, error: plansError } = await supabase
     .from("plans")
-    .select("id, title, days, total_estimated_cost, updated_at")
+    .select("id, title, days, total_estimated_cost, annual_cost, updated_at")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
@@ -82,6 +82,9 @@ export async function GET() {
     );
   }
 
+  const latestPlanWithAnnualCost =
+    plans?.find((plan) => plan.annual_cost !== null && plan.annual_cost !== undefined) ?? null;
+
   const response: DashboardResponse = {
     data: {
       familySummary: {
@@ -89,8 +92,8 @@ export async function GET() {
         hasFamily: (memberCount ?? 0) > 0,
       },
       costSummary: {
-        annualCost: null,
-        sourcePlanId: null,
+        annualCost: latestPlanWithAnnualCost?.annual_cost ?? null,
+        sourcePlanId: latestPlanWithAnnualCost?.id ?? null,
       },
       expiringItems: {
         count: 0,

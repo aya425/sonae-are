@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -134,15 +133,6 @@ export default function BillingPage() {
               </div>
             </section>
           ) : null}
-
-          <div>
-            <Link
-              href="/dashboard"
-              className="text-sm font-medium text-slate-600 underline underline-offset-4 hover:text-slate-900"
-            >
-              ダッシュボードへ戻る
-            </Link>
-          </div>
         </div>
       </div>
     </main>

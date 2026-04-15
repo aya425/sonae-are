@@ -6,6 +6,7 @@ type PlanRow = {
   title: string;
   family_member_count: number;
   total_estimated_cost: number;
+  annual_cost: number | null;
   updated_at: string;
 };
 
@@ -28,15 +29,13 @@ export async function GET() {
             details: null,
           },
         },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
     const { data: plans, error: plansError } = await supabase
       .from("plans")
-      .select(
-        "id, title, family_member_count, total_estimated_cost, updated_at",
-      )
+      .select("id, title, family_member_count, total_estimated_cost, annual_cost, updated_at")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
 
@@ -50,7 +49,7 @@ export async function GET() {
             details: plansError.message,
           },
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -59,6 +58,7 @@ export async function GET() {
       title: plan.title,
       familyMemberCount: plan.family_member_count,
       totalEstimatedCost: plan.total_estimated_cost,
+      annualCost: plan.annual_cost,
       updatedAt: plan.updated_at,
     }));
 
@@ -76,7 +76,7 @@ export async function GET() {
           details: error instanceof Error ? error.message : null,
         },
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -99,7 +99,7 @@ export async function DELETE(request: Request) {
             details: null,
           },
         },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
@@ -116,15 +116,11 @@ export async function DELETE(request: Request) {
             details: null,
           },
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    const { error } = await supabase
-      .from("plans")
-      .delete()
-      .eq("id", planId)
-      .eq("user_id", user.id);
+    const { error } = await supabase.from("plans").delete().eq("id", planId).eq("user_id", user.id);
 
     if (error) {
       return NextResponse.json(
@@ -136,7 +132,7 @@ export async function DELETE(request: Request) {
             details: error.message,
           },
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -154,7 +150,7 @@ export async function DELETE(request: Request) {
           details: error instanceof Error ? error.message : null,
         },
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
