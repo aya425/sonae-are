@@ -350,7 +350,7 @@ export default function FamilyPage() {
       }
 
       if (!member.ageGroup) {
-        return "年齢区分を選択してください。";
+        return "年齢を選択してください。";
       }
     }
 
@@ -490,7 +490,7 @@ export default function FamilyPage() {
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium">年齢区分</label>
+                    <label className="mb-1 block text-sm font-medium">年齢</label>
                     <select
                       className="w-full rounded border px-3 py-2"
                       value={member.ageGroup}
@@ -527,7 +527,7 @@ export default function FamilyPage() {
                     <button
                       type="button"
                       onClick={() => openAllergenModal(index)}
-                      className="mt-3 rounded bg-blue-900 px-4 py-2 text-sm font-semibold text-white whitespace-nowrap"
+                      className="mt-3 inline-block px-2 py-1 text-sm font-semibold text-blue-700 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={isFormDisabled || isDeleting}
                     >
                       アレルゲンを選択
@@ -555,10 +555,10 @@ export default function FamilyPage() {
           <button
             type="button"
             onClick={addMember}
-            className="rounded bg-blue-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isFormDisabled}
           >
-            家族情報を追加
+            家族を追加
           </button>
         </div>
 
