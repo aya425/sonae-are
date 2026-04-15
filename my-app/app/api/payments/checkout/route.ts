@@ -5,11 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function POST() {
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const premiumPriceId = process.env.STRIPE_PRICE_ID_PREMIUM;
 
     if (!appUrl) {
       console.error("NEXT_PUBLIC_APP_URL is not set");
@@ -26,23 +22,6 @@ export async function POST() {
       );
     }
 
-    if (userError || !user) {
-      console.error("Failed to get authenticated user", userError);
-
-      return NextResponse.json(
-        {
-          data: null,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "ログイン情報を確認できませんでした。もう一度ログインしてからお試しください。",
-          },
-        },
-        { status: 401 }
-      );
-    }
-
-    const premiumPriceId = process.env.STRIPE_PRICE_ID_PREMIUM;
-
     if (!premiumPriceId) {
       console.error("STRIPE_PRICE_ID_PREMIUM is not set");
 
@@ -55,6 +34,27 @@ export async function POST() {
           },
         },
         { status: 500 }
+      );
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      console.error("Failed to get authenticated user", userError);
+
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "ログイン情報を確認できませんでした。もう一度ログインしてからお試しください。",
+          },
+        },
+        { status: 401 }
       );
     }
 
@@ -71,16 +71,7 @@ export async function POST() {
       },
       line_items: [
         {
-          price_data: {
-            currency: "jpy",
-            product_data: {
-              name: "プレミアムプラン（テスト）",
-            },
-            unit_amount: 500,
-            recurring: {
-              interval: "month",
-            },
-          },
+          price: premiumPriceId,
           quantity: 1,
         },
       ],

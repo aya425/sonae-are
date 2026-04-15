@@ -1,64 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { useState } from "react";
 
 export default function BillingPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !supabaseAnonKey) {
-        console.error("Supabase env is not set");
-        return;
-      }
-
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-
-      if (error) {
-        console.error("Failed to get user", error);
-        return;
-      }
-
-      setUserId(user?.id ?? null);
-    };
-
-    void fetchUser();
-  }, []);
 
   const handleCheckout = async () => {
-    if (!userId) {
-      alert("ユーザー情報を取得できませんでした。ログインし直してください。");
-      return;
-    }
-
     try {
       setIsLoading(true);
 
       const res = await fetch("/api/payments/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId,
-        }),
+        credentials: "include",
       });
 
       const json = await res.json();
 
       if (!res.ok || !json.data?.url) {
         console.error("Failed to create checkout session", json.error);
-        alert("決済画面への遷移に失敗しました。");
+        alert(json.error?.message ?? "決済画面への遷移に失敗しました。");
         return;
       }
 
