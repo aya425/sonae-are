@@ -1,9 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import { createClient } from "@/lib/supabase/server";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
     if (!appUrl) {
       console.error("NEXT_PUBLIC_APP_URL is not set");
@@ -13,38 +19,54 @@ export async function POST(req: NextRequest) {
           data: null,
           error: {
             code: "INTERNAL_SERVER_ERROR",
-            message: "Application URL is not configured",
+            message: "決済画面の準備に必要な設定が不足しています。時間をおいて再度お試しください。",
           },
         },
         { status: 500 }
       );
     }
 
-    const body = await req.json();
-    const userId = body.userId;
+    if (userError || !user) {
+      console.error("Failed to get authenticated user", userError);
 
-    if (!userId || typeof userId !== "string") {
       return NextResponse.json(
         {
           data: null,
           error: {
-            code: "BAD_REQUEST",
-            message: "userId is required",
+            code: "UNAUTHORIZED",
+            message: "ログイン情報を確認できませんでした。もう一度ログインしてからお試しください。",
           },
         },
-        { status: 400 }
+        { status: 401 }
+      );
+    }
+
+    const premiumPriceId = process.env.STRIPE_PRICE_ID_PREMIUM;
+
+    if (!premiumPriceId) {
+      console.error("STRIPE_PRICE_ID_PREMIUM is not set");
+
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "INTERNAL_SERVER_ERROR",
+            message: "現在、決済画面を開けません。管理者に設定内容を確認してください。",
+          },
+        },
+        { status: 500 }
       );
     }
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      client_reference_id: userId,
+      client_reference_id: user.id,
       metadata: {
-        userId,
+        user_id: user.id,
       },
       subscription_data: {
         metadata: {
-          userId,
+          user_id: user.id,
         },
       },
       line_items: [
@@ -74,7 +96,7 @@ export async function POST(req: NextRequest) {
           data: null,
           error: {
             code: "CHECKOUT_SESSION_URL_NOT_FOUND",
-            message: "Checkout URL was not returned by Stripe",
+            message: "決済画面の作成に失敗しました。時間をおいて再度お試しください。",
           },
         },
         { status: 500 }
@@ -95,7 +117,7 @@ export async function POST(req: NextRequest) {
         data: null,
         error: {
           code: "CHECKOUT_SESSION_CREATE_FAILED",
-          message: "Failed to create Stripe Checkout session",
+          message: "決済画面への遷移に失敗しました。時間をおいて再度お試しください。",
         },
       },
       { status: 500 }
