@@ -10,6 +10,22 @@ type PlanRow = {
   updated_at: string;
 };
 
+type SavePlanRequest = {
+  title: string;
+  days: number;
+  totalEstimatedCost: number;
+  familyMemberCount: number;
+  priorityPolicy?: string | null;
+  includeDailyItems?: boolean;
+  aiComment?: string | null;
+  items?: Array<{
+    productId: string;
+    quantity: number;
+    priority?: string | null;
+    purposeNote?: string | null;
+  }>;
+};
+
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -80,6 +96,154 @@ export async function GET() {
     );
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "認証が必要です。",
+            details: null,
+          },
+        },
+        { status: 401 }
+      );
+    }
+
+    const body = (await request.json()) as SavePlanRequest;
+
+    const {
+      title,
+      days,
+      totalEstimatedCost,
+      familyMemberCount,
+      priorityPolicy,
+      includeDailyItems,
+      aiComment,
+      items = [],
+    } = body;
+
+    if (!title || !days || !familyMemberCount) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "INVALID_REQUEST",
+            message: "title, days, familyMemberCount は必須です。",
+            details: null,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    if (items.length === 0) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "INVALID_REQUEST",
+            message: "保存する商品がありません。",
+            details: null,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const { data: savedPlan, error: planError } = await supabase
+      .from("plans")
+      .insert({
+        user_id: user.id,
+        title,
+        family_member_count: familyMemberCount,
+        days,
+        priority_policy: priorityPolicy ?? null,
+        include_daily_items: includeDailyItems ?? false,
+        total_estimated_cost: totalEstimatedCost ?? 0,
+        ai_comment: aiComment ?? null,
+      })
+      .select("id, title, family_member_count, total_estimated_cost, updated_at")
+      .single();
+
+    if (planError || !savedPlan) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "PLAN_SAVE_FAILED",
+            message: "プラン保存に失敗しました。",
+            details: planError?.message ?? null,
+          },
+        },
+        { status: 500 }
+      );
+    }
+
+    const planItemsToInsert = items.map((item) => ({
+      plan_id: savedPlan.id,
+      product_id: item.productId ?? null,
+      quantity: item.quantity,
+      priority: item.priority ?? null,
+      purpose_note: item.purposeNote ?? null,
+    }));
+
+    const { error: planItemsError } = await supabase.from("plan_items").insert(planItemsToInsert);
+
+    if (planItemsError) {
+      await supabase.from("plans").delete().eq("id", savedPlan.id).eq("user_id", user.id);
+
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "PLAN_ITEMS_SAVE_FAILED",
+            message: "プラン商品の保存に失敗しました。",
+            details: planItemsError.message,
+          },
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        data: {
+          id: savedPlan.id,
+          title: savedPlan.title,
+          familyMemberCount: savedPlan.family_member_count,
+          totalEstimatedCost: savedPlan.total_estimated_cost,
+          updatedAt: savedPlan.updated_at,
+        },
+        error: null,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        data: null,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "予期しないエラーが発生しました。",
+          details: error instanceof Error ? error.message : null,
+        },
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const supabase = await createClient();
