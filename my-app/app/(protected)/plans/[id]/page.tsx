@@ -133,6 +133,7 @@ export default function PlanDetailPage() {
         annualCost: parsedPlan.annualCost,
         explanation: parsedPlan.explanation,
         warnings: parsedPlan.warnings,
+         items: PlanItem[];
       });
 
       setPlanItems(parsedPlan.items);
@@ -157,15 +158,19 @@ export default function PlanDetailPage() {
   };
 
   const handleSave = async () => {
-    console.log("save start", {
+    const payload = {
       title: plan.title,
       familyMemberCount: plan.familyMemberCount,
       days: plan.days,
       priorityPolicy: plan.priorityPolicy,
       includeDailyItems: plan.includeDailyItems,
-      totalCost: plan.totalCost,
-      explanation: plan.explanation,
-    });
+      totalEstimatedCost: plan.totalCost,
+      aiComment: plan.explanation,
+      items: plan.items ?? [],
+    };
+
+    console.log("save payload", payload);
+    console.log("save payload.items", payload.items);
 
     try {
       const response = await fetch("/api/plans", {
@@ -173,15 +178,7 @@ export default function PlanDetailPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          title: plan.title,
-          familyMemberCount: plan.familyMemberCount,
-          days: plan.days,
-          priorityPolicy: plan.priorityPolicy,
-          includeDailyItems: plan.includeDailyItems,
-          totalCost: plan.totalCost,
-          explanation: plan.explanation,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
