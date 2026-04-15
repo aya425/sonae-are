@@ -5,28 +5,30 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type SyntheticEvent } from "react";
 
 const DAYS_OPTIONS = [
-  { value: 3, label: "3日" },
-  { value: 7, label: "7日" },
+  { value: 3, label: "3日（まずはこれ）" },
+  { value: 7, label: "7日 (安心して備える)" },
+  { value: 14, label: "14日 (万全に備える)" },
 ] as const;
 
-const DAYS_HELP_TEXT: Record<3 | 7, string> = {
+const DAYS_HELP_TEXT: Record<3 | 7 | 14, string> = {
   3: "災害直後を乗り切る最低限の備え",
   7: "ライフライン停止も想定した安心の備え",
+  14: "長期化にも対応できる余裕ある備え",
 };
 
 const SCOPE_OPTIONS = [
-  { value: false, label: "防災食のみ" },
-  { value: true, label: "日常品を含む" },
+  { value: false, label: "防災食だけで選ぶ" },
+  { value: true, label: "ふだんの食品も含める" },
 ] as const;
 
-const SCOPE_HELP_TEXT: Record<"false" | "true", string> = {
+const SCOPE_HELP_TEXT = {
   false: "長期保存できる専用食品だけで備えます",
   true: "普段食べている食品も活用して備えます",
-};
+} as const;
 
 const PRIORITY_OPTIONS = [
-  { value: "minimum", label: "最低限そろえる" },
-  { value: "balanced", label: "バランス重視" },
+  { value: "minimum", label: "必要なものを優先する" },
+  { value: "balanced", label: "いろいろバランスよくそろえる" },
 ] as const;
 
 const PRIORITY_HELP_TEXT: Record<"minimum" | "balanced", string> = {
@@ -35,7 +37,7 @@ const PRIORITY_HELP_TEXT: Record<"minimum" | "balanced", string> = {
 };
 
 type PlanConditionInput = {
-  days: 3 | 7;
+  days: 3 | 7 | 14;
   includeDailyItems: boolean;
   priorityPolicy: "minimum" | "balanced";
 };
@@ -59,7 +61,7 @@ type GeneratedPlanItem = {
 type GeneratedPlan = {
   title: string;
   familyMemberCount: number;
-  days: 3 | 7;
+  days: 3 | 7 | 14;
   includeDailyItems: boolean;
   priorityPolicy: "minimum" | "balanced";
   totalCost: number;
@@ -106,20 +108,22 @@ export default function PlanNewPage() {
     priorityPolicy: "minimum",
   });
 
-  const selectedDaysHelpText = DAYS_HELP_TEXT[form.days];
-  const selectedScopeHelpText = SCOPE_HELP_TEXT[String(form.includeDailyItems) as "false" | "true"];
-  const selectedPriorityHelpText = PRIORITY_HELP_TEXT[form.priorityPolicy];
-
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [needsFamilyRegistration, setNeedsFamilyRegistration] = useState(false);
-
   const [hasFamily, setHasFamily] = useState<boolean | null>(null);
   const [isCheckingFamily, setIsCheckingFamily] = useState(false);
+
+  const selectedDaysHelpText = DAYS_HELP_TEXT[form.days];
+  const selectedScopeHelpText = form.includeDailyItems
+    ? SCOPE_HELP_TEXT.true
+    : SCOPE_HELP_TEXT.false;
+  const selectedPriorityHelpText = PRIORITY_HELP_TEXT[form.priorityPolicy];
 
   useEffect(() => {
     const fetchFamilyMembers = async () => {
       setIsCheckingFamily(true);
+
       try {
         const response = await fetch("/api/family-members", {
           method: "GET",
@@ -292,11 +296,9 @@ export default function PlanNewPage() {
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">想定日数</label>
 
-                  {selectedDaysHelpText && (
-                    <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
-                      {selectedDaysHelpText}
-                    </p>
-                  )}
+                  <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
+                    {selectedDaysHelpText}
+                  </p>
 
                   <select
                     className="w-full rounded-md border px-3 py-2 text-sm"
@@ -304,7 +306,7 @@ export default function PlanNewPage() {
                     onChange={(e) =>
                       setForm((prev) => ({
                         ...prev,
-                        days: Number(e.target.value) as 3 | 7,
+                        days: Number(e.target.value) as 3 | 7 | 14,
                       }))
                     }
                     disabled={isSubmitting || isCheckingFamily}
@@ -320,11 +322,9 @@ export default function PlanNewPage() {
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">候補範囲</label>
 
-                  {selectedScopeHelpText && (
-                    <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
-                      {selectedScopeHelpText}
-                    </p>
-                  )}
+                  <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
+                    {selectedScopeHelpText}
+                  </p>
 
                   <select
                     className="w-full rounded-md border px-3 py-2 text-sm"
@@ -348,11 +348,9 @@ export default function PlanNewPage() {
                 <div className="rounded-lg border p-4">
                   <label className="mb-2 block text-sm font-medium text-gray-900">優先方針</label>
 
-                  {selectedPriorityHelpText && (
-                    <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
-                      {selectedPriorityHelpText}
-                    </p>
-                  )}
+                  <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
+                    {selectedPriorityHelpText}
+                  </p>
 
                   <select
                     className="w-full rounded-md border px-3 py-2 text-sm"
