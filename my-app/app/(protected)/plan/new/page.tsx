@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type SyntheticEvent } from "react";
 
 const DAYS_OPTIONS = [
-  { value: 3, label: "3日" },
-  { value: 7, label: "7日" },
-  { value: 14, label: "14日" },
+  { value: 3, label: "3日（まずはこれ）" },
+  { value: 7, label: "7日 (安心して備える)" },
+  { value: 14, label: "14日 (万全に備える)" },
 ] as const;
 
 const DAYS_HELP_TEXT: Record<3 | 7 | 14, string> = {
@@ -17,8 +17,8 @@ const DAYS_HELP_TEXT: Record<3 | 7 | 14, string> = {
 };
 
 const SCOPE_OPTIONS = [
-  { value: false, label: "防災食のみ" },
-  { value: true, label: "日常品を含む" },
+  { value: false, label: "防災食だけで選ぶ" },
+  { value: true, label: "ふだんの食品も含める" },
 ] as const;
 
 const SCOPE_HELP_TEXT = {
@@ -27,8 +27,8 @@ const SCOPE_HELP_TEXT = {
 } as const;
 
 const PRIORITY_OPTIONS = [
-  { value: "minimum", label: "最低限そろえる" },
-  { value: "balanced", label: "バランス重視" },
+  { value: "minimum", label: "必要なものを優先する" },
+  { value: "balanced", label: "いろいろバランスよくそろえる" },
 ] as const;
 
 const PRIORITY_HELP_TEXT: Record<"minimum" | "balanced", string> = {
