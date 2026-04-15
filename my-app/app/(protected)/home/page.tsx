@@ -87,13 +87,14 @@ export default function DashboardPage() {
     planCode === "premium" ? "有料プラン" : planCode === "free" ? "無料プラン" : "未取得";
 
   return (
-    <main className="min-h-screen bg-gray-50 px-3 py-6">
-      <div className="mx-auto max-w-[1800px]">
-        <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">ホーム</h1>
-            <p className="mt-1 text-xs text-gray-600">
-              家族情報、備えの費用、期限が近い商品、保存済みプランをまとめて確認できます。
+    <main className="h-full min-h-full bg-white px-3 py-6">
+      <div className="mx-auto w-full max-w-none bg-white">
+        <div className="mb-6 flex flex-col items-center gap-4 bg-white text-center">
+          <div className="rounded-2xl bg-blue-50 px-5 py-4">
+            <p className="text-base font-medium leading-7 text-[#1E3A8A]">
+              家族情報、備えの費用、期限が近い商品、
+              <br />
+              保存済みプランをまとめて確認できます。
             </p>
           </div>
 
@@ -111,7 +112,7 @@ export default function DashboardPage() {
           </section>
         ) : null}
 
-        <div className="grid max-w-[1000px] grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid w-full grid-cols-2 gap-3">
           <DashboardCard title="家族情報" href="/family" linkLabel="家族情報を見る">
             <div className="space-y-1 text-xs text-gray-700">
               <p className="font-semibold text-gray-900">
@@ -206,7 +207,7 @@ export default function DashboardPage() {
           </DashboardCard>
         </div>
 
-        <section className="mt-4 inline-block max-w-fit space-y-3 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 shadow-sm">
+        <section className="mt-4 w-full space-y-3 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 shadow-sm">
           <p className="text-sm font-semibold leading-relaxed text-gray-900">
             賞味期限が近い商品があります。必要に応じて備蓄品一覧から確認してください。
           </p>
@@ -240,7 +241,7 @@ export default function DashboardPage() {
           {isLoading ? (
             <p className="text-xs text-gray-500">読み込み中...</p>
           ) : savedPlans.length > 0 ? (
-            <div className="grid max-w-[1000px] grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="grid w-full grid-cols-2 gap-3">
               {savedPlans.map((plan) => (
                 <div
                   key={plan.id}
