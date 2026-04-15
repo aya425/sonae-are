@@ -22,8 +22,8 @@ type ItemPriority = "high" | "medium" | "low";
 
 type CategoryName = "主食" | "飲料" | "おかず" | "汁物" | "おやつ";
 
-// おやつはMVPの最小提案では必須カテゴリに含めず、余裕がある場合のみ追加候補とする
-const CATEGORY_ORDER: CategoryName[] = ["主食", "飲料", "おかず", "汁物"];
+// MVPでは、おやつも含めて「食べやすさ」と継続しやすさが伝わる提案にする
+const CATEGORY_ORDER: CategoryName[] = ["主食", "飲料", "おかず", "汁物", "おやつ"];
 
 function isCategoryName(category: string): category is CategoryName {
   return ["主食", "飲料", "おかず", "汁物", "おやつ"].includes(category);
@@ -89,7 +89,9 @@ function chooseCandidateForCategory(
 
 function getPriorityByCategory(category: string): ItemPriority {
   if (category === "主食" || category === "飲料") return "high";
-  if (category === "おかず" || category === "汁物") return "medium";
+  if (category === "おかず" || category === "汁物" || category === "おやつ") {
+    return "medium";
+  }
   return "low";
 }
 
@@ -99,6 +101,7 @@ function getCategoryMultiplier(category: string, priorityPolicy: PriorityPolicy)
     if (category === "飲料") return 1.0;
     if (category === "おかず") return 0.6;
     if (category === "汁物") return 0.5;
+    if (category === "おやつ") return 0.3;
     return 0.2;
   }
 
@@ -106,16 +109,23 @@ function getCategoryMultiplier(category: string, priorityPolicy: PriorityPolicy)
   if (category === "飲料") return 1.0;
   if (category === "おかず") return 0.8;
   if (category === "汁物") return 0.7;
+  if (category === "おやつ") return 0.5;
   return 0.3;
 }
 
 function getMinimumQuantity(category: string, priorityPolicy: PriorityPolicy): number {
   if (priorityPolicy === "minimum") {
     if (category === "主食" || category === "飲料") return 2;
+    if (category === "おやつ") return 1;
     return 1;
   }
 
-  if (category === "主食" || category === "飲料" || category === "おかず") {
+  if (
+    category === "主食" ||
+    category === "飲料" ||
+    category === "おかず" ||
+    category === "おやつ"
+  ) {
     return 2;
   }
 
@@ -142,26 +152,30 @@ function getReason(category: string, productType: ProductType, priority: ItemPri
   }
 
   if (priority === "medium") {
+    if (category === "おやつ") {
+      return "食べやすく、気持ちの負担をやわらげやすい備えとして入れています。";
+    }
+
     return `${category}を補って、備えのバランスを取りやすいです。`;
   }
 
-  return `${typeLabel}として余裕があれば加えたい${category}です。`;
+  return `${typeLabel}として、食べやすさや気持ちの負担軽減にもつながる${category}です。`;
 }
 
 function getExplanation(includeDailyItems: boolean, priorityPolicy: PriorityPolicy): string {
   if (priorityPolicy === "minimum" && includeDailyItems) {
-    return "最低限そろえる前提で、防災食を中心にしつつ、候補範囲に含まれる日常品も一部混ぜて提案しています。";
+    return "最低限そろえる前提で、主食・飲料を優先しつつ、おかず・汁物・おやつも含めて、防災食を中心に一部日常品を組み合わせて提案しています。";
   }
 
   if (priorityPolicy === "minimum" && !includeDailyItems) {
-    return "最低限そろえる前提で、主食と飲料を優先して提案しています。";
+    return "最低限そろえる前提で、主食・飲料を優先しつつ、おかず・汁物・おやつも含めて防災食中心で提案しています。";
   }
 
   if (priorityPolicy === "balanced" && includeDailyItems) {
-    return "主食・飲料・おかず・汁物のバランスを見ながら、候補範囲に含まれる防災食と日常品を組み合わせて提案しています。";
+    return "主食・飲料・おかず・汁物・おやつのバランスを見ながら、候補範囲に含まれる防災食と日常品を組み合わせて提案しています。";
   }
 
-  return "主食・飲料・おかず・汁物のバランスを見ながら、防災食中心で提案しています。";
+  return "主食・飲料・おかず・汁物・おやつのバランスを見ながら、防災食中心で提案しています。";
 }
 
 function buildCandidateProducts(
@@ -196,25 +210,12 @@ function buildCandidateProducts(
     usedProductIds.add(chosen.id);
   }
 
-  // minimum + 日常品含む の場合は、最低限の備えに加えて
-  // 日常転用品も候補に入ることを見せるため、日常品を1件だけ追加する
-  if (includeDailyItems && priorityPolicy === "minimum") {
-    const extraDailyItem = targetProducts.find(
-      (product) => product.productType === "daily_item" && !usedProductIds.has(product.id)
-    );
-
-    if (extraDailyItem) {
-      selected.push(extraDailyItem);
-      usedProductIds.add(extraDailyItem.id);
-    }
-  }
-
   return selected;
 }
 
-// TODO:
-// 現状は familyMemberCount ベースの最小版。
-// 次段で member_allergens を使った候補除外・優先調整を入れる。
+// 現状は、固定商品マスタ（特定28品目不使用品）を前提に、
+// familyMemberCount・想定日数・候補範囲・優先方針をもとに提案するMVP版。
+// アレルギー情報は商品除外ロジックの中心には置かず、最終確認は注意文で補足する。
 export function generatePlan({
   familyMemberCount,
   days,
