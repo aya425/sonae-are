@@ -90,14 +90,6 @@ export default function DashboardPage() {
     <main className="h-full min-h-full bg-white px-3 py-6">
       <div className="mx-auto w-full max-w-none bg-white">
         <div className="mb-6 flex flex-col items-center gap-4 bg-white text-center">
-          <div className="rounded-2xl bg-blue-50 px-5 py-4">
-            <p className="text-base font-medium leading-7 text-[#1E3A8A]">
-              家族情報、備えの費用、期限が近い商品、
-              <br />
-              保存済みプランをまとめて確認できます。
-            </p>
-          </div>
-
           <Link
             href="/plan/new"
             className="inline-flex items-center justify-center rounded-xl bg-blue-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-800"

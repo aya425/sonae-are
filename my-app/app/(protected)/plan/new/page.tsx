@@ -219,16 +219,6 @@ export default function PlanNewPage() {
   return (
     <main className="min-h-screen bg-white px-4 py-8">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <p className="text-lg font-medium leading-7 text-[#1E3A8A]">
-            家族条件に合わせて、
-            <br />
-            備え候補を迷わず選べるように
-            <br />
-            条件を設定します。
-          </p>
-        </div>
-
         {hasFamily === false && !errorMessage ? (
           <div className="mb-6 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
             <p>家族情報がまだ登録されていません。</p>

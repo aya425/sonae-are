@@ -427,14 +427,14 @@ export default function FamilyPage() {
 
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-5xl p-6">
+      <main className="mx-auto max-w-5xl bg-white p-6">
         <p className="mt-4 text-center text-sm text-gray-600">家族情報を読み込み中です...</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-3xl p-6 bg-gray-50 min-h-screen">
+    <main className="mx-auto max-w-3xl min-h-screen bg-white p-6">
       {errorMessage ? (
         <div className="mt-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}

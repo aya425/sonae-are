@@ -77,9 +77,7 @@ type ProductsResponse = {
 
 export default function StockItemsPage() {
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
-  const [productCandidates, setProductCandidates] = useState<
-    ProductCandidate[]
-  >([]);
+  const [productCandidates, setProductCandidates] = useState<ProductCandidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -126,20 +124,15 @@ export default function StockItemsPage() {
           }),
         ]);
 
-        const stockItemsResult: StockItemsResponse =
-          await stockItemsResponse.json();
+        const stockItemsResult: StockItemsResponse = await stockItemsResponse.json();
         const productsResult: ProductsResponse = await productsResponse.json();
 
         if (!stockItemsResponse.ok) {
-          throw new Error(
-            stockItemsResult.error?.message || "備蓄一覧の取得に失敗しました。",
-          );
+          throw new Error(stockItemsResult.error?.message || "備蓄一覧の取得に失敗しました。");
         }
 
         if (!productsResponse.ok) {
-          throw new Error(
-            productsResult.error?.message || "商品の取得に失敗しました。",
-          );
+          throw new Error(productsResult.error?.message || "商品の取得に失敗しました。");
         }
 
         setStockItems(stockItemsResult.data ?? []);
@@ -147,9 +140,7 @@ export default function StockItemsPage() {
       } catch (error) {
         console.error(error);
         setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "初期データの取得に失敗しました。",
+          error instanceof Error ? error.message : "初期データの取得に失敗しました。"
         );
       } finally {
         setIsLoading(false);
@@ -180,9 +171,7 @@ export default function StockItemsPage() {
       return;
     }
 
-    const selected = productCandidates.find(
-      (candidate) => candidate.id === value,
-    );
+    const selected = productCandidates.find((candidate) => candidate.id === value);
 
     if (!selected) return;
 
@@ -209,10 +198,7 @@ export default function StockItemsPage() {
         },
         credentials: "include",
         body: JSON.stringify({
-          productId:
-            selectedProductId && selectedProductId !== "manual"
-              ? selectedProductId
-              : null,
+          productId: selectedProductId && selectedProductId !== "manual" ? selectedProductId : null,
           productName: form.productName,
           quantity: Number(form.quantity),
           expiresAt: form.expiresAt,
@@ -223,12 +209,11 @@ export default function StockItemsPage() {
       const result: CreateStockItemResponse = await response.json();
 
       if (!response.ok || !result.data) {
-        throw new Error(
-          result.error?.message || "備蓄商品の登録に失敗しました。",
-        );
+        throw new Error(result.error?.message || "備蓄商品の登録に失敗しました。");
       }
 
-      setStockItems((prev) => [result.data!, ...prev]);
+      const createdItem = result.data;
+      setStockItems((prev) => [createdItem, ...prev]);
 
       setForm({
         productName: "",
@@ -239,11 +224,7 @@ export default function StockItemsPage() {
       setSelectedProductId("");
     } catch (error) {
       console.error(error);
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "備蓄商品の登録に失敗しました。",
-      );
+      setErrorMessage(error instanceof Error ? error.message : "備蓄商品の登録に失敗しました。");
     } finally {
       setIsSubmitting(false);
     }
@@ -271,19 +252,17 @@ export default function StockItemsPage() {
       setStockItems((prev) => prev.filter((item) => item.id !== stockItemId));
     } catch (error) {
       console.error(error);
-      setErrorMessage(
-        error instanceof Error ? error.message : "削除に失敗しました。",
-      );
+      setErrorMessage(error instanceof Error ? error.message : "削除に失敗しました。");
     }
   };
 
   const totalEstimatedCost = stockItems.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
-    0,
+    0
   );
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
@@ -293,24 +272,14 @@ export default function StockItemsPage() {
 
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-5xl p-6">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold">備蓄品一覧</h1>
-          <p className="mt-1 text-sm text-gray-600">読み込み中...</p>
-        </div>
+      <main className="mx-auto max-w-5xl bg-white p-6">
+        <p className="mt-4 text-center text-sm text-gray-600">家族情報を読み込み中です...</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-5xl p-6">
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold">備蓄品一覧</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          登録済み備蓄品を確認し、期限やコストを管理できます。
-        </p>
-      </div>
-
+    <main className="mx-auto max-w-5xl bg-white p-6">
       {errorMessage ? (
         <div className="mb-6 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
@@ -322,19 +291,12 @@ export default function StockItemsPage() {
           <h2 className="text-lg font-semibold">期限が近い商品</h2>
           <div className="mt-4 space-y-3">
             {expiringItems.length === 0 ? (
-              <p className="text-sm text-gray-600">
-                期限が近い商品はありません。
-              </p>
+              <p className="text-sm text-gray-600">期限が近い商品はありません。</p>
             ) : (
               expiringItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-lg border border-amber-200 bg-amber-50 p-3"
-                >
+                <div key={item.id} className="rounded-lg border border-amber-200 bg-amber-50 p-3">
                   <p className="font-medium">{item.name}</p>
-                  <p className="mt-1 text-sm text-gray-700">
-                    残り {item.daysLeft} 日
-                  </p>
+                  <p className="mt-1 text-sm text-gray-700">残り {item.daysLeft} 日</p>
                 </div>
               ))
             )}
@@ -344,10 +306,7 @@ export default function StockItemsPage() {
         <section className="rounded-xl border bg-white p-5">
           <h2 className="text-lg font-semibold">備蓄登録フォーム</h2>
 
-          <form
-            onSubmit={handleSubmit}
-            className="mt-4 grid gap-4 sm:grid-cols-2"
-          >
+          <form onSubmit={handleSubmit} className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="mb-1 block text-sm font-medium">商品名</label>
               <select
@@ -367,9 +326,7 @@ export default function StockItemsPage() {
 
             {selectedProductId === "manual" ? (
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-sm font-medium">
-                  商品名を自由入力
-                </label>
+                <label className="mb-1 block text-sm font-medium">商品名を自由入力</label>
                 <input
                   type="text"
                   placeholder="例: アレルギー対応カレー"
@@ -436,7 +393,7 @@ export default function StockItemsPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-md bg-[#1E3A8A] px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-md bg-[#1E3A8A] px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? "追加中..." : "備蓄を追加する"}
               </button>
@@ -462,26 +419,22 @@ export default function StockItemsPage() {
             stockItems.map((item) => (
               <article
                 key={item.id}
-                className="rounded-lg border p-4 flex flex-col justify-between"
+                className="flex flex-col justify-between rounded-lg border p-4"
               >
                 <div className="space-y-1">
                   <p className="font-medium">{item.name}</p>
                   <p className="text-sm text-gray-600">数量: {item.quantity}</p>
                   <p className="text-sm text-gray-600">
                     賞味期限:{" "}
-                    <span className="whitespace-nowrap">
-                      {formatDate(item.expiresAt)}
-                    </span>
+                    <span className="whitespace-nowrap">{formatDate(item.expiresAt)}</span>
                   </p>
-                  <p className="text-sm text-gray-600">
-                    単価: ¥{item.unitPrice.toLocaleString()}
-                  </p>
+                  <p className="text-sm text-gray-600">単価: ¥{item.unitPrice.toLocaleString()}</p>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => handleDelete(item.id)}
-                  className="mt-4 self-start rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                  className="mt-4 self-start rounded-md border border-red-300 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50"
                 >
                   削除
                 </button>
