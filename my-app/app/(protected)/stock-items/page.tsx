@@ -279,15 +279,15 @@ export default function StockItemsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl bg-white p-6">
+    <main className="mx-auto max-w-5xl bg-white px-3 py-4">
       {errorMessage ? (
         <div className="mb-6 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
         </div>
       ) : null}
 
-      <div className="space-y-6">
-        <section className="rounded-xl border bg-white p-5">
+      <div className="space-y-4">
+        <section className="rounded-xl border bg-white p-4">
           <h2 className="text-lg font-semibold">期限が近い商品</h2>
           <div className="mt-4 space-y-3">
             {expiringItems.length === 0 ? (
@@ -303,7 +303,7 @@ export default function StockItemsPage() {
           </div>
         </section>
 
-        <section className="rounded-xl border bg-white p-5">
+        <section className="rounded-xl border bg-white p-4">
           <h2 className="text-lg font-semibold">備蓄登録フォーム</h2>
 
           <form onSubmit={handleSubmit} className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -402,7 +402,7 @@ export default function StockItemsPage() {
         </section>
       </div>
 
-      <section className="mt-6 rounded-xl border bg-white p-5">
+      <section className="mt-4 rounded-xl border bg-white p-5">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold">登録済み備蓄商品一覧</h2>
           <p className="text-sm text-gray-600">

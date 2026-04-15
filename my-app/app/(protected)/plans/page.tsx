@@ -96,8 +96,8 @@ export default function PlansPage() {
 
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-5xl p-6">
-        <div className="mb-8 text-center">
+      <main className="mx-auto max-w-5xl px-2 py-2">
+        <div className="mb-4 text-center">
           <p className="text-lg font-bold text-gray-600">保存済みプラン数: 読み込み中...</p>
         </div>
       </main>
@@ -106,8 +106,8 @@ export default function PlansPage() {
 
   if (errorMessage) {
     return (
-      <main className="mx-auto max-w-5xl p-6">
-        <div className="mb-8 text-center">
+      <main className="mx-auto max-w-5xl px-2 py-2">
+        <div className="mb-4 text-center">
           <p className="text-lg font-bold text-gray-600">保存済みプラン数: --件</p>
         </div>
 
@@ -119,8 +119,8 @@ export default function PlansPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl p-6">
-      <div className="mb-8 text-center">
+    <main className="mx-auto max-w-5xl px-2 py-2">
+      <div className="mb-4 text-center">
         <p className="text-lg font-bold text-gray-600">保存済みプラン数: {plans.length}件</p>
       </div>
 

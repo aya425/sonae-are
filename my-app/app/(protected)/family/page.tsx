@@ -427,14 +427,14 @@ export default function FamilyPage() {
 
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-5xl bg-white p-6">
+      <main className=" max-w-5xl bg-white px-2 py-2">
         <p className="mt-4 text-center text-sm text-gray-600">家族情報を読み込み中です...</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-3xl min-h-screen bg-white p-6">
+    <main className="mx-auto max-w-4xl min-h-screen px-3 py-4">
       {errorMessage ? (
         <div className="mt-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
@@ -445,8 +445,8 @@ export default function FamilyPage() {
         <p className="mt-4 text-center text-sm text-gray-600">家族情報を登録しましょう</p>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <form onSubmit={handleSubmit} className="mt-0 space-y-3">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
           {members.map((member, index) => {
             const isExistingMember = Boolean(member.id);
             const deletingMemberId = member.id;
@@ -454,7 +454,7 @@ export default function FamilyPage() {
 
             return (
               <section key={member.localId} className="rounded-lg border bg-white p-4 shadow-sm">
-                <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="mb-1 flex items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold text-gray-800 whitespace-nowrap">
                     {index + 1}人目
                   </h2>
@@ -471,7 +471,7 @@ export default function FamilyPage() {
                   ) : null}
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <div>
                     <label className="mb-1 block text-sm font-medium">続柄</label>
                     <select
@@ -514,7 +514,7 @@ export default function FamilyPage() {
                         member.allergens.map((allergen) => (
                           <span
                             key={allergen}
-                            className="rounded-full bg-gray-100 px-3 py-1 text-sm"
+                            className="rounded-full bg-gray-100 px-2 py-0.5 text-xs"
                           >
                             {allergen}
                           </span>
@@ -527,7 +527,7 @@ export default function FamilyPage() {
                     <button
                       type="button"
                       onClick={() => openAllergenModal(index)}
-                      className="mt-3 inline-block px-2 py-1 text-sm font-semibold text-blue-700 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                      className="mt-1 inline-block px-2 py-1 text-sm font-semibold text-blue-700 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={isFormDisabled || isDeleting}
                     >
                       アレルゲンを選択
