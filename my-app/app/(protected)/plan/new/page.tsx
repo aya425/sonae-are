@@ -18,7 +18,7 @@ const DAYS_HELP_TEXT: Record<3 | 7 | 14, string> = {
 
 const SCOPE_OPTIONS = [
   { value: false, label: "防災食だけで選ぶ" },
-  { value: true, label: "ふだんの食品も含める" },
+  { value: true, label: "普段の食品も含める" },
 ] as const;
 
 const SCOPE_HELP_TEXT = {
@@ -217,15 +217,8 @@ export default function PlanNewPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-8">
+    <main className="min-h-screen bg-white px-4 py-8">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <h1 className="text-2xl font-bold text-gray-900">備えプランを作成</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            家族条件に合わせて、備え候補を迷わず選べるように条件を設定します。
-          </p>
-        </div>
-
         {hasFamily === false && !errorMessage ? (
           <div className="mb-6 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
             <p>家族情報がまだ登録されていません。</p>
@@ -257,27 +250,27 @@ export default function PlanNewPage() {
           </div>
         ) : null}
 
-        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,680px)]">
+        <div className="grid grid-cols-1 gap-6">
           <aside className="h-fit rounded-xl border border-blue-100 bg-blue-50 p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-gray-900">選び方のヒント</h2>
+            <h2 className="text-lg font-semibold text-gray-900">選び方のヒント</h2>
 
-            <div className="mt-4 space-y-4 text-sm text-gray-700">
+            <div className="mt-4 space-y-4 text-base text-gray-700">
               <div>
-                <p className="font-medium text-gray-900">想定日数</p>
+                <p className="font-medium text-lg text-gray-900">想定日数</p>
                 <p className="mt-1">
                   まずは3日分から始めると、最小構成で無理なく備えやすくなります。
                 </p>
               </div>
 
               <div>
-                <p className="font-medium text-gray-900">候補範囲</p>
+                <p className="font-medium text-lg text-gray-900">候補範囲</p>
                 <p className="mt-1">
                   日常品も含めると、普段使いしながら備えを維持しやすくなります。
                 </p>
               </div>
 
               <div>
-                <p className="font-medium text-gray-900">優先方針</p>
+                <p className="font-medium text-lg text-gray-900">優先方針</p>
                 <p className="mt-1">
                   迷う場合は「バランス重視」を選ぶと、主食・飲料・おかずを偏りなく確認できます。
                 </p>
@@ -288,20 +281,20 @@ export default function PlanNewPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <section className="rounded-xl border bg-white p-5 shadow-sm">
               <h2 className="text-lg font-semibold text-gray-900">プラン生成条件</h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-base text-gray-500">
                 必要な条件を選ぶと、家族に合わせた備え候補を生成できます。
               </p>
 
               <div className="mt-5 space-y-4">
                 <div className="rounded-lg border p-4">
-                  <label className="mb-2 block text-sm font-medium text-gray-900">想定日数</label>
+                  <label className="mb-2 block text-lg font-medium text-gray-900">想定日数</label>
 
-                  <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
+                  <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-sm leading-relaxed text-gray-600">
                     {selectedDaysHelpText}
                   </p>
 
                   <select
-                    className="w-full rounded-md border px-3 py-2 text-sm"
+                    className="w-full rounded-md border px-3 py-2 text-base"
                     value={form.days}
                     onChange={(e) =>
                       setForm((prev) => ({
@@ -320,14 +313,14 @@ export default function PlanNewPage() {
                 </div>
 
                 <div className="rounded-lg border p-4">
-                  <label className="mb-2 block text-sm font-medium text-gray-900">候補範囲</label>
+                  <label className="mb-2 block text-lg font-medium text-gray-900">候補範囲</label>
 
-                  <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
+                  <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-sm leading-relaxed text-gray-600">
                     {selectedScopeHelpText}
                   </p>
 
                   <select
-                    className="w-full rounded-md border px-3 py-2 text-sm"
+                    className="w-full rounded-md border px-3 py-2 text-base"
                     value={String(form.includeDailyItems)}
                     onChange={(e) =>
                       setForm((prev) => ({
@@ -346,14 +339,14 @@ export default function PlanNewPage() {
                 </div>
 
                 <div className="rounded-lg border p-4">
-                  <label className="mb-2 block text-sm font-medium text-gray-900">優先方針</label>
+                  <label className="mb-2 block text-lg font-medium text-gray-900">優先方針</label>
 
-                  <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
+                  <p className="mb-2 rounded-md bg-gray-50 px-3 py-2 text-sm leading-relaxed text-gray-600">
                     {selectedPriorityHelpText}
                   </p>
 
                   <select
-                    className="w-full rounded-md border px-3 py-2 text-sm"
+                    className="w-full rounded-md border px-3 py-2 text-base"
                     value={form.priorityPolicy}
                     onChange={(e) =>
                       setForm((prev) => ({

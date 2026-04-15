@@ -6,6 +6,7 @@ type PlanRow = {
   title: string;
   family_member_count: number;
   total_estimated_cost: number;
+  annual_cost: number | null;
   updated_at: string;
 };
 
@@ -50,7 +51,7 @@ export async function GET() {
 
     const { data: plans, error: plansError } = await supabase
       .from("plans")
-      .select("id, title, family_member_count, total_estimated_cost, updated_at")
+      .select("id, title, family_member_count, total_estimated_cost, annual_cost, updated_at")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
 
@@ -73,6 +74,7 @@ export async function GET() {
       title: plan.title,
       familyMemberCount: plan.family_member_count,
       totalEstimatedCost: plan.total_estimated_cost,
+      annualCost: plan.annual_cost,
       updatedAt: plan.updated_at,
     }));
 
