@@ -115,14 +115,18 @@ export default function PlanDetailPage() {
   const [plan, setPlan] = useState<PlanCondition>(mockPlanCondition);
   const [planItems, setPlanItems] = useState<PlanItem[]>(mockPlanItems);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [hasGeneratedPlan, setHasGeneratedPlan] = useState(false);
 
   useEffect(() => {
     const storedPlan = sessionStorage.getItem("generatedPlan");
 
     if (!storedPlan) {
+      setHasGeneratedPlan(false);
       setIsLoaded(true);
       return;
     }
+
+    setHasGeneratedPlan(true);
 
     try {
       const parsedPlan = JSON.parse(storedPlan) as StoredGeneratedPlan;
@@ -142,6 +146,7 @@ export default function PlanDetailPage() {
       setPlanItems(parsedPlan.items);
     } catch (error) {
       console.error("generatedPlanの読み込みに失敗しました", error);
+      setHasGeneratedPlan(false);
     } finally {
       setIsLoaded(true);
     }
@@ -164,6 +169,11 @@ export default function PlanDetailPage() {
   };
 
   const handleSave = async () => {
+    if (!hasGeneratedPlan) {
+      alert("先にプランを生成してください。");
+      return;
+    }
+
     const payload = {
       title: plan.title,
       familyMemberCount: plan.familyMemberCount,
@@ -222,6 +232,25 @@ export default function PlanDetailPage() {
 
   return (
     <main className="mx-auto max-w-5xl p-6">
+      {!hasGeneratedPlan ? (
+        <section className="mb-6 rounded-xl border border-yellow-300 bg-yellow-50 p-5">
+          <h2 className="text-lg font-semibold text-yellow-800">
+            未生成のプランです
+          </h2>
+          <p className="mt-2 text-sm text-yellow-700">
+            先にプラン生成画面で条件を選び、プランを生成してください。
+          </p>
+          <div className="mt-4">
+            <Link
+              href="/plan/new"
+              className="inline-flex items-center justify-center rounded-md bg-yellow-700 px-4 py-2 text-sm font-bold text-white hover:bg-yellow-800"
+            >
+              プラン生成画面へ戻る
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       <section className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-5">
         <h2 className="text-lg font-semibold text-[#1E3A8A]">プラン条件</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -329,7 +358,8 @@ export default function PlanDetailPage() {
         <button
           type="button"
           onClick={handleSave}
-          className="rounded-md bg-[#1E3A8A] px-4 py-2 text-sm font-bold text-white hover:bg-blue-800"
+          disabled={!hasGeneratedPlan}
+          className="rounded-md bg-[#1E3A8A] px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           保存
         </button>
