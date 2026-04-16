@@ -343,33 +343,33 @@ export default function PlanNewPage() {
               </section>
             ) : (
               <section className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
-                <h2 className="mt-1 text-center text-xl font-semibold text-gray-900">
+                <h2 className="mt-2 text-center text-xl font-semibold text-gray-900">
                   AIに伝える条件
                 </h2>
-                <p className="mt-2 text-center text-base text-gray-900">
+                <p className="mt-2 text-center text-base font-semibold text-gray-900">
                   条件を選んで、AIに備えプランを作ってもらいます
                 </p>
 
-                <div className="mt-3 space-y-3">
+                <div className="mt-2 space-y-2">
                   <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
                     <div className="mb-2 flex items-center justify-center gap-2">
                       <label className="block text-lg font-semibold text-blue-900">想定日数</label>
                       <button
                         type="button"
                         onClick={() => setOpenHintModal("days")}
-                        className="flex h-7 w-7 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                        className="flex h-7 w-7 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-100"
                         aria-label="想定日数のヒントを表示"
                       >
                         ?
                       </button>
                     </div>
 
-                    <p className="mb-2 rounded-xl bg-slate-50 px-3 py-2 text-center text-base font-medium leading-relaxed text-gray-900">
+                    <p className="mb-2 rounded-xl bg-slate-50 px-3 py-2 text-center text-lg font-medium leading-relaxed text-gray-900">
                       {selectedDaysHelpText}
                     </p>
 
                     <select
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-base font-semibold text-gray-900"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold text-gray-900"
                       value={form.days}
                       onChange={(e) =>
                         setForm((prev) => ({
@@ -393,19 +393,19 @@ export default function PlanNewPage() {
                       <button
                         type="button"
                         onClick={() => setOpenHintModal("scope")}
-                        className="flex h-7 w-7 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                        className="flex h-7 w-7 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-100"
                         aria-label="候補範囲のヒントを表示"
                       >
                         ?
                       </button>
                     </div>
 
-                    <p className="mb-2 rounded-xl bg-slate-50 px-3 py-2 text-center text-base font-medium leading-relaxed text-gray-900">
+                    <p className="mb-2 rounded-xl bg-slate-50 px-3 py-2 text-center text-lg font-medium leading-relaxed text-gray-900">
                       {selectedScopeHelpText}
                     </p>
 
                     <select
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-base font-semibold text-gray-900"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold text-gray-900"
                       value={String(form.includeDailyItems)}
                       onChange={(e) =>
                         setForm((prev) => ({
@@ -429,19 +429,19 @@ export default function PlanNewPage() {
                       <button
                         type="button"
                         onClick={() => setOpenHintModal("priority")}
-                        className="flex h-7 w-7 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                        className="flex h-7 w-7 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-100"
                         aria-label="優先方針のヒントを表示"
                       >
                         ?
                       </button>
                     </div>
 
-                    <p className="mb-2 rounded-xl bg-slate-50 px-3 py-2 text-center text-base font-medium leading-relaxed text-gray-900">
+                    <p className="mb-2 rounded-xl bg-slate-50 v py-2 text-center text-lg font-medium leading-relaxed text-gray-900">
                       {selectedPriorityHelpText}
                     </p>
 
                     <select
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-base font-semibold whitespace-pre-line text-gray-900"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold whitespace-pre-line text-gray-900"
                       value={form.priorityPolicy}
                       onChange={(e) =>
                         setForm((prev) => ({
@@ -460,11 +460,11 @@ export default function PlanNewPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 mb-3 flex justify-center">
+                <div className="mt-4 mb-3 flex justify-center">
                   <button
                     type="submit"
                     disabled={isSubmitting || isCheckingFamily}
-                    className="flex min-w-[280px] justify-center rounded-xl bg-[#1E3A8A] px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex min-w-[280px] justify-center rounded-xl bg-[#1E3A8A] px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isCheckingFamily ? "家族情報を確認中..." : "AIでプランを生成する"}
                   </button>

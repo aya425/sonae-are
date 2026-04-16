@@ -98,7 +98,7 @@ export default function PlansPage() {
     return (
       <main className="mx-auto w-full max-w-[920px] px-2 py-4">
         <div className="mb-4 text-center">
-          <p className="text-lg font-semibold text-gray-700">保存済みプラン数: 読み込み中...</p>
+          <p className="text-xl text-gray-900">保存済みプラン数: 読み込み中...</p>
         </div>
       </main>
     );
@@ -108,7 +108,7 @@ export default function PlansPage() {
     return (
       <main className="mx-auto w-full max-w-[920px] px-2 py-4">
         <div className="mb-4 text-center">
-          <p className="text-lg font-semibold text-gray-700">保存済みプラン数: --件</p>
+          <p className="text-xl font-semibold text-gray-900">保存済みプラン数: --件</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
@@ -121,7 +121,7 @@ export default function PlansPage() {
   return (
     <main className="mx-auto w-full max-w-[920px] px-2 py-4">
       <div className="mb-4 text-center">
-        <p className="text-lg font-semibold text-gray-700">保存済みプラン数: {plans.length}件</p>
+        <p className="text-xl font-semibold text-gray-900">保存済みプラン数: {plans.length}件</p>
       </div>
 
       {!hasPlans ? (
@@ -133,7 +133,7 @@ export default function PlansPage() {
           <div className="mt-4 flex justify-center">
             <Link
               href="/plan/new"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-xl bg-[#1E3A8A] px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-xl bg-[#1E3A8A] px-5 py-3 text-base font-semibold text-white hover:bg-blue-800"
             >
               備えプランを作る
             </Link>
@@ -147,12 +147,12 @@ export default function PlansPage() {
               className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-[0_4px_12px_rgba(15,23,42,0.08)]"
             >
               <div className="space-y-2 text-center">
-                <h2 className="text-lg font-semibold text-gray-900">{plan.title}</h2>
-                <p className="text-base text-gray-900">家族人数: {plan.familyMemberCount}人</p>
-                <p className="text-base text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900">{plan.title}</h2>
+                <p className="text-lg text-gray-900">家族人数: {plan.familyMemberCount}人</p>
+                <p className="text-lg text-gray-900">
                   初期費用: ¥{plan.totalEstimatedCost.toLocaleString()}
                 </p>
-                <p className="text-base text-gray-900">
+                <p className="text-lg text-gray-900">
                   更新日: {new Date(plan.updatedAt).toLocaleDateString("ja-JP")}
                 </p>
               </div>
@@ -160,14 +160,14 @@ export default function PlansPage() {
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 <Link
                   href={`/plans/${plan.id}`}
-                  className="inline-flex min-w-[132px] items-center justify-center whitespace-nowrap rounded-xl bg-[#1E3A8A] px-4 py-3 text-base font-semibold text-white hover:bg-blue-800"
+                  className="inline-flex min-w-[132px] items-center justify-center whitespace-nowrap rounded-xl bg-[#1E3A8A] px-4 py-3 text-lg font-semibold text-white hover:bg-blue-800"
                 >
                   プランを見る
                 </Link>
                 <button
                   type="button"
                   onClick={() => handleDelete(plan.id)}
-                  className="inline-flex min-w-[132px] items-center justify-center whitespace-nowrap rounded-xl border border-red-300 px-4 py-3 text-base font-semibold text-red-600 hover:bg-red-50"
+                  className="inline-flex min-w-[132px] items-center justify-center whitespace-nowrap rounded-xl border border-red-300 px-4 py-3 text-lg font-semibold text-red-600 hover:bg-red-50"
                 >
                   削除
                 </button>
