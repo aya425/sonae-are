@@ -455,7 +455,7 @@ export default function FamilyPage() {
             return (
               <section
                 key={member.localId}
-                className="w-full max-w-md rounded-lg border bg-white p-4 shadow-sm"
+                className="w-full max-w-md rounded-lg border bg-white p-4 shadow-sm mb-1"
               >
                 <div className="mb-1 flex items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold text-gray-800 whitespace-nowrap">
@@ -554,7 +554,7 @@ export default function FamilyPage() {
           })}
         </div>
 
-        <div className="flex justify-center">
+        <div className="mt-4 flex justify-center">
           <button
             type="button"
             onClick={addMember}
@@ -565,7 +565,7 @@ export default function FamilyPage() {
           </button>
         </div>
 
-        <div className="flex justify-center">
+        <div className="mt-2 flex justify-center">
           <button
             type="submit"
             disabled={isFormDisabled}
