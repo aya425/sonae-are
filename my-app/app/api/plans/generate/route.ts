@@ -33,6 +33,22 @@ type NormalizedProduct = {
   isActive: boolean;
 };
 
+type RecentPlanRow = {
+  id: string;
+};
+
+type RecentSelectedProduct = {
+  name: string;
+  category: string;
+};
+
+type PlanItemWithProductRow = {
+  product: Array<{
+    name: string;
+    category: string;
+  }> | null;
+};
+
 type AiPlanItem = {
   productId: string;
   quantity: number;
@@ -142,6 +158,7 @@ function buildAiPrompt(params: {
   includeDailyItems: boolean;
   priorityPolicy: PriorityPolicy;
   products: NormalizedProduct[];
+  recentSelectedProducts: RecentSelectedProduct[];
 }) {
   const filteredProducts = params.products
     .filter((product) => product.isActive && product.isFreeFrom28)
@@ -151,51 +168,21 @@ function buildAiPrompt(params: {
 
   const categoryOrder = ["主食", "飲料", "おかず", "汁物", "おやつ"] as const;
 
-  const getCategoryLimit = (category: (typeof categoryOrder)[number]) => {
-    if (category === "飲料") return 2;
-    return params.priorityPolicy === "minimum" ? 2 : 3;
-  };
+  const shuffleProducts = (products: typeof filteredProducts) => {
+    const shuffled = [...products];
 
-  const pickCategoryProducts = (category: (typeof categoryOrder)[number], limit: number) => {
-    const categoryProducts = filteredProducts.filter((product) => product.category === category);
-
-    if (!params.includeDailyItems) {
-      return categoryProducts.slice(0, limit);
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
-    const emergencyFoods = categoryProducts.filter(
-      (product) => product.productType === "emergency_food"
-    );
-    const dailyItems = categoryProducts.filter((product) => product.productType === "daily_item");
-
-    const selected: typeof categoryProducts = [];
-    const usedIds = new Set<string>();
-
-    const firstEmergency = emergencyFoods[0];
-    if (firstEmergency) {
-      selected.push(firstEmergency);
-      usedIds.add(firstEmergency.id);
-    }
-
-    const firstDaily = dailyItems[0];
-    if (selected.length < limit && firstDaily && !usedIds.has(firstDaily.id)) {
-      selected.push(firstDaily);
-      usedIds.add(firstDaily.id);
-    }
-
-    const remainingProducts = categoryProducts.filter((product) => !usedIds.has(product.id));
-
-    for (const product of remainingProducts) {
-      if (selected.length >= limit) break;
-      selected.push(product);
-      usedIds.add(product.id);
-    }
-
-    return selected;
+    return shuffled;
   };
 
   const candidateProducts = categoryOrder
-    .flatMap((category) => pickCategoryProducts(category, getCategoryLimit(category)))
+    .flatMap((category) =>
+      shuffleProducts(filteredProducts.filter((product) => product.category === category))
+    )
     .map((product) => ({
       id: product.id,
       name: product.name,
@@ -203,6 +190,18 @@ function buildAiPrompt(params: {
       productType: product.productType,
       price: product.price,
     }));
+
+  const recentSelectedProductsText =
+    params.recentSelectedProducts.length > 0
+      ? `
+直近で選ばれた商品:
+${params.recentSelectedProducts
+  .map((product) => `- ${product.category}: ${product.name}`)
+  .join("\n")}
+
+可能であれば、今回はこれらと異なる商品を優先してください。
+`
+      : "";
 
   return `
 あなたは、食物アレルギー家庭向け防災備蓄支援アプリの提案アシスタントです。
@@ -217,7 +216,7 @@ function buildAiPrompt(params: {
 
 候補商品一覧:
 ${JSON.stringify(candidateProducts)}
-
+${recentSelectedProductsText}
 最重要ルール:
 1. 候補商品一覧にある商品だけを使う
 2. items に重複する productId を入れない
@@ -227,9 +226,13 @@ ${JSON.stringify(candidateProducts)}
 6. 主食と飲料は、必ず同量にする
 7. 必要優先のときは、おかず6割・汁物5割・おやつ3割を目安にする
 8. バランス重視のときは、おかず8割・汁物7割・おやつ5割を目安にする
-9. explanation は日本語1〜2文、120文字以内にする
-10. warnings は日本語で最大2件にする
-11. JSON 以外は返さない
+9. 同じ条件でも毎回同じ商品名だけに固定しすぎない
+10. 候補商品一覧に複数の妥当な候補がある場合は、商品名のバリエーションが出るように選ぶ
+11. 特に主食・おかず・汁物・おやつは、毎回同じ商品だけを優先し続けない
+12. explanation では、選んだ商品の違いが伝わるようにする
+13. explanation は日本語1〜2文、120文字以内にする
+14. warnings は日本語で最大2件にする
+15. JSON 以外は返さない
 
 reason:
 - 商品名の言い換えだけにしない
@@ -279,6 +282,7 @@ async function generatePlanWithOpenAI(params: {
   includeDailyItems: boolean;
   priorityPolicy: PriorityPolicy;
   products: NormalizedProduct[];
+  recentSelectedProducts: RecentSelectedProduct[];
 }) {
   const prompt = buildAiPrompt(params);
 
@@ -310,16 +314,24 @@ async function generatePlanWithOpenAI(params: {
     throw new Error("OpenAI response items are invalid.");
   }
 
-  const productMap = new Map(params.products.map((product) => [product.id, product]));
+  const productMap = new Map<string, NormalizedProduct>();
+
+  for (const product of params.products) {
+    productMap.set(product.id, product);
+    productMap.set(product.name, product);
+  }
   const usedProductIds = new Set<string>();
+  const usedCategories = new Set<string>();
 
   const items = parsed.items
     .map((item) => {
       const product = productMap.get(item.productId);
       if (!product) return null;
       if (usedProductIds.has(product.id)) return null;
+      if (usedCategories.has(product.category)) return null;
 
       usedProductIds.add(product.id);
+      usedCategories.add(product.category);
 
       const quantity = getQuantityByCategory({
         category: product.category,
@@ -377,8 +389,6 @@ async function generatePlanWithOpenAI(params: {
 }
 
 export async function POST(request: NextRequest) {
-  console.log("[plans/generate] start");
-
   try {
     const body = (await request.json()) as GeneratePlanRequest;
     const { days, includeDailyItems, priorityPolicy } = body;
@@ -454,7 +464,6 @@ export async function POST(request: NextRequest) {
     const familyMemberCount = ((familyMembers ?? []) as FamilyMemberRow[]).length;
 
     if (familyMemberCount === 0) {
-      console.log("[plans/generate] family members not found");
       return NextResponse.json(
         {
           data: null,
@@ -502,6 +511,40 @@ export async function POST(request: NextRequest) {
       isActive: product.is_active,
     }));
 
+    let recentSelectedProducts: RecentSelectedProduct[] = [];
+
+    const { data: recentPlans, error: recentPlansError } = await supabase
+      .from("plans")
+      .select("id")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(1);
+
+    if (recentPlansError) {
+      console.warn("[plans/generate] recent plans fetch failed", recentPlansError);
+    } else {
+      const latestPlan = (recentPlans?.[0] ?? null) as RecentPlanRow | null;
+
+      if (latestPlan) {
+        const { data: recentPlanItems, error: recentPlanItemsError } = await supabase
+          .from("plan_items")
+          .select("product:products(name, category)")
+          .eq("plan_id", latestPlan.id);
+
+        if (recentPlanItemsError) {
+          console.warn("[plans/generate] recent plan items fetch failed", recentPlanItemsError);
+        } else {
+          recentSelectedProducts = ((recentPlanItems ?? []) as PlanItemWithProductRow[])
+            .flatMap((item) => item.product ?? [])
+            .filter(
+              (product): product is { name: string; category: string } =>
+                Boolean(product?.name) && Boolean(product?.category)
+            )
+            .slice(0, 5);
+        }
+      }
+    }
+
     const fallbackResponse = buildFallbackResponse({
       familyMemberCount,
       days,
@@ -517,9 +560,8 @@ export async function POST(request: NextRequest) {
         includeDailyItems,
         priorityPolicy,
         products: normalizedProducts,
+        recentSelectedProducts,
       });
-
-      console.log("[plans/generate] success with openai");
 
       return NextResponse.json(
         {
