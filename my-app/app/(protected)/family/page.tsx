@@ -446,7 +446,7 @@ export default function FamilyPage() {
       )}
 
       <form onSubmit={handleSubmit} className="mt-0 space-y-3">
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 justify-items-center">
+        <div className="grid grid-cols-1 gap-2 justify-items-center">
           {members.map((member, index) => {
             const isExistingMember = Boolean(member.id);
             const deletingMemberId = member.id;
@@ -475,42 +475,44 @@ export default function FamilyPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">続柄</label>
-                    <select
-                      className="w-full rounded border px-3 py-2"
-                      value={member.role}
-                      onChange={(e) => updateMemberField(index, "role", e.target.value)}
-                      disabled={isFormDisabled || isDeleting}
-                    >
-                      <option value="">選択してください</option>
-                      {RELATION_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">続柄</label>
+                      <select
+                        className="w-full rounded border px-3 py-2"
+                        value={member.role}
+                        onChange={(e) => updateMemberField(index, "role", e.target.value)}
+                        disabled={isFormDisabled || isDeleting}
+                      >
+                        <option value="">選択してください</option>
+                        {RELATION_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">年齢</label>
+                      <select
+                        className="w-full rounded border px-3 py-2"
+                        value={member.ageGroup}
+                        onChange={(e) => updateMemberField(index, "ageGroup", e.target.value)}
+                        disabled={isFormDisabled || isDeleting}
+                      >
+                        <option value="">選択してください</option>
+                        {AGE_GROUP_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium">年齢</label>
-                    <select
-                      className="w-full rounded border px-3 py-2"
-                      value={member.ageGroup}
-                      onChange={(e) => updateMemberField(index, "ageGroup", e.target.value)}
-                      disabled={isFormDisabled || isDeleting}
-                    >
-                      <option value="">選択してください</option>
-                      {AGE_GROUP_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <p className="mb-2 text-sm font-medium">アレルゲン</p>
+                    <p className="mb-2 text-base font-medium">アレルゲン</p>
 
                     <div className="flex flex-wrap gap-2">
                       {member.allergens.length > 0 ? (
@@ -523,14 +525,14 @@ export default function FamilyPage() {
                           </span>
                         ))
                       ) : (
-                        <p className="text-sm text-gray-500">未選択</p>
+                        <p className="text-base text-gray-500">未選択</p>
                       )}
                     </div>
 
                     <button
                       type="button"
                       onClick={() => openAllergenModal(index)}
-                      className="mt-1 inline-block px-2 py-1 text-sm font-semibold text-blue-700 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                      className="mt-1 inline-block px-2 py-1 text-sm font-semibold text-[#1E3A8A] underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={isFormDisabled || isDeleting}
                     >
                       アレルゲンを選択
@@ -589,7 +591,7 @@ export default function FamilyPage() {
             aria-labelledby="allergen-modal-title"
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 id="allergen-modal-title" className="text-lg font-semibold">
+              <h2 id="allergen-modal-title" className="text-4xl font-bold text-red-500">
                 アレルゲンを選択
               </h2>
               <button
@@ -606,7 +608,7 @@ export default function FamilyPage() {
               {ALLERGEN_OPTIONS.map((allergen) => (
                 <label
                   key={allergen.value}
-                  className="flex items-center gap-2 rounded border px-3 py-2 text-sm"
+                  className="flex items-center gap-2 rounded border px-3 py-2 text-base"
                 >
                   <input
                     type="checkbox"
