@@ -445,8 +445,8 @@ export default function FamilyPage() {
         <p className="mt-4 text-center text-sm text-gray-600">家族情報を登録しましょう</p>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-0 space-y-3">
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 justify-items-center">
+      <form onSubmit={handleSubmit} className="mt-0 space-y-4">
+        <div className="grid grid-cols-1 gap-3 justify-items-center">
           {members.map((member, index) => {
             const isExistingMember = Boolean(member.id);
             const deletingMemberId = member.id;
@@ -455,10 +455,10 @@ export default function FamilyPage() {
             return (
               <section
                 key={member.localId}
-                className="w-full max-w-md rounded-lg border bg-white p-4 shadow-sm mb-1"
+                className=" max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 mb-2 shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
               >
-                <div className="mb-1 flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-semibold text-gray-800 whitespace-nowrap">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="whitespace-nowrap text-2xl font-bold text-[#1E3A8A]">
                     {index + 1}人目
                   </h2>
 
@@ -467,80 +467,88 @@ export default function FamilyPage() {
                       type="button"
                       onClick={() => member.id && handleDelete(member.id)}
                       disabled={isDeleting || isSubmitting}
-                      className="flex items-center gap-1 rounded border border-red-300 px-3 py-1 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex items-center gap-1 rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <span>{isDeleting ? "削除中..." : "削除"}</span>
                     </button>
                   ) : null}
                 </div>
 
-                <div className="space-y-2">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">続柄</label>
-                    <select
-                      className="w-full rounded border px-3 py-2"
-                      value={member.role}
-                      onChange={(e) => updateMemberField(index, "role", e.target.value)}
-                      disabled={isFormDisabled || isDeleting}
-                    >
-                      <option value="">選択してください</option>
-                      {RELATION_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-base font-semibold text-slate-800">
+                        続柄
+                      </label>
+                      <select
+                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
+                        value={member.role}
+                        onChange={(e) => updateMemberField(index, "role", e.target.value)}
+                        disabled={isFormDisabled || isDeleting}
+                      >
+                        <option value="">選択してください</option>
+                        {RELATION_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-base font-semibold text-slate-800">
+                        年齢
+                      </label>
+                      <select
+                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
+                        value={member.ageGroup}
+                        onChange={(e) => updateMemberField(index, "ageGroup", e.target.value)}
+                        disabled={isFormDisabled || isDeleting}
+                      >
+                        <option value="">選択してください</option>
+                        {AGE_GROUP_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">年齢</label>
-                    <select
-                      className="w-full rounded border px-3 py-2"
-                      value={member.ageGroup}
-                      onChange={(e) => updateMemberField(index, "ageGroup", e.target.value)}
-                      disabled={isFormDisabled || isDeleting}
-                    >
-                      <option value="">選択してください</option>
-                      {AGE_GROUP_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <p className="mb-2 text-sm font-medium">アレルゲン</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-base font-semibold text-slate-800">アレルゲン</span>
+                      <button
+                        type="button"
+                        onClick={() => openAllergenModal(index)}
+                        className="text-base font-semibold text-[#1E3A8A] hover:underline"
+                      >
+                        選択してください
+                      </button>
+                    </div>
 
                     <div className="flex flex-wrap gap-2">
-                      {member.allergens.length > 0 ? (
+                      {member.allergens.length === 0 ? (
+                        <span className="text-sm text-gray-400">未選択</span>
+                      ) : (
                         member.allergens.map((allergen) => (
                           <span
                             key={allergen}
-                            className="rounded-full bg-gray-100 px-2 py-0.5 text-xs"
+                            className="px-2 py-1 text-xs bg-gray-100 rounded-full"
                           >
                             {allergen}
                           </span>
                         ))
-                      ) : (
-                        <p className="text-sm text-gray-500">未選択</p>
                       )}
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => openAllergenModal(index)}
-                      className="mt-1 inline-block px-2 py-1 text-sm font-semibold text-blue-700 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={isFormDisabled || isDeleting}
-                    >
-                      アレルゲンを選択
-                    </button>
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium">メモ</label>
+                    <label className="mb-1 block text-base font-semibold text-slate-800">
+                      メモ
+                    </label>
                     <textarea
-                      className="w-full rounded border px-3 py-2"
+                      className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
                       rows={2}
                       value={member.notes}
                       onChange={(e) => updateMemberField(index, "notes", e.target.value)}
@@ -558,7 +566,7 @@ export default function FamilyPage() {
           <button
             type="button"
             onClick={addMember}
-            className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-base font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isFormDisabled}
           >
             家族を追加
@@ -569,7 +577,7 @@ export default function FamilyPage() {
           <button
             type="submit"
             disabled={isFormDisabled}
-            className="rounded bg-blue-900 px-4 py-2 font-semibold text-white transition hover:bg-blue-800 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-w-[280px] justify-center rounded-xl bg-[#1E3A8A] px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "保存中..." : "保存してプラン作成へ"}
           </button>
@@ -589,7 +597,7 @@ export default function FamilyPage() {
             aria-labelledby="allergen-modal-title"
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 id="allergen-modal-title" className="text-lg font-semibold">
+              <h2 id="allergen-modal-title" className="text-4xl font-bold text-red-500">
                 アレルゲンを選択
               </h2>
               <button
@@ -606,7 +614,7 @@ export default function FamilyPage() {
               {ALLERGEN_OPTIONS.map((allergen) => (
                 <label
                   key={allergen.value}
-                  className="flex items-center gap-2 rounded border px-3 py-2 text-sm"
+                  className="flex items-center gap-2 rounded border px-3 py-2 text-base"
                 >
                   <input
                     type="checkbox"
