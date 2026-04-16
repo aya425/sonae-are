@@ -88,6 +88,7 @@ export default function StockItemsPage() {
     unitPrice: "",
   });
   const [selectedProductId, setSelectedProductId] = useState("");
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   const expiringItems: ExpiringItem[] = stockItems
     .map((item) => {
@@ -272,14 +273,14 @@ export default function StockItemsPage() {
 
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-5xl bg-white px-3 py-4">
-        <p className="mt-4 text-center text-sm text-gray-600">備蓄品一覧を読み込み中です...</p>
+      <main className="mx-auto max-w-6xl bg-white px-3 py-4">
+        <p className="mt-4 text-center text-xl text-gray-900">備蓄品一覧を読み込み中です...</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-5xl bg-white px-3 py-4">
+    <main className="mx-auto max-w-none bg-white px-2 py-2">
       {errorMessage ? (
         <div className="mb-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
@@ -288,38 +289,38 @@ export default function StockItemsPage() {
 
       <div className="space-y-4">
         {/* 期限が近い商品 */}
-        <section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
-          <h2 className="text-xl font-bold text-[#1E3A8A]">期限が近い商品</h2>
+        <section className="mx-auto max-w-4xl rounded-3xl border border-amber-300 bg-amber-100 p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+          <h2 className="text-center text-xl font-bold text-[#1E3A8A]">期限が近い商品</h2>
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 rounded-xl bg-white/80 px-4 py-3">
             {expiringItems.length === 0 ? (
-              <p className="text-base text-gray-600">期限が近い商品はありません。</p>
+              <p className="mt-2 text-lg text-gray-900">期限が近い商品はありません。</p>
             ) : (
-              expiringItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-base font-semibold text-slate-800">{item.name}</p>
-                    <p className="whitespace-nowrap text-sm font-semibold text-amber-700">
-                      残り {item.daysLeft} 日
+              <div className="mt-0 space-y-0">
+                {expiringItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3"
+                  >
+                    <p className="text-xl font-semibold text-slate-800">{item.name}</p>
+                    <p className="whitespace-nowrap text-xl font-semibold text-red-500">
+                      あと{item.daysLeft}日
                     </p>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
         </section>
 
         {/* 登録フォーム */}
         <section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
-          <h2 className="text-xl font-bold text-[#1E3A8A]">備蓄登録フォーム</h2>
+          <h2 className="text-center text-xl font-bold text-[#1E3A8A]">備蓄登録フォーム</h2>
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <label className="mb-2 block text-base font-semibold text-slate-800">商品名</label>
+                <label className="mb-2 block text-lg font-semibold text-slate-800">商品名</label>
                 <select
                   className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
                   value={selectedProductId}
@@ -337,7 +338,7 @@ export default function StockItemsPage() {
 
               {selectedProductId === "manual" ? (
                 <div className="sm:col-span-2">
-                  <label className="mb-2 block text-base font-semibold text-slate-800">
+                  <label className="mb-2 block text-lg font-semibold text-slate-800">
                     商品名を自由入力
                   </label>
                   <input
@@ -357,7 +358,7 @@ export default function StockItemsPage() {
 
               {/* 数量 */}
               <div>
-                <label className="mb-2 block text-base font-semibold text-slate-800">数量</label>
+                <label className="mb-2 block text-lg font-semibold text-slate-800">数量</label>
                 <input
                   type="number"
                   placeholder="例: 3"
@@ -374,7 +375,7 @@ export default function StockItemsPage() {
 
               {/* 単価 */}
               <div>
-                <label className="mb-2 block text-base font-semibold text-slate-800">単価</label>
+                <label className="mb-2 block text-lg font-semibold text-slate-800">単価</label>
                 <input
                   type="number"
                   min="0"
@@ -392,9 +393,7 @@ export default function StockItemsPage() {
 
               {/* 賞味期限 */}
               <div className="sm:col-span-2">
-                <label className="mb-2 block text-base font-semibold text-slate-800">
-                  賞味期限
-                </label>
+                <label className="mb-2 block text-lg font-semibold text-slate-800">賞味期限</label>
                 <input
                   type="date"
                   className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
@@ -413,7 +412,7 @@ export default function StockItemsPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex min-w-[280px] justify-center rounded-xl bg-[#1E3A8A] px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-w-[280px] justify-center rounded-xl bg-[#1E3A8A] px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSubmitting ? "追加中..." : "備蓄を追加する"}
                 </button>
@@ -423,46 +422,74 @@ export default function StockItemsPage() {
         </section>
 
         {/* 一覧 */}
-        <section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
-          <div className="space-y-1">
+        <section className="mx-auto w-full rounded-3xl border border-slate-200 bg-white px-3 py-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+          <div className="space-y-1 text-center">
             <h2 className="text-xl font-bold text-[#1E3A8A]">登録済み備蓄品一覧</h2>
-            <p className="text-base text-gray-600">
+            <p className="text-xl font-semibold text-gray-900">
               備蓄品の合計金額: ¥{totalEstimatedCost.toLocaleString()}
             </p>
           </div>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {stockItems.length === 0 ? (
-              <p className="sm:col-span-2 text-base text-gray-600">
+              <p className="sm:col-span-2 text-lg text-gray-900">
                 登録済みの備蓄品はまだありません。上のフォームから備蓄を追加してください。
               </p>
             ) : (
               stockItems.map((item) => (
                 <article
                   key={item.id}
-                  className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-[0_2px_8px_rgba(0,0,0,0.05)]"
+                  className="flex flex-col justify-between rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.08)]"
                 >
-                  <div className="space-y-2">
-                    <p className="text-lg font-bold text-slate-800 leading-snug break-words">
+                  <div className="space-y-3 text-center">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedItemId((prev) => (prev === item.id ? null : item.id))
+                      }
+                      className={`w-full rounded-xl px-2 py-1 text-xl font-bold leading-snug text-slate-800 transition-colors hover:bg-slate-100 hover:text-[#1E3A8A] ${
+                        expandedItemId === item.id ? "text-wrap" : "line-clamp-2"
+                      }`}
+                    >
                       {item.name}
-                    </p>
-                    <p className="text-base text-gray-600">数量: {item.quantity}</p>
-                    <p className="text-base text-gray-600">
-                      賞味期限:{" "}
-                      <span className="whitespace-nowrap">{formatDate(item.expiresAt)}</span>
-                    </p>
-                    <p className="text-base text-gray-600">
-                      単価: ¥{item.unitPrice.toLocaleString()}
-                    </p>
+                    </button>
+                    <div className="grid gap-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-2xl bg-blue-50 px-4 py-1">
+                          <p className="text-center text-lg font-medium text-gray-900">数量</p>
+                          <div className="mt-1 flex justify-center">
+                            <p className="text-center text-2xl text-slate-900">{item.quantity}</p>
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl bg-blue-50 px-4 py-1">
+                          <p className="text-center text-lg font-medium text-gray-900">単価</p>
+                          <div className="mt-1 flex justify-center">
+                            <p className="text-center text-2xl text-slate-900">
+                              ¥{item.unitPrice.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl bg-blue-50 px-4 py-1 text-center">
+                        <p className="text-xl font-medium text-gray-900">賞味期限</p>
+                        <p className="mt-1 text-2xl text-slate-900">
+                          <span className="whitespace-nowrap">{formatDate(item.expiresAt)}</span>
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(item.id)}
-                    className="mt-4 self-start rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-50"
-                  >
-                    削除
-                  </button>
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(item.id)}
+                      className="inline-flex min-w-[110px] items-center justify-center rounded-2xl border border-red-300 bg-white px-4 py-3 text-lg font-semibold text-red-600 transition-colors hover:bg-red-50"
+                    >
+                      削除
+                    </button>
+                  </div>
                 </article>
               ))
             )}

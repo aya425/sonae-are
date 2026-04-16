@@ -19,7 +19,7 @@ export default function BillingSuccessPage() {
             完了しました
           </h1>
 
-          <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
+          <p className="mt-5 text-xl font-medium leading-8 text-slate-600">
             保存できる備えプラン数が増え、
             <br />
             複数の備えプランを比較しながら
@@ -29,9 +29,9 @@ export default function BillingSuccessPage() {
         </section>
 
         <section className="mt-8 animate-[fadeUp_0.7s_ease-out] rounded-3xl bg-blue-50 p-5 text-left ring-1 ring-[rgba(30,58,138,0.18)] shadow-[0_8px_22px_rgba(30,58,138,0.12)]">
-          <p className="text-lg font-semibold text-[#1E3A8A]">ご案内</p>
+          <p className="text-xl font-semibold text-[#1E3A8A]">ご案内</p>
 
-          <div className="mt-3 space-y-3 text-lg font-medium leading-8 text-slate-700">
+          <div className="mt-3 space-y-3 text-xl font-medium leading-8 text-slate-700">
             <p>・決済情報の反映まで、少し時間がかかることがあります。</p>
             <p>・反映されない場合は、少し時間をおいてからもう一度ご確認ください。</p>
           </div>

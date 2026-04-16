@@ -164,7 +164,7 @@ export default function DashboardPage() {
                       <li key={item.id} className="list-none text-xl">
                         {item.productName}
                         <br />
-                        （あと{item.daysLeft}日）
+                        あと{item.daysLeft}日
                       </li>
                     ))}
                   </ul>
@@ -216,23 +216,35 @@ export default function DashboardPage() {
           </DashboardCard>
         </div>
 
-        <section className="mt-4 w-full space-y-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
-          <p className="text-lg font-semibold leading-relaxed text-gray-900">
-            賞味期限が近い商品があります。必要に応じて備蓄品一覧から確認してください。
+        <section className="mt-4 w-full space-y-3 rounded-2xl border border-amber-300 bg-amber-100 px-4 py-4 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
+          <p className="text-center text-lg font-semibold leading-relaxed text-gray-900">
+            賞味期限が近い商品があります。
+            <br />
+            必要に応じて、備蓄品一覧から
+            <br />
+            確認してください。
           </p>
 
           <div className="rounded-xl bg-white/80 px-4 py-3">
-            <h2 className="text-lg font-semibold leading-snug text-gray-900">期限が近い商品</h2>
+            <h2 className="text-center text-lg font-semibold leading-snug text-gray-900">
+              期限が近い商品
+            </h2>
             {isLoading ? (
-              <p className="mt-2 text-base text-gray-900">読み込み中...</p>
+              <p className="mt-2 text-lg text-gray-900">読み込み中...</p>
             ) : nearExpiryItems.length > 0 ? (
-              <ul className="mt-2 space-y-1.5 text-xl text-gray-900">
+              <div className="mt-3 space-y-0">
                 {nearExpiryItems.map((item) => (
-                  <li key={item.id} className="ml-5 list-disc leading-relaxed">
-                    {item.productName}（あと{item.daysLeft}日）
-                  </li>
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-1 rounded-xl bg-white px-4 py-3"
+                  >
+                    <p className="text-xl font-semibold text-slate-800">{item.productName}</p>
+                    <p className="whitespace-nowrap text-xl font-semibold text-red-500">
+                      あと{item.daysLeft}日
+                    </p>
+                  </div>
                 ))}
-              </ul>
+              </div>
             ) : (
               <p className="mt-2 text-sm text-gray-700">期限が近い商品はありません</p>
             )}
@@ -240,14 +252,19 @@ export default function DashboardPage() {
         </section>
 
         <section className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <h2 className="text-xl font-semibold leading-snug text-gray-900">保存済みプラン</h2>
-            <Link
-              href="/plans"
-              className="text-lg font-semibold text-[#1E3A8A] transition-colors hover:text-blue-800"
-            >
-              一覧へ
-            </Link>
+          <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <div />
+            <h2 className="text-center text-xl font-semibold leading-snug text-gray-900">
+              保存済みプラン
+            </h2>
+            <div className="flex justify-end">
+              <Link
+                href="/plans"
+                className="text-lg font-semibold text-[#1E3A8A] transition-colors hover:text-blue-800"
+              >
+                一覧へ
+              </Link>
+            </div>
           </div>
 
           {isLoading ? (
@@ -259,8 +276,8 @@ export default function DashboardPage() {
                   key={plan.id}
                   className="h-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center shadow-sm"
                 >
-                  <p className="text-lg font-semibold leading-snug text-gray-900">{plan.title}</p>
-                  <div className="mt-2 space-y-1 text-lg text-gray-700">
+                  <p className="text-xl font-semibold leading-snug text-gray-900">{plan.title}</p>
+                  <div className="mt-2 space-y-1 text-lg font-semibold text-gray-900">
                     <p>初期費用: ¥{plan.totalEstimatedCost.toLocaleString()}</p>
                     <p>更新日: {new Date(plan.updatedAt).toLocaleDateString("ja-JP")}</p>
                   </div>

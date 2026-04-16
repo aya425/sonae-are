@@ -13,9 +13,9 @@ type ProtectedShellProps = {
 const footerItems = [
   { href: "/home", label: "ホーム", icon: House },
   { href: "/family", label: "家族情報", icon: Users },
-  { href: "/plan/new", label: "プラン作成", icon: Sparkles },
+  { href: "/plan/new", label: ["プラン", "作成"], icon: Sparkles },
   { href: "/plans", label: ["保存済み", "プラン"], icon: FolderKanban },
-  { href: "/stock-items", label: "備蓄品一覧", icon: Package },
+  { href: "/stock-items", label: ["備蓄品", "一覧"], icon: Package },
 ];
 
 function getPageTitle(pathname: string) {
@@ -53,24 +53,26 @@ export default function ProtectedShell({ children }: ProtectedShellProps) {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-white text-slate-900">
-      <header className="flex h-14 shrink-0 items-center border-b border-slate-200 bg-white px-4">
-        <div className="relative flex w-full items-center justify-center">
-          <h1 className="text-center text-lg font-bold text-[#1E3A8A]">{pageTitle}</h1>
+      <header className="flex h-20 shrink-0 items-center border-b border-slate-200 bg-white px-3 pt-1">
+        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <h1 className="col-start-2 text-center text-2xl font-bold text-[#1E3A8A]">{pageTitle}</h1>
           {isHomePage ? (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="absolute right-0 rounded-lg bg-[#1E3A8A] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-800"
-            >
-              ログアウト
-            </button>
+            <div className="col-start-3 flex justify-end">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-lg bg-[#1E3A8A] px-3 py-2 text-base font-semibold text-white transition-colors hover:bg-blue-800"
+              >
+                ログアウト
+              </button>
+            </div>
           ) : null}
         </div>
       </header>
 
       <main className="min-h-0 flex-1 overflow-y-auto px-0.5 py-0">{children}</main>
 
-      <footer className="h-20 shrink-0 border-t border-slate-200 bg-white">
+      <footer className="h-24 shrink-0 border-t border-slate-200 bg-white">
         <nav className="grid h-full grid-cols-5">
           {footerItems.map((item) => {
             const Icon = item.icon;
@@ -97,16 +99,16 @@ export default function ProtectedShell({ children }: ProtectedShellProps) {
                   <Icon
                     className={
                       isActive
-                        ? "h-6 w-6 text-[#1E3A8A]"
-                        : "h-6 w-6 text-slate-500 transition-colors hover:text-blue-800"
+                        ? "h-8 w-8 text-[#1E3A8A]"
+                        : "h-8 w-8 text-slate-500 transition-colors hover:text-blue-800"
                     }
                     strokeWidth={2.2}
                   />
                   <span
                     className={
                       isActive
-                        ? "text-center text-[10px] font-semibold leading-tight text-[#1E3A8A]"
-                        : "text-center text-[10px] leading-tight text-slate-600 transition-colors hover:text-blue-800"
+                        ? "text-center text-[12px] font-bold leading-tight text-[#1E3A8A]"
+                        : "text-center text-[12px] leading-tight text-slate-600 transition-colors hover:text-blue-800"
                     }
                   >
                     {Array.isArray(item.label)
