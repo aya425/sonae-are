@@ -307,7 +307,7 @@ export default function PlanNewPage() {
         <div className="grid grid-cols-1 gap-3">
           <form onSubmit={handleSubmit} className="space-y-6">
             {isSubmitting ? (
-              <section className="mt-4 rounded-2xl border border-slate-200 bg-white px-3 py-5 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
+              <section className="mt-30 rounded-2xl border border-slate-200 bg-white px-3 py-5 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
                 <div className="flex flex-col justify-center">
                   <h2 className="text-center text-xl font-semibold text-gray-900">
                     備えプランを作成中
