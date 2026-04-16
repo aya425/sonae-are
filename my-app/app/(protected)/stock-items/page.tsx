@@ -287,7 +287,8 @@ export default function StockItemsPage() {
       ) : null}
 
       <div className="space-y-4">
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+        {/* 期限が近い商品 */}
+        <section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
           <h2 className="text-xl font-bold text-[#1E3A8A]">期限が近い商品</h2>
 
           <div className="mt-4 space-y-3">
@@ -311,7 +312,8 @@ export default function StockItemsPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+        {/* 登録フォーム */}
+        <section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
           <h2 className="text-xl font-bold text-[#1E3A8A]">備蓄登録フォーム</h2>
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
@@ -353,12 +355,13 @@ export default function StockItemsPage() {
                 </div>
               ) : null}
 
+              {/* 数量 */}
               <div>
                 <label className="mb-2 block text-base font-semibold text-slate-800">数量</label>
                 <input
                   type="number"
                   placeholder="例: 3"
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
+                  className="w-full max-w-[200px] rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
                   value={form.quantity}
                   onChange={(e) =>
                     setForm((prev) => ({
@@ -369,7 +372,26 @@ export default function StockItemsPage() {
                 />
               </div>
 
+              {/* 単価 */}
               <div>
+                <label className="mb-2 block text-base font-semibold text-slate-800">単価</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="例: 300"
+                  className="w-full max-w-[200px] rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
+                  value={form.unitPrice}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      unitPrice: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              {/* 賞味期限 */}
+              <div className="sm:col-span-2">
                 <label className="mb-2 block text-base font-semibold text-slate-800">
                   賞味期限
                 </label>
@@ -386,39 +408,22 @@ export default function StockItemsPage() {
                 />
               </div>
 
-              <div className="sm:col-span-2 space-y-3">
-                <div>
-                  <label className="mb-2 block text-base font-semibold text-slate-800">単価</label>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="例: 300"
-                    className="w-full max-w-[280px] rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
-                    value={form.unitPrice}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        unitPrice: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="flex justify-center">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex min-w-[280px] justify-center rounded-xl bg-[#1E3A8A] px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isSubmitting ? "追加中..." : "備蓄を追加する"}
-                  </button>
-                </div>
+              {/* ボタン */}
+              <div className="sm:col-span-2 flex justify-center">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex min-w-[280px] justify-center rounded-xl bg-[#1E3A8A] px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSubmitting ? "追加中..." : "備蓄を追加する"}
+                </button>
               </div>
             </div>
           </form>
         </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+        {/* 一覧 */}
+        <section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
           <div className="space-y-1">
             <h2 className="text-xl font-bold text-[#1E3A8A]">登録済み備蓄品一覧</h2>
             <p className="text-base text-gray-600">
@@ -438,7 +443,9 @@ export default function StockItemsPage() {
                   className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-[0_2px_8px_rgba(0,0,0,0.05)]"
                 >
                   <div className="space-y-2">
-                    <p className="text-lg font-bold text-slate-800">{item.name}</p>
+                    <p className="text-lg font-bold text-slate-800 leading-snug break-words">
+                      {item.name}
+                    </p>
                     <p className="text-base text-gray-600">数量: {item.quantity}</p>
                     <p className="text-base text-gray-600">
                       賞味期限:{" "}
