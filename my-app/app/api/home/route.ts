@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { DashboardResponse } from "@/lib/types/dashboard";
+import type { HomeResponse } from "@/lib/types/home";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
@@ -44,9 +44,21 @@ export async function GET() {
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id);
 
-  console.log("[dashboard] user.id", user.id);
-  console.log("[dashboard] stockCount", stockCount);
-  console.log("[dashboard] stockError", stockError);
+  const today = new Date();
+  const todayDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+  const within30Days = new Date(todayDate);
+  within30Days.setUTCDate(within30Days.getUTCDate() + 30);
+
+  const todayString = todayDate.toISOString().slice(0, 10);
+  const within30DaysString = within30Days.toISOString().slice(0, 10);
+
+  const { data: expiringStockItems, error: expiringItemsError } = await supabase
+    .from("stock_items")
+    .select("id, product_name, expires_at")
+    .eq("user_id", user.id)
+    .gte("expires_at", todayString)
+    .lte("expires_at", within30DaysString)
+    .order("expires_at", { ascending: true });
 
   if (stockError) {
     return NextResponse.json(
@@ -60,15 +72,23 @@ export async function GET() {
     );
   }
 
+  if (expiringItemsError) {
+    return NextResponse.json(
+      {
+        data: null,
+        error: {
+          message: "賞味期限が近い備蓄品情報の取得に失敗しました。",
+        },
+      },
+      { status: 500 }
+    );
+  }
+
   const { data: plans, error: plansError } = await supabase
     .from("plans")
     .select("id, title, days, total_estimated_cost, annual_cost, updated_at")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
-
-  if (process.env.NODE_ENV === "development") {
-    console.log("[dashboard] plans", plans);
-  }
 
   if (plansError) {
     return NextResponse.json(
@@ -85,11 +105,7 @@ export async function GET() {
   const latestPlanWithAnnualCost =
     plans?.find((plan) => plan.annual_cost !== null && plan.annual_cost !== undefined) ?? null;
 
-  if (process.env.NODE_ENV === "development") {
-    console.log("[dashboard] latestPlanWithAnnualCost", latestPlanWithAnnualCost);
-  }
-
-  const response: DashboardResponse = {
+  const response: HomeResponse = {
     data: {
       familySummary: {
         memberCount: memberCount ?? 0,
@@ -100,8 +116,20 @@ export async function GET() {
         sourcePlanId: latestPlanWithAnnualCost?.id ?? null,
       },
       expiringItems: {
-        count: 0,
-        items: [],
+        count: expiringStockItems?.length ?? 0,
+        items:
+          expiringStockItems?.map((item) => {
+            const expiresAtDate = new Date(`${item.expires_at}T00:00:00Z`);
+            const diffMs = expiresAtDate.getTime() - todayDate.getTime();
+            const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+            return {
+              id: item.id,
+              productName: item.product_name,
+              expiresAt: item.expires_at,
+              daysLeft,
+            };
+          }) ?? [],
       },
       stockSummary: {
         count: stockCount ?? 0,
