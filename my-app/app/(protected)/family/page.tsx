@@ -445,8 +445,8 @@ export default function FamilyPage() {
         <p className="mt-4 text-center text-sm text-gray-600">家族情報を登録しましょう</p>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-0 space-y-3">
-        <div className="grid grid-cols-1 gap-2 justify-items-center">
+      <form onSubmit={handleSubmit} className="mt-0 space-y-4">
+        <div className="grid grid-cols-1 gap-3 justify-items-center">
           {members.map((member, index) => {
             const isExistingMember = Boolean(member.id);
             const deletingMemberId = member.id;
@@ -455,10 +455,10 @@ export default function FamilyPage() {
             return (
               <section
                 key={member.localId}
-                className="w-full max-w-md rounded-lg border bg-white p-4 shadow-sm mb-1"
+                className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-slate-50 p-6 mb-2"
               >
-                <div className="mb-1 flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-semibold text-gray-800 whitespace-nowrap">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="whitespace-nowrap text-2xl font-bold text-[#1E3A8A]">
                     {index + 1}人目
                   </h2>
 
@@ -467,19 +467,21 @@ export default function FamilyPage() {
                       type="button"
                       onClick={() => member.id && handleDelete(member.id)}
                       disabled={isDeleting || isSubmitting}
-                      className="flex items-center gap-1 rounded border border-red-300 px-3 py-1 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex items-center gap-1 rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <span>{isDeleting ? "削除中..." : "削除"}</span>
                     </button>
                   ) : null}
                 </div>
 
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-5">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="mb-1 block text-sm font-medium">続柄</label>
+                      <label className="mb-2 block text-base font-semibold text-slate-800">
+                        続柄
+                      </label>
                       <select
-                        className="w-full rounded border px-3 py-2"
+                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
                         value={member.role}
                         onChange={(e) => updateMemberField(index, "role", e.target.value)}
                         disabled={isFormDisabled || isDeleting}
@@ -494,9 +496,11 @@ export default function FamilyPage() {
                     </div>
 
                     <div>
-                      <label className="mb-1 block text-sm font-medium">年齢</label>
+                      <label className="mb-2 block text-base font-semibold text-slate-800">
+                        年齢
+                      </label>
                       <select
-                        className="w-full rounded border px-3 py-2"
+                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
                         value={member.ageGroup}
                         onChange={(e) => updateMemberField(index, "ageGroup", e.target.value)}
                         disabled={isFormDisabled || isDeleting}
@@ -512,27 +516,27 @@ export default function FamilyPage() {
                   </div>
 
                   <div>
-                    <p className="mb-2 text-base font-medium">アレルゲン</p>
+                    <p className="mb-2 text-base font-semibold text-slate-800">アレルゲン</p>
 
                     <div className="flex flex-wrap gap-2">
                       {member.allergens.length > 0 ? (
                         member.allergens.map((allergen) => (
                           <span
                             key={allergen}
-                            className="rounded-full bg-gray-100 px-2 py-0.5 text-xs"
+                            className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700"
                           >
                             {allergen}
                           </span>
                         ))
                       ) : (
-                        <p className="text-base text-gray-500">未選択</p>
+                        <p className="text-base text-slate-500">未選択</p>
                       )}
                     </div>
 
                     <button
                       type="button"
                       onClick={() => openAllergenModal(index)}
-                      className="mt-1 inline-block px-2 py-1 text-sm font-semibold text-[#1E3A8A] underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                      className="mt-2 inline-block px-1 py-1 text-base font-semibold text-[#1E3A8A] underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={isFormDisabled || isDeleting}
                     >
                       アレルゲンを選択
@@ -540,9 +544,11 @@ export default function FamilyPage() {
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium">メモ</label>
+                    <label className="mb-2 block text-base font-semibold text-slate-800">
+                      メモ
+                    </label>
                     <textarea
-                      className="w-full rounded border px-3 py-2"
+                      className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
                       rows={2}
                       value={member.notes}
                       onChange={(e) => updateMemberField(index, "notes", e.target.value)}
@@ -560,7 +566,7 @@ export default function FamilyPage() {
           <button
             type="button"
             onClick={addMember}
-            className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-base font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isFormDisabled}
           >
             家族を追加
@@ -571,7 +577,7 @@ export default function FamilyPage() {
           <button
             type="submit"
             disabled={isFormDisabled}
-            className="rounded bg-blue-900 px-4 py-2 font-semibold text-white transition hover:bg-blue-800 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-[#1E3A8A] px-6 py-3 text-base font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "保存中..." : "保存してプラン作成へ"}
           </button>
