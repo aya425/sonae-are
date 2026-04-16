@@ -11,9 +11,11 @@
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
     "@upstash/redis": "^1.37.0",
-    "openai": "^6.33.0"
+    "openai": "^6.33.0",
+    "stripe": "^22.0.1"
   },
   "devDependencies": {
+    "@types/stripe": "^8.0.416",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.1"
   }
