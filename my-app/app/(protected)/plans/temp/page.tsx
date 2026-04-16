@@ -1,20 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
-type PlanCondition = {
-  title: string;
-  familyMemberCount: number;
-  days: number;
-  includeDailyItems: boolean;
-  priorityPolicy: "minimum" | "balanced";
-  totalCost: number;
-  annualCost: number;
-  explanation: string;
-  warnings: string[];
-};
 
 type PlanItem = {
   id: string;
@@ -24,93 +12,135 @@ type PlanItem = {
   isFreeFrom28: boolean;
   price: number;
   purchaseUrl: string;
-  productId?: string;
   shelfLifeMonths: number;
   isActive: boolean;
   quantity: number;
   subtotal: number;
   priority: "high" | "medium" | "low";
   reason: string;
+  productId?: string;
 };
 
-export default function PlanDetailPage() {
-  const router = useRouter();
-  const params = useParams<{ id: string }>();
+type StoredGeneratedPlan = {
+  title: string;
+  familyMemberCount: number;
+  days: 3 | 7 | 14;
+  includeDailyItems: boolean;
+  priorityPolicy: "minimum" | "balanced";
+  totalCost: number;
+  annualCost: number;
+  explanation: string;
+  items: PlanItem[];
+  warnings: string[];
+};
 
-  const [plan, setPlan] = useState<PlanCondition>({
-    title: "",
-    familyMemberCount: 0,
-    days: 3,
-    includeDailyItems: false,
-    priorityPolicy: "minimum",
-    totalCost: 0,
-    annualCost: 0,
-    explanation: "",
-    warnings: [],
-  });
+const mockPlanCondition: Omit<StoredGeneratedPlan, "items"> = {
+  title: "備えプラン",
+  familyMemberCount: 0,
+  days: 3,
+  includeDailyItems: false,
+  priorityPolicy: "minimum",
+  totalCost: 0,
+  annualCost: 0,
+  explanation: "",
+  warnings: [],
+};
+
+export default function TempPlanPage() {
+  const router = useRouter();
+  const [plan, setPlan] = useState<Omit<StoredGeneratedPlan, "items">>(mockPlanCondition);
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
   const [hasGeneratedPlan, setHasGeneratedPlan] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const planId = params.id;
+    const storedPlan = sessionStorage.getItem("generatedPlan");
 
-    if (!planId) {
+    if (!storedPlan) {
       setHasGeneratedPlan(false);
       setIsLoaded(true);
       return;
     }
 
-    const fetchPlanDetail = async () => {
-      try {
-        const response = await fetch(`/api/plans/${planId}`, {
-          method: "GET",
-          credentials: "include",
-        });
+    try {
+      const parsedPlan = JSON.parse(storedPlan) as StoredGeneratedPlan;
 
-        const result = await response.json();
+      setPlan({
+        title: parsedPlan.title,
+        familyMemberCount: parsedPlan.familyMemberCount,
+        days: parsedPlan.days,
+        includeDailyItems: parsedPlan.includeDailyItems,
+        priorityPolicy: parsedPlan.priorityPolicy,
+        totalCost: parsedPlan.totalCost,
+        annualCost: parsedPlan.annualCost,
+        explanation: parsedPlan.explanation,
+        warnings: parsedPlan.warnings,
+      });
+      setPlanItems(parsedPlan.items ?? []);
+      setHasGeneratedPlan(true);
+    } catch (error) {
+      console.error("generatedPlanの読み込みに失敗しました", error);
+      setHasGeneratedPlan(false);
+    } finally {
+      setIsLoaded(true);
+    }
+  }, []);
 
-        if (!response.ok) {
-          throw new Error(result.error?.message || "プランの取得に失敗しました。");
-        }
+  const handleSave = async () => {
+    if (!hasGeneratedPlan) return;
 
-        const fetchedPlan = result.data as {
-          title: string;
-          familyMemberCount: number;
-          days: 3 | 7 | 14;
-          includeDailyItems: boolean;
-          priorityPolicy: "minimum" | "balanced";
-          totalEstimatedCost: number;
-          annualCost: number;
-          aiComment: string;
-          warnings: string[];
-          items: PlanItem[];
-        };
-
-        setPlan({
-          title: fetchedPlan.title,
-          familyMemberCount: fetchedPlan.familyMemberCount,
-          days: fetchedPlan.days,
-          includeDailyItems: fetchedPlan.includeDailyItems,
-          priorityPolicy: fetchedPlan.priorityPolicy,
-          totalCost: fetchedPlan.totalEstimatedCost,
-          annualCost: fetchedPlan.annualCost,
-          explanation: fetchedPlan.aiComment,
-          warnings: fetchedPlan.warnings,
-        });
-
-        setPlanItems(fetchedPlan.items);
-        setHasGeneratedPlan(true);
-      } catch (error) {
-        console.error("プラン詳細の取得に失敗しました", error);
-        setHasGeneratedPlan(false);
-      } finally {
-        setIsLoaded(true);
-      }
+    const payload = {
+      title: plan.title,
+      familyMemberCount: plan.familyMemberCount,
+      days: plan.days,
+      priorityPolicy: plan.priorityPolicy,
+      includeDailyItems: plan.includeDailyItems,
+      totalEstimatedCost: plan.totalCost,
+      annualCost: plan.annualCost,
+      aiComment: plan.explanation,
+      warnings: plan.warnings,
+      items: (planItems ?? []).map((item) => ({
+        productId: item.productId ?? item.id,
+        quantity: item.quantity,
+        priority: item.priority,
+        purposeNote: item.reason,
+      })),
     };
 
-    fetchPlanDetail();
-  }, [params.id]);
+    try {
+      setIsSaving(true);
+
+      const response = await fetch("/api/plans", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error?.message || "プランの保存に失敗しました。");
+      }
+
+      sessionStorage.removeItem("generatedPlan");
+      sessionStorage.removeItem("planConditions");
+
+      if (!result.data?.id) {
+        throw new Error("保存後のプランIDが取得できませんでした。");
+      }
+
+      router.push(`/plans/${result.data.id}`);
+    } catch (error) {
+      console.error("save failed", error);
+      alert(error instanceof Error ? error.message : "プランの保存に失敗しました。");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const priorityPolicyLabel =
     plan.priorityPolicy === "minimum" ? "必要なものを優先する" : "いろいろバランスよくそろえる";
@@ -141,39 +171,9 @@ export default function PlanDetailPage() {
       ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
       : "bg-blue-50 text-blue-700 border border-blue-200";
 
-  const handleDelete = async () => {
-    const confirmed = window.confirm("このプランを削除しますか？");
-    if (!confirmed) return;
-
-    const planId = params.id;
-
-    if (!planId) {
-      alert("削除対象のプランIDが取得できませんでした。");
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/plans/${planId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error?.message || "プランの削除に失敗しました。");
-      }
-
-      router.push("/plans");
-    } catch (error) {
-      console.error("delete failed", error);
-      alert(error instanceof Error ? error.message : "プランの削除に失敗しました。");
-    }
-  };
-
   if (!isLoaded) {
     return (
-      <main className="mx-auto max-w-5xl p-6">
+      <main className="mx-auto w-full max-w-[920px] px-2 py-4">
         <div className="rounded-xl border p-5">
           <p className="text-sm text-gray-600">プランを読み込んでいます...</p>
         </div>
@@ -199,6 +199,15 @@ export default function PlanDetailPage() {
           </div>
         </section>
       ) : null}
+
+      <section className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-4 text-center shadow-sm">
+        <h1 className="text-xl font-bold text-gray-900">AIが家族に合う備えプランを提案します</h1>
+        <p className="mt-2 text-base text-gray-700">
+          条件に合わせて、優先度やバランスを見ながら
+          <br />
+          備え候補を整理しています。
+        </p>
+      </section>
 
       <section className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
         <h2 className="text-center text-xl font-semibold text-gray-900">プラン条件</h2>
@@ -238,7 +247,7 @@ export default function PlanDetailPage() {
       </div>
 
       <section className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
-        <h2 className="text-center text-xl font-semibold text-gray-900">商品一覧</h2>
+        <h2 className="text-center text-xl font-bold text-gray-900">商品一覧</h2>
         <div className="mt-4 space-y-3">
           {planItems.map((item) => (
             <article
@@ -246,7 +255,7 @@ export default function PlanDetailPage() {
               className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm"
             >
               <div>
-                <p className="text-lg font-semibold text-gray-900">{item.name}</p>
+                <p className="text-xl font-semibold text-gray-900">{item.name}</p>
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap gap-2">
                     <span
@@ -291,8 +300,10 @@ export default function PlanDetailPage() {
               </div>
 
               <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3">
-                <p className="text-base font-semibold text-gray-900">提案理由</p>
-                <p className="mt-1 text-base leading-relaxed text-gray-900">{item.reason}</p>
+                <p className="text-lg font-semibold text-gray-900">提案理由</p>
+                <p className="mt-1 text-base font-medium leading-relaxed text-gray-900">
+                  {item.reason}
+                </p>
               </div>
 
               <div className="mt-4 flex flex-wrap justify-center gap-2">
@@ -300,13 +311,13 @@ export default function PlanDetailPage() {
                   href={item.purchaseUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex min-w-[132px] items-center justify-center whitespace-nowrap rounded-xl bg-[#1E3A8A] px-4 py-3 text-lg font-semibold text-white hover:bg-blue-800"
+                  className="inline-flex min-w-[132px] items-center justify-center whitespace-nowrap rounded-xl bg-[#1E3A8A] px-4 py-3 text-base font-semibold text-white hover:bg-blue-800"
                 >
                   商品を見る
                 </a>
                 <Link
                   href="/stock-items"
-                  className="inline-flex min-w-[132px] items-center justify-center whitespace-nowrap rounded-xl border border-slate-300 px-4 py-3 text-lg font-semibold text-gray-700 hover:bg-slate-50"
+                  className="inline-flex min-w-[132px] items-center justify-center whitespace-nowrap rounded-xl border border-slate-300 px-4 py-3 text-base font-semibold text-gray-700 hover:bg-slate-50"
                 >
                   備蓄登録
                 </Link>
@@ -334,15 +345,24 @@ export default function PlanDetailPage() {
         </div>
       </section>
 
-      <div className="flex justify-center">
-        <button
-          type="button"
-          onClick={handleDelete}
-          className="inline-flex min-w-[140px] items-center justify-center rounded-xl border border-red-300 px-5 py-3 text-lg font-semibold text-red-600 hover:bg-red-50"
-        >
-          削除
-        </button>
-      </div>
+      {hasGeneratedPlan ? (
+        <div className="flex flex-wrap justify-center gap-3">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="inline-flex min-w-[140px] items-center justify-center rounded-xl bg-[#1E3A8A] px-5 py-3 text-base font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSaving ? "保存中..." : "保存"}
+          </button>
+          <Link
+            href="/plan/new"
+            className="inline-flex min-w-[140px] items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-base font-semibold text-gray-700 hover:bg-slate-50"
+          >
+            条件を選び直す
+          </Link>
+        </div>
+      ) : null}
     </main>
   );
 }

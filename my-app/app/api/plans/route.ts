@@ -19,6 +19,7 @@ type SavePlanRequest = {
   priorityPolicy?: string | null;
   includeDailyItems?: boolean;
   aiComment?: string | null;
+  warnings?: string[];
   items?: Array<{
     productId: string;
     quantity: number;
@@ -132,6 +133,7 @@ export async function POST(request: Request) {
       priorityPolicy,
       includeDailyItems,
       aiComment,
+      warnings,
       items = [],
     } = body;
 
@@ -175,6 +177,7 @@ export async function POST(request: Request) {
         total_estimated_cost: totalEstimatedCost ?? 0,
         annual_cost: annualCost ?? null,
         ai_comment: aiComment ?? null,
+        warnings: warnings ?? [],
       })
       .select("id, title, family_member_count, total_estimated_cost, annual_cost, updated_at")
       .single();

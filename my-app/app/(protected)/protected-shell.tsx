@@ -23,6 +23,7 @@ function getPageTitle(pathname: string) {
   if (pathname === "/family") return "家族情報";
   if (pathname === "/plan/new") return "プラン作成";
   if (pathname === "/plans") return "保存済みプラン";
+  if (pathname === "/plans/temp") return "生成プラン確認";
   if (pathname.startsWith("/plans/")) return "プラン詳細";
   if (pathname === "/stock-items") return "備蓄品一覧";
   if (pathname === "/billing") return "料金プラン";
@@ -74,7 +75,11 @@ export default function ProtectedShell({ children }: ProtectedShellProps) {
           {footerItems.map((item) => {
             const Icon = item.icon;
             const isActive =
-              pathname === item.href || (item.href === "/plans" && pathname.startsWith("/plans/"));
+              pathname === item.href ||
+              (item.href === "/plan/new" && pathname === "/plans/temp") ||
+              (item.href === "/plans" &&
+                pathname.startsWith("/plans/") &&
+                pathname !== "/plans/temp");
 
             return (
               <Link
