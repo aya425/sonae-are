@@ -446,14 +446,17 @@ export default function FamilyPage() {
       )}
 
       <form onSubmit={handleSubmit} className="mt-0 space-y-3">
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 justify-items-center">
           {members.map((member, index) => {
             const isExistingMember = Boolean(member.id);
             const deletingMemberId = member.id;
             const isDeleting = deletingMemberId ? deletingIds.includes(deletingMemberId) : false;
 
             return (
-              <section key={member.localId} className="rounded-lg border bg-white p-4 shadow-sm">
+              <section
+                key={member.localId}
+                className="w-full max-w-md rounded-lg border bg-white p-4 shadow-sm mb-1"
+              >
                 <div className="mb-1 flex items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold text-gray-800 whitespace-nowrap">
                     {index + 1}人目
@@ -551,7 +554,7 @@ export default function FamilyPage() {
           })}
         </div>
 
-        <div className="flex justify-center">
+        <div className="mt-4 flex justify-center">
           <button
             type="button"
             onClick={addMember}
@@ -562,7 +565,7 @@ export default function FamilyPage() {
           </button>
         </div>
 
-        <div className="flex justify-center">
+        <div className="mt-2 flex justify-center">
           <button
             type="submit"
             disabled={isFormDisabled}
