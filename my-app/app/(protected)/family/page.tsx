@@ -455,7 +455,7 @@ export default function FamilyPage() {
             return (
               <section
                 key={member.localId}
-                className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-slate-50 p-6 mb-2"
+                className=" max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 mb-2 shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
               >
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="whitespace-nowrap text-2xl font-bold text-[#1E3A8A]">
@@ -474,10 +474,10 @@ export default function FamilyPage() {
                   ) : null}
                 </div>
 
-                <div className="space-y-5">
+                <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="mb-2 block text-base font-semibold text-slate-800">
+                      <label className="mb-1 block text-base font-semibold text-slate-800">
                         続柄
                       </label>
                       <select
@@ -496,7 +496,7 @@ export default function FamilyPage() {
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-base font-semibold text-slate-800">
+                      <label className="mb-1 block text-base font-semibold text-slate-800">
                         年齢
                       </label>
                       <select
@@ -515,36 +515,36 @@ export default function FamilyPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <p className="mb-2 text-base font-semibold text-slate-800">アレルゲン</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-base font-semibold text-slate-800">アレルゲン</span>
+                      <button
+                        type="button"
+                        onClick={() => openAllergenModal(index)}
+                        className="text-base font-semibold text-[#1E3A8A] hover:underline"
+                      >
+                        選択してください
+                      </button>
+                    </div>
 
                     <div className="flex flex-wrap gap-2">
-                      {member.allergens.length > 0 ? (
+                      {member.allergens.length === 0 ? (
+                        <span className="text-sm text-gray-400">未選択</span>
+                      ) : (
                         member.allergens.map((allergen) => (
                           <span
                             key={allergen}
-                            className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700"
+                            className="px-2 py-1 text-xs bg-gray-100 rounded-full"
                           >
                             {allergen}
                           </span>
                         ))
-                      ) : (
-                        <p className="text-base text-slate-500">未選択</p>
                       )}
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => openAllergenModal(index)}
-                      className="mt-2 inline-block px-1 py-1 text-base font-semibold text-[#1E3A8A] underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={isFormDisabled || isDeleting}
-                    >
-                      アレルゲンを選択
-                    </button>
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-base font-semibold text-slate-800">
+                    <label className="mb-1 block text-base font-semibold text-slate-800">
                       メモ
                     </label>
                     <textarea
@@ -577,7 +577,7 @@ export default function FamilyPage() {
           <button
             type="submit"
             disabled={isFormDisabled}
-            className="rounded-xl bg-[#1E3A8A] px-6 py-3 text-base font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-w-[280px] justify-center rounded-xl bg-[#1E3A8A] px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "保存中..." : "保存してプラン作成へ"}
           </button>
