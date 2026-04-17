@@ -102,8 +102,53 @@ export async function GET() {
     );
   }
 
+  const { data: subscriptions, error: subscriptionError } = await supabase
+    .from("subscriptions")
+    .select("status, plan_id, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (subscriptionError) {
+    return NextResponse.json(
+      {
+        data: null,
+        error: {
+          message: "プラン情報の取得に失敗しました。",
+        },
+      },
+      { status: 500 }
+    );
+  }
+
+  const subscription =
+    subscriptions?.find((item) => item.status === "active" || item.status === "trialing") ?? null;
+
   const latestPlanWithAnnualCost =
     plans?.find((plan) => plan.annual_cost !== null && plan.annual_cost !== undefined) ?? null;
+
+  let planMaster: { plan_code: "free" | "premium"; max_saved_plans: number } | null = null;
+
+  if (subscription?.plan_id) {
+    const { data: planMasterData, error: planMasterError } = await supabase
+      .from("plans_master")
+      .select("plan_code, max_saved_plans")
+      .eq("id", subscription.plan_id)
+      .maybeSingle();
+
+    if (planMasterError) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            message: "プラン情報の取得に失敗しました。",
+          },
+        },
+        { status: 500 }
+      );
+    }
+
+    planMaster = planMasterData;
+  }
 
   const response: HomeResponse = {
     data: {
@@ -144,8 +189,8 @@ export async function GET() {
           updatedAt: plan.updated_at,
         })) ?? [],
       billingSummary: {
-        planCode: "free",
-        maxSavedPlans: 1,
+        planCode: planMaster?.plan_code ?? "free",
+        maxSavedPlans: planMaster?.max_saved_plans ?? 1,
       },
     },
     error: null,
