@@ -294,7 +294,7 @@ export default function StockItemsPage() {
 
           <div className="mt-4 rounded-xl bg-white/80 px-4 py-3">
             {expiringItems.length === 0 ? (
-              <p className="mt-2 text-lg text-gray-900">期限が近い商品はありません。</p>
+              <p className="text-lg text-gray-900">期限が近い商品はありません。</p>
             ) : (
               <div className="mt-0 space-y-0">
                 {expiringItems.map((item) => (
@@ -433,7 +433,9 @@ export default function StockItemsPage() {
           <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {stockItems.length === 0 ? (
               <p className="sm:col-span-2 text-lg text-gray-900">
-                登録済みの備蓄品はまだありません。上のフォームから備蓄を追加してください。
+                登録済みの備蓄品はまだありません。
+                <br />
+                上のフォームから備蓄を追加してください。
               </p>
             ) : (
               stockItems.map((item) => (
