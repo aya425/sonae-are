@@ -53,6 +53,7 @@ export default function TempPlanPage() {
   const [hasGeneratedPlan, setHasGeneratedPlan] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveErrorMessage, setSaveErrorMessage] = useState("");
 
   useEffect(() => {
     const storedPlan = sessionStorage.getItem("generatedPlan");
@@ -89,6 +90,7 @@ export default function TempPlanPage() {
 
   const handleSave = async () => {
     if (!hasGeneratedPlan) return;
+    setSaveErrorMessage("");
 
     const payload = {
       title: plan.title,
@@ -123,7 +125,8 @@ export default function TempPlanPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error?.message || "プランの保存に失敗しました。");
+        setSaveErrorMessage(result.error?.message || "プランの保存に失敗しました。");
+        return;
       }
 
       sessionStorage.removeItem("generatedPlan");
@@ -136,7 +139,7 @@ export default function TempPlanPage() {
       router.push(`/plans/${result.data.id}`);
     } catch (error) {
       console.error("save failed", error);
-      alert(error instanceof Error ? error.message : "プランの保存に失敗しました。");
+      setSaveErrorMessage(error instanceof Error ? error.message : "プランの保存に失敗しました。");
     } finally {
       setIsSaving(false);
     }
@@ -346,22 +349,30 @@ export default function TempPlanPage() {
       </section>
 
       {hasGeneratedPlan ? (
-        <div className="flex flex-wrap justify-center gap-3">
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="inline-flex min-w-[140px] items-center justify-center rounded-xl bg-[#1E3A8A] px-5 py-3 text-base font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isSaving ? "保存中..." : "保存"}
-          </button>
-          <Link
-            href="/plan/new"
-            className="inline-flex min-w-[140px] items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-base font-semibold text-gray-700 hover:bg-slate-50"
-          >
-            条件を選び直す
-          </Link>
-        </div>
+        <>
+          {saveErrorMessage ? (
+            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center">
+              <p className="text-base font-semibold text-red-700">{saveErrorMessage}</p>
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="inline-flex min-w-[140px] items-center justify-center rounded-xl bg-[#1E3A8A] px-5 py-3 text-base font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSaving ? "保存中..." : "保存"}
+            </button>
+            <Link
+              href="/plan/new"
+              className="inline-flex min-w-[140px] items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-base font-semibold text-gray-700 hover:bg-slate-50"
+            >
+              条件を選び直す
+            </Link>
+          </div>
+        </>
       ) : null}
     </main>
   );
