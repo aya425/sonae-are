@@ -169,7 +169,7 @@ export default function DashboardPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p>
+                  <p className="text-lg text-gray-900">
                     期限が近い商品は
                     <br />
                     ありません
@@ -246,7 +246,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="mt-2 text-sm text-gray-700">期限が近い商品はありません</p>
+              <p className="mt-2 text-lg text-gray-900">期限が近い商品はありません</p>
             )}
           </div>
         </section>
