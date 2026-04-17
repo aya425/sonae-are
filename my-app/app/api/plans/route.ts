@@ -165,6 +165,79 @@ export async function POST(request: Request) {
       );
     }
 
+    const { data: subscription, error: subscriptionError } = await supabase
+      .from("subscriptions")
+      .select(
+        `
+          status,
+          plan_id,
+          plans_master (
+            max_saved_plans,
+            plan_code
+          )
+        `
+      )
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (subscriptionError) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: "SUBSCRIPTION_FETCH_FAILED",
+            message: "プラン情報の取得に失敗しました。",
+            details: subscriptionError.message,
+          },
+        },
+        { status: 500 }
+      );
+    }
+
+    const isUsableSubscription =
+      !subscription || subscription.status === "active" || subscription.status === "trialing";
+
+    const planMaster = Array.isArray(subscription?.plans_master)
+      ? subscription.plans_master[0]
+      : subscription?.plans_master;
+
+    const maxSavedPlans = planMaster?.max_saved_plans ?? 1;
+
+    if (isUsableSubscription) {
+      const { count: savedPlanCount, error: savedPlanCountError } = await supabase
+        .from("plans")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if (savedPlanCountError) {
+        return NextResponse.json(
+          {
+            data: null,
+            error: {
+              code: "PLAN_COUNT_FETCH_FAILED",
+              message: "保存済みプラン数の確認に失敗しました。",
+              details: savedPlanCountError.message,
+            },
+          },
+          { status: 500 }
+        );
+      }
+
+      if ((savedPlanCount ?? 0) >= maxSavedPlans) {
+        return NextResponse.json(
+          {
+            data: null,
+            error: {
+              code: "PLAN_SAVE_LIMIT_EXCEEDED",
+              message: `このプランでは備えプランは${maxSavedPlans}件まで保存できます。`,
+              details: null,
+            },
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     const { data: savedPlan, error: planError } = await supabase
       .from("plans")
       .insert({
