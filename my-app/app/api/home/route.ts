@@ -86,7 +86,7 @@ export async function GET() {
 
   const { data: plans, error: plansError } = await supabase
     .from("plans")
-    .select("id, title, days, total_estimated_cost, annual_cost, updated_at")
+    .select("id, title, days, family_member_count, total_estimated_cost, annual_cost, updated_at")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
@@ -184,6 +184,7 @@ export async function GET() {
           id: plan.id,
           title: plan.title,
           days: plan.days,
+          familyMemberCount: plan.family_member_count,
           totalEstimatedCost: plan.total_estimated_cost,
           annualCost: plan.annual_cost,
           updatedAt: plan.updated_at,

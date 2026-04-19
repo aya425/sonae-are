@@ -36,6 +36,17 @@ type PlanDetailRow = {
   }> | null;
 };
 
+function getPriorityByCategory(category: string): "high" | "medium" | "low" {
+  if (category === "主食" || category === "飲料") return "high";
+  if (category === "おかず" || category === "汁物") {
+    return "medium";
+  }
+  if (category === "おやつ") {
+    return "low";
+  }
+  return "low";
+}
+
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const supabase = await createClient();
@@ -170,7 +181,7 @@ export async function GET(_request: Request, context: RouteContext) {
               isActive: product.is_active,
               quantity: item.quantity,
               subtotal: product.price * item.quantity,
-              priority: item.priority ?? "medium",
+              priority: getPriorityByCategory(product.category),
               reason: item.purpose_note ?? "家族条件と備えのバランスを見て提案しています。",
             };
           })

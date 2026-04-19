@@ -2,6 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
+import {
+  CreditCardIcon,
+  PackageIcon,
+  SparkleIcon,
+  UsersThreeIcon,
+  WalletIcon,
+  BowlFoodIcon,
+} from "@phosphor-icons/react";
 import type { HomeResponse } from "@/lib/types/home";
 
 function DashboardCard({
@@ -16,7 +24,7 @@ function DashboardCard({
   linkLabel?: string;
 }) {
   return (
-    <section className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
+    <section className="flex h-full flex-col rounded-2xl border border-blue-100 bg-blue-50 px-4 py-4 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
       <div className="mb-3 text-center">
         <h2 className="text-xl font-semibold leading-snug text-gray-900">{title}</h2>
       </div>
@@ -27,7 +35,7 @@ function DashboardCard({
         <div className="mt-2 pt-1 text-center">
           <Link
             href={href}
-            className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-base font-semibold text-[#1E3A8A] transition-colors hover:bg-slate-100"
+            className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-lg font-semibold text-[#1E3A8A] transition-colors hover:bg-slate-50"
           >
             {linkLabel}
           </Link>
@@ -90,148 +98,26 @@ export default function DashboardPage() {
     planCode === "premium" ? "有料プラン" : planCode === "free" ? "無料プラン" : "未取得";
 
   return (
-    <main className="min-h-full bg-slate-50 px-3 py-4">
+    <main className="min-h-full bg-white px-3 pb-4 pt-1">
       <div className="mx-auto w-full max-w-[920px]">
-        <div className="mb-4 text-center">
-          <Link
-            href="/plan/new"
-            className="inline-flex min-w-[240px] items-center justify-center rounded-xl bg-[#1E3A8A] px-6 py-3 text-lg font-semibold text-white transition-colors hover:bg-blue-800"
-          >
-            新しく備えプランを作る
-          </Link>
-        </div>
-
         {errorMessage ? (
           <section className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
             <p className="text-base font-medium text-gray-900">{errorMessage}</p>
           </section>
         ) : null}
-
-        <div className="grid w-full grid-cols-2 gap-3">
-          <DashboardCard title="家族情報" href="/family" linkLabel="家族情報を見る">
-            <div className="space-y-1 text-lg text-gray-900">
-              <p className="mt-2 font-semibold text-gray-900">
-                {isLoading
-                  ? "読み込み中..."
-                  : memberCount !== undefined
-                    ? `登録人数: ${memberCount}人`
-                    : "登録人数: 未取得"}
+        {!isLoading && nearExpiryItems.length > 0 ? (
+          <section className="mb-3 w-full space-y-3 rounded-2xl border border-amber-300 bg-amber-100 px-4 py-4 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
+            <div className="flex items-center justify-center gap-2">
+              <p className="text-center text-xl font-semibold leading-relaxed text-gray-900">
+                賞味期限が近い商品があります
               </p>
-              <div className="mt-5 flex flex-1 items-center justify-center">
-                <p>
-                  家族情報を
-                  <br />
-                  確認・編集
-                  <br />
-                  できます
-                </p>
-              </div>
+              <BowlFoodIcon size={30} weight="fill" className="text-gray-900" />
             </div>
-          </DashboardCard>
 
-          <DashboardCard title="コスト概要" href="/plans" linkLabel="プランを見る">
-            <div className="space-y-2 text-lg text-gray-900">
-              <p className="font-semibold text-gray-900">
-                {isLoading
-                  ? "読み込み中..."
-                  : `年間維持コスト: ${annualCost !== null && annualCost !== undefined ? `¥${annualCost.toLocaleString()}` : "未取得"}`}
-              </p>
-              <p>
-                保存済みプラン
-                <br />
-                をもとに算出
-                <br />
-                しています
-              </p>
-            </div>
-          </DashboardCard>
-
-          <DashboardCard title="期限が近い商品" href="/stock-items" linkLabel="確認する">
-            <div className="flex h-full flex-col text-gray-900">
-              <p className="text-lg font-semibold text-gray-900">
-                {isLoading
-                  ? "読み込み中..."
-                  : dashboard
-                    ? `件数: ${nearExpiryItems.length}件`
-                    : "件数: 未取得"}
-              </p>
-              <div className="flex flex-1 items-center justify-center">
-                {isLoading ? (
-                  <p>読み込み中...</p>
-                ) : nearExpiryItems.length > 0 ? (
-                  <ul className="mt-2 space-y-2 text-center">
-                    {nearExpiryItems.map((item) => (
-                      <li key={item.id} className="list-none text-xl">
-                        {item.productName}
-                        <br />
-                        あと{item.daysLeft}日
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-lg text-gray-900">
-                    期限が近い商品は
-                    <br />
-                    ありません
-                  </p>
-                )}
-              </div>
-            </div>
-          </DashboardCard>
-
-          <DashboardCard title="備蓄品一覧" href="/stock-items" linkLabel="備蓄品一覧を見る">
-            <div className="flex h-full flex-col text-lg text-gray-900">
-              <p className="font-semibold text-gray-900">
-                {isLoading
-                  ? "読み込み中..."
-                  : stockCount !== undefined
-                    ? `登録済み備蓄: ${stockCount}件`
-                    : "登録済み備蓄: 未取得"}
-              </p>
-              <div className="mt-2 flex flex-1 items-center justify-center">
-                <p>
-                  備蓄の登録・
-                  <br />
-                  確認・削除が
-                  <br />
-                  できます
-                </p>
-              </div>
-            </div>
-          </DashboardCard>
-
-          <DashboardCard title="料金プラン" href="/billing" linkLabel="料金プランを見る">
-            <div className="space-y-3 text-lg text-gray-900">
-              <p className="font-semibold text-gray-900">
-                {isLoading ? "読み込み中..." : `現在: ${planLabel}`}
-              </p>
-              <p>
-                {isLoading
-                  ? "読み込み中..."
-                  : maxSavedPlans !== undefined
-                    ? `保存可能件数: ${maxSavedPlans}件`
-                    : "保存可能件数: 未取得"}
-              </p>
-            </div>
-          </DashboardCard>
-        </div>
-
-        <section className="mt-4 w-full space-y-3 rounded-2xl border border-amber-300 bg-amber-100 px-4 py-4 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
-          <p className="text-center text-lg font-semibold leading-relaxed text-gray-900">
-            賞味期限が近い商品があります。
-            <br />
-            必要に応じて、備蓄品一覧から
-            <br />
-            確認してください。
-          </p>
-
-          <div className="rounded-xl bg-white/80 px-4 py-3">
-            <h2 className="text-center text-lg font-semibold leading-snug text-gray-900">
-              期限が近い商品
-            </h2>
-            {isLoading ? (
-              <p className="mt-2 text-lg text-gray-900">読み込み中...</p>
-            ) : nearExpiryItems.length > 0 ? (
+            <div className="rounded-xl bg-white/80 px-4 py-3">
+              <h2 className="text-center text-lg font-semibold leading-snug text-blue-900">
+                期限が近い商品
+              </h2>
               <div className="mt-3 space-y-0">
                 {nearExpiryItems.map((item) => (
                   <div
@@ -245,12 +131,67 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-            ) : (
-              <p className="mt-2 text-lg text-gray-900">期限が近い商品はありません</p>
-            )}
-          </div>
-        </section>
+            </div>
+          </section>
+        ) : null}
+        <div className="grid w-full grid-cols-2 gap-3">
+          <DashboardCard title="家族情報" href="/family" linkLabel="確認する">
+            <div className="flex h-full flex-col items-center justify-center gap-2 text-gray-900">
+              <UsersThreeIcon size={40} weight="fill" className="text-[#1E3A8A]" />
+              <p className="text-xl font-semibold text-gray-900">
+                {isLoading
+                  ? "読み込み中..."
+                  : memberCount !== undefined
+                    ? `${memberCount}人を登録中`
+                    : "未取得"}
+              </p>
+            </div>
+          </DashboardCard>
 
+          <DashboardCard title="コスト概要" href="/plans" linkLabel="確認する">
+            <div className="flex h-full flex-col items-center justify-center gap-2 text-gray-900">
+              <WalletIcon size={40} weight="fill" className="text-[#1E3A8A]" />
+              <p className="text-center text-xl font-semibold text-gray-900">
+                {isLoading
+                  ? "読み込み中..."
+                  : annualCost !== null && annualCost !== undefined
+                    ? `年間 ¥${annualCost.toLocaleString()}`
+                    : "未取得"}
+              </p>
+            </div>
+          </DashboardCard>
+
+          <DashboardCard title="備蓄品一覧" href="/stock-items" linkLabel="確認する">
+            <div className="flex h-full flex-col items-center justify-center gap-2 text-gray-900">
+              <PackageIcon size={40} weight="fill" className="text-[#1E3A8A]" />
+              <p className="text-xl font-semibold text-gray-900">
+                {isLoading
+                  ? "読み込み中..."
+                  : stockCount !== undefined
+                    ? `${stockCount}件を管理中`
+                    : "未取得"}
+              </p>
+            </div>
+          </DashboardCard>
+
+          <DashboardCard title="料金プラン" href="/billing" linkLabel="確認する">
+            <div className="flex h-full flex-col items-center justify-center gap-2 text-gray-900">
+              <CreditCardIcon size={40} weight="fill" className="text-[#1E3A8A]" />
+              <div className="space-y-1 text-center">
+                <p className="text-xl font-semibold text-gray-900">
+                  {isLoading ? "読み込み中..." : planLabel}
+                </p>
+                <p className="text-xl text-gray-900">
+                  {isLoading
+                    ? ""
+                    : maxSavedPlans !== undefined
+                      ? `保存 ${maxSavedPlans}件まで`
+                      : "未取得"}
+                </p>
+              </div>
+            </div>
+          </DashboardCard>
+        </div>
         <section className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
           <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             <div />
@@ -268,35 +209,67 @@ export default function DashboardPage() {
           </div>
 
           {isLoading ? (
-            <p className="text-lg text-gray-900">読み込み中...</p>
+            <p className="text-center text-lg text-gray-900">読み込み中...</p>
           ) : savedPlans.length > 0 ? (
-            <div className="grid w-full grid-cols-2 gap-3">
+            <div className="grid gap-3 grid-cols-1">
               {savedPlans.map((plan) => (
                 <div
                   key={plan.id}
-                  className="h-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center shadow-sm"
+                  className="rounded-2xl border border-slate-200 bg-blue-50 px-4 py-4 shadow-[0_4px_12px_rgba(15,23,42,0.08)]"
                 >
-                  <p className="text-xl font-semibold leading-snug text-gray-900">{plan.title}</p>
-                  <div className="mt-2 space-y-1 text-lg font-semibold text-gray-900">
-                    <p>初期費用: ¥{plan.totalEstimatedCost.toLocaleString()}</p>
-                    <p>更新日: {new Date(plan.updatedAt).toLocaleDateString("ja-JP")}</p>
+                  <div className="mx-auto max-w-[520px]">
+                    <h3 className="text-center text-xl font-semibold text-[#1E3A8A]">
+                      {plan.title}
+                    </h3>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-xl bg-white px-3 py-3 text-center">
+                        <p className="text-lg font-semibold text-gray-600">家族人数</p>
+                        <p className="mt-1 text-xl font-semibold text-gray-900">
+                          {plan.familyMemberCount}人
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-white px-3 py-3 text-center">
+                        <p className="text-lg font-semibold text-gray-600">初期費用</p>
+                        <p className="mt-1 text-xl font-semibold text-gray-900">
+                          ¥{plan.totalEstimatedCost.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-white text-center px-3 py-3">
+                        <p className="text-lg font-semibold text-gray-600">更新日</p>
+                        <div className="mt-1 flex justify-center">
+                          <p className="text-xl font-semibold text-gray-900 tabular-nums">
+                            {new Date(plan.updatedAt).toLocaleDateString("ja-JP")}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="mt-4 text-center">
+                  <div className="mt-4 flex justify-center gap-2">
                     <Link
                       href={`/plans/${plan.id}`}
-                      className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-base font-semibold text-[#1E3A8A] transition-colors hover:bg-slate-100"
+                      className="inline-flex min-w-[132px] items-center justify-center whitespace-nowrap rounded-xl bg-[#1E3A8A] px-4 py-3 text-lg font-semibold text-white transition-colors hover:bg-blue-800"
                     >
-                      詳細を見る
+                      プランを見る
                     </Link>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">まだ保存済みプランはありません。</p>
+            <p className="text-xl text-center text-gray-900">まだ保存済みプランはありません。</p>
           )}
         </section>
+        <div className="mt-4 text-center">
+          <Link
+            href="/plan/new"
+            className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-6 py-3 text-lg font-semibold text-white transition-colors hover:bg-blue-800"
+          >
+            <SparkleIcon size={20} weight="fill" />
+            <span>新しく備えプランを作る</span>
+          </Link>
+        </div>
       </div>
     </main>
   );
