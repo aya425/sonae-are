@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FloppyDiskIcon, TrashIcon, UserPlusIcon } from "@phosphor-icons/react";
 
 const RELATION_OPTIONS = [
   { value: "本人", label: "本人" },
@@ -434,7 +435,7 @@ export default function FamilyPage() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl min-h-screen px-3 py-4">
+    <main className="mx-auto max-w-4xl min-h-screen px-3 py-1">
       {errorMessage ? (
         <div className="mt-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
@@ -442,11 +443,13 @@ export default function FamilyPage() {
       ) : null}
 
       {savedMembers.length === 0 && (
-        <p className="mt-4 text-center text-sm text-gray-600">家族情報を登録しましょう</p>
+        <p className="mt-2 text-center text-xl font-semibold text-gray-900">
+          家族情報を登録しましょう
+        </p>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-0 space-y-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <form onSubmit={handleSubmit} className="mt-2 space-y-4">
+        <div className="grid grid-cols-1 gap-3">
           {members.map((member, index) => {
             const isExistingMember = Boolean(member.id);
             const deletingMemberId = member.id;
@@ -455,25 +458,43 @@ export default function FamilyPage() {
             return (
               <section
                 key={member.localId}
-                className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-4 mb-2 shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+                className="mb-1 w-full rounded-3xl border border-blue-100 bg-blue-50 px-5 py-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)] sm:px-6 sm:py-6"
               >
-                <div className="mb-4 text-center">
-                  <h2 className="text-xl font-bold text-[#1E3A8A]">{index + 1}人目</h2>
+                <div className="mb-2 grid grid-cols-[1fr_auto_1fr] items-center">
+                  <div />
+                  <h2 className="text-center text-2xl font-bold text-[#1E3A8A]">{index + 1}人目</h2>
+                  <div className="flex justify-end">
+                    {isExistingMember ? (
+                      <button
+                        type="button"
+                        onClick={() => member.id && handleDelete(member.id)}
+                        disabled={isDeleting || isSubmitting}
+                        aria-label={isDeleting ? "削除中" : "削除"}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-red-300 bg-white text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isDeleting ? (
+                          <span className="text-base font-semibold">...</span>
+                        ) : (
+                          <TrashIcon size={25} weight="bold" />
+                        )}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
 
-                <div className="space-y-4 text-center">
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-3 text-center">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="mb-2 block text-lg font-semibold text-slate-800">
+                      <label className="mb-2 block text-xl font-semibold text-slate-800">
                         続柄
                       </label>
                       <select
-                        className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-3 text-center text-lg"
+                        className="w-[80%] rounded-2xl border border-slate-300 bg-white pl-8 pr-3 py-3 text-center text-xl leading-normal"
                         value={member.role}
                         onChange={(e) => updateMemberField(index, "role", e.target.value)}
                         disabled={isFormDisabled || isDeleting}
                       >
-                        <option value="">選択してください</option>
+                        <option value="">選択</option>
                         {RELATION_OPTIONS.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
@@ -483,16 +504,16 @@ export default function FamilyPage() {
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-lg font-semibold text-slate-800">
-                        年齢
+                      <label className="mb-2 block text-xl font-semibold text-slate-800">
+                        年齢区分
                       </label>
                       <select
-                        className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-3 text-center text-lg"
+                        className="w-[80%] rounded-2xl border border-slate-300 bg-white pl-8 pr-3 py-3 text-center text-xl leading-normal"
                         value={member.ageGroup}
                         onChange={(e) => updateMemberField(index, "ageGroup", e.target.value)}
                         disabled={isFormDisabled || isDeleting}
                       >
-                        <option value="">選択してください</option>
+                        <option value="">選択</option>
                         {AGE_GROUP_OPTIONS.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
@@ -502,28 +523,34 @@ export default function FamilyPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-[auto_1fr] items-start gap-2 text-left">
-                      <span className="mt-1 text-lg font-semibold text-slate-900">アレルゲン</span>
-                      <button
-                        type="button"
-                        onClick={() => openAllergenModal(index)}
-                        className="inline-flex whitespace-nowrap items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-1 py-1 text-base font-semibold text-[#1E3A8A] transition-colors hover:bg-blue-100"
-                      >
-                        選択 ▼
-                      </button>
+                  <div className="mx-auto w-[90%] space-y-1 rounded-2xl bg-white px-1 py-2 sm:px-5">
+                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                      <div />
+                      <span className="text-center text-xl font-semibold text-slate-900">
+                        アレルゲン
+                      </span>
+                      <div className="flex justify-start">
+                        <button
+                          type="button"
+                          onClick={() => openAllergenModal(index)}
+                          className="inline-flex min-h-[35px] items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-2 py-1 text-lg font-semibold text-[#1E3A8A] transition-colors hover:bg-blue-100"
+                        >
+                          選択 ▼
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-[auto_1fr] items-start gap-3 text-left">
-                      <span />
-                      <div className="flex flex-wrap gap-2">
+                    <div className="rounded-2xl bg-white px-4 py-3">
+                      <div className="flex min-h-[40px] flex-wrap items-center justify-center gap-2 text-center">
                         {member.allergens.length === 0 ? (
-                          <span className="text-base font-semibold text-gray-900">未選択</span>
+                          <span className="inline-flex items-center justify-center text-base font-semibold text-gray-900">
+                            未選択
+                          </span>
                         ) : (
                           member.allergens.map((allergen) => (
                             <span
                               key={allergen}
-                              className="rounded-full bg-gray-100 px-3 py-1 text-base font-semibold"
+                              className="rounded-full bg-orange-200 px-3 py-1.5 text-base font-semibold text-slate-800"
                             >
                               {allergen}
                             </span>
@@ -533,31 +560,19 @@ export default function FamilyPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="mb-2 block text-left text-lg font-semibold text-slate-800">
-                      メモ
-                    </label>
-                    <textarea
-                      className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
-                      rows={2}
-                      value={member.notes}
-                      onChange={(e) => updateMemberField(index, "notes", e.target.value)}
-                      disabled={isFormDisabled || isDeleting}
-                      placeholder="任意でメモを入力"
-                    />
-                  </div>
-                  {isExistingMember ? (
-                    <div className="flex justify-center">
-                      <button
-                        type="button"
-                        onClick={() => member.id && handleDelete(member.id)}
-                        disabled={isDeleting || isSubmitting}
-                        className="flex items-center gap-0 rounded-xl border border-red-300 bg-white px-4 py-2 text-lg font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <span>{isDeleting ? "削除中..." : "削除"}</span>
-                      </button>
+                  <div className="mx-auto w-[90%]">
+                    <div className="grid grid-cols-[45px_1fr] items-start gap-2 text-left">
+                      <label className="pt-3 text-lg font-semibold text-slate-800">メモ</label>
+                      <textarea
+                        className="min-h-[50px] w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg leading-normal"
+                        rows={1}
+                        value={member.notes}
+                        onChange={(e) => updateMemberField(index, "notes", e.target.value)}
+                        disabled={isFormDisabled || isDeleting}
+                        placeholder="メモ（任意）"
+                      />
                     </div>
-                  ) : null}
+                  </div>
                 </div>
               </section>
             );
@@ -568,10 +583,12 @@ export default function FamilyPage() {
           <button
             type="button"
             onClick={addMember}
-            className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-lg font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="家族を追加"
+            className="inline-flex items-center gap-2 rounded-2xl border border-blue-200 bg-white px-5 py-3 text-[#1E3A8A] shadow-sm transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isFormDisabled}
           >
-            家族を追加
+            <UserPlusIcon size={30} weight="fill" />
+            <span className="text-lg font-semibold text-[#1E3A8A]">追加</span>
           </button>
         </div>
 
@@ -579,9 +596,10 @@ export default function FamilyPage() {
           <button
             type="submit"
             disabled={isFormDisabled}
-            className="flex min-w-[280px] justify-center rounded-xl bg-[#1E3A8A] px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-8 py-4 text-xl font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSubmitting ? "保存中..." : "保存してプラン作成へ"}
+            <FloppyDiskIcon size={22} weight="fill" />
+            <span>{isSubmitting ? "保存中..." : "保存してプラン作成へ"}</span>
           </button>
         </div>
       </form>
@@ -589,7 +607,7 @@ export default function FamilyPage() {
       {isAllergenModalOpen && activeMemberIndex !== null ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-          onClick={closeAllergenModal} // 👈 追加
+          onClick={closeAllergenModal}
         >
           <div
             className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg"
@@ -599,7 +617,7 @@ export default function FamilyPage() {
             aria-labelledby="allergen-modal-title"
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 id="allergen-modal-title" className="text-4xl font-bold text-red-500">
+              <h2 id="allergen-modal-title" className="text-3xl font-bold text-red-400">
                 アレルゲンを選択
               </h2>
               <button
@@ -616,12 +634,13 @@ export default function FamilyPage() {
               {ALLERGEN_OPTIONS.map((allergen) => (
                 <label
                   key={allergen.value}
-                  className="flex items-center gap-2 rounded border px-3 py-2 text-lg font-semibold"
+                  className="flex cursor-pointer items-center gap-3 rounded border border-slate-200 bg-white px-3 py-3 text-lg font-semibold transition-colors hover:bg-blue-50 hover:border-blue-200"
                 >
                   <input
                     type="checkbox"
                     checked={members[activeMemberIndex].allergens.includes(allergen.value)}
                     onChange={() => toggleAllergen(activeMemberIndex, allergen.value)}
+                    className="h-5 w-5 cursor-pointer"
                   />
                   <span>{allergen.label}</span>
                 </label>
@@ -632,7 +651,7 @@ export default function FamilyPage() {
               <button
                 type="button"
                 onClick={closeAllergenModal}
-                className="rounded bg-blue-900 px-4 py-2 text-lg font-semibold text-white"
+                className="rounded bg-[#1E3A8A] px-4 py-2 text-lg font-semibold text-white"
               >
                 選択を完了
               </button>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { BowlFoodIcon, CalendarBlankIcon, PackageIcon, TrashIcon } from "@phosphor-icons/react";
+import { useEffect, useRef, useState } from "react";
 
 type ExpiringItem = {
   id: string;
@@ -88,7 +89,7 @@ export default function StockItemsPage() {
     unitPrice: "",
   });
   const [selectedProductId, setSelectedProductId] = useState("");
-  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const expiresAtInputRef = useRef<HTMLInputElement | null>(null);
 
   const expiringItems: ExpiringItem[] = stockItems
     .map((item) => {
@@ -210,7 +211,7 @@ export default function StockItemsPage() {
       const result: CreateStockItemResponse = await response.json();
 
       if (!response.ok || !result.data) {
-        throw new Error(result.error?.message || "備蓄商品の登録に失敗しました。");
+        throw new Error(getFriendlyCreateErrorMessage(result.error, form));
       }
 
       const createdItem = result.data;
@@ -224,8 +225,11 @@ export default function StockItemsPage() {
       });
       setSelectedProductId("");
     } catch (error) {
-      console.error(error);
-      setErrorMessage(error instanceof Error ? error.message : "備蓄商品の登録に失敗しました。");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "備蓄商品の登録に失敗しました。入力内容を確認してもう一度お試しください。"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -271,6 +275,79 @@ export default function StockItemsPage() {
     return date.toLocaleDateString("ja-JP");
   };
 
+  const formatDateInputDisplay = (value: string) => {
+    if (!value) return "";
+    return value.replace(/-/g, "/");
+  };
+
+  const openDatePicker = () => {
+    const input = expiresAtInputRef.current;
+    if (!input) return;
+
+    if (typeof input.showPicker === "function") {
+      input.showPicker();
+      return;
+    }
+
+    input.focus();
+    input.click();
+  };
+
+  const getFriendlyCreateErrorMessage = (
+    error: CreateStockItemResponse["error"] | null,
+    formValue: StockItemForm
+  ) => {
+    const rawMessage = error?.message ?? "";
+
+    const missingFields: string[] = [];
+
+    if (!formValue.productName.trim()) {
+      missingFields.push("商品名");
+    }
+
+    if (!formValue.quantity) {
+      missingFields.push("数量");
+    }
+
+    if (formValue.unitPrice === "") {
+      missingFields.push("単価");
+    }
+
+    if (!formValue.expiresAt) {
+      missingFields.push("賞味期限");
+    }
+
+    if (missingFields.length > 0) {
+      return `${missingFields.join("・")}を入力してください。`;
+    }
+
+    if (Number(formValue.quantity) <= 0) {
+      return "数量は1以上で入力してください。";
+    }
+
+    if (Number(formValue.unitPrice) < 0) {
+      return "単価は0円以上で入力してください。";
+    }
+
+    if (
+      rawMessage.includes("商品名と賞味期限は必須です") ||
+      rawMessage.includes("product") ||
+      rawMessage.includes("expires")
+    ) {
+      return "入力内容を確認してください。商品名と賞味期限は必須です。";
+    }
+
+    if (rawMessage.includes("quantity")) {
+      return "数量は1以上で入力してください。";
+    }
+
+    if (rawMessage.includes("unitPrice") || rawMessage.includes("単価")) {
+      return "単価は0円以上で入力してください。";
+    }
+
+    return "備蓄商品の登録に失敗しました。入力内容を確認してもう一度お試しください。";
+  };
+
   if (isLoading) {
     return (
       <main className="mx-auto max-w-6xl bg-white px-3 py-4">
@@ -281,21 +358,16 @@ export default function StockItemsPage() {
 
   return (
     <main className="mx-auto max-w-none bg-white px-2 py-2">
-      {errorMessage ? (
-        <div className="mb-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {errorMessage}
-        </div>
-      ) : null}
-
       <div className="space-y-4">
         {/* 期限が近い商品 */}
-        <section className="mx-auto max-w-4xl rounded-3xl border border-amber-300 bg-amber-100 p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
-          <h2 className="text-center text-xl font-bold text-[#1E3A8A]">期限が近い商品</h2>
+        {expiringItems.length > 0 ? (
+          <section className="mx-auto max-w-4xl rounded-3xl border border-amber-300 bg-amber-100 p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+            <div className="flex items-center justify-center gap-2">
+              <h2 className="text-center text-2xl font-bold text-[#1E3A8A]">期限が近い商品</h2>
+              <BowlFoodIcon size={30} weight="fill" className="text-[#1E3A8A]" />
+            </div>
 
-          <div className="mt-4 rounded-xl bg-white/80 px-4 py-3">
-            {expiringItems.length === 0 ? (
-              <p className="text-lg text-gray-900">期限が近い商品はありません。</p>
-            ) : (
+            <div className="mt-4 rounded-xl bg-white/80 px-4 py-3">
               <div className="mt-0 space-y-0">
                 {expiringItems.map((item) => (
                   <div
@@ -309,20 +381,26 @@ export default function StockItemsPage() {
                   </div>
                 ))}
               </div>
-            )}
+            </div>
+          </section>
+        ) : null}
+
+        {errorMessage ? (
+          <div className="mx-auto mb-1 max-w-2xl rounded-xl border border-red-300 bg-red-50 px-4 py-4 text-base font-medium leading-relaxed text-red-700 sm:text-lg">
+            {errorMessage}
           </div>
-        </section>
+        ) : null}
 
         {/* 登録フォーム */}
-        <section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
-          <h2 className="text-center text-xl font-bold text-[#1E3A8A]">備蓄登録フォーム</h2>
+        <section className="mx-auto max-w-2xl rounded-3xl border border-blue-100 bg-blue-50 p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+          <h2 className="text-center text-2xl font-bold text-[#1E3A8A]">登録フォーム</h2>
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <label className="mb-2 block text-lg font-semibold text-slate-800">商品名</label>
+                <label className="mb-2 block text-xl font-semibold text-slate-800">商品名</label>
                 <select
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
+                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-xl"
                   value={selectedProductId}
                   onChange={(e) => handleChangeSelectedProduct(e.target.value)}
                 >
@@ -344,7 +422,7 @@ export default function StockItemsPage() {
                   <input
                     type="text"
                     placeholder="例: アレルギー対応カレー"
-                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-lg"
                     value={form.productName}
                     onChange={(e) =>
                       setForm((prev) => ({
@@ -358,11 +436,11 @@ export default function StockItemsPage() {
 
               {/* 数量 */}
               <div>
-                <label className="mb-2 block text-lg font-semibold text-slate-800">数量</label>
+                <label className="mb-2 block text-xl font-semibold text-slate-800">数量</label>
                 <input
                   type="number"
                   placeholder="例: 3"
-                  className="w-full max-w-[200px] rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
+                  className="w-full max-w-[200px] rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-lg"
                   value={form.quantity}
                   onChange={(e) =>
                     setForm((prev) => ({
@@ -375,12 +453,12 @@ export default function StockItemsPage() {
 
               {/* 単価 */}
               <div>
-                <label className="mb-2 block text-lg font-semibold text-slate-800">単価</label>
+                <label className="mb-2 block text-xl font-semibold text-slate-800">単価</label>
                 <input
                   type="number"
                   min="0"
                   placeholder="例: 300"
-                  className="w-full max-w-[200px] rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
+                  className="w-full max-w-[200px] rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-lg"
                   value={form.unitPrice}
                   onChange={(e) =>
                     setForm((prev) => ({
@@ -393,18 +471,39 @@ export default function StockItemsPage() {
 
               {/* 賞味期限 */}
               <div className="sm:col-span-2">
-                <label className="mb-2 block text-lg font-semibold text-slate-800">賞味期限</label>
-                <input
-                  type="date"
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg"
-                  value={form.expiresAt}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      expiresAt: e.target.value,
-                    }))
-                  }
-                />
+                <label className="mb-2 block text-xl font-semibold text-slate-800">賞味期限</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    readOnly
+                    placeholder="年 / 月 / 日"
+                    value={formatDateInputDisplay(form.expiresAt)}
+                    onClick={openDatePicker}
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={openDatePicker}
+                    aria-label="賞味期限を選択"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-800"
+                  >
+                    <CalendarBlankIcon size={24} weight="bold" />
+                  </button>
+                  <input
+                    ref={expiresAtInputRef}
+                    type="date"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    value={form.expiresAt}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        expiresAt: e.target.value,
+                      }))
+                    }
+                    className="pointer-events-none absolute right-4 top-1/2 h-10 w-10 -translate-y-1/2 opacity-0"
+                  />
+                </div>
               </div>
 
               {/* ボタン */}
@@ -412,9 +511,10 @@ export default function StockItemsPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex min-w-[280px] justify-center rounded-xl bg-[#1E3A8A] px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex min-w-[280px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-8 py-4 text-xl font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isSubmitting ? "追加中..." : "備蓄を追加する"}
+                  <PackageIcon size={24} weight="fill" />
+                  <span>{isSubmitting ? "追加中..." : "備蓄を追加する"}</span>
                 </button>
               </div>
             </div>
@@ -424,15 +524,15 @@ export default function StockItemsPage() {
         {/* 一覧 */}
         <section className="mx-auto w-full rounded-3xl border border-slate-200 bg-white px-3 py-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
           <div className="space-y-1 text-center">
-            <h2 className="text-xl font-bold text-[#1E3A8A]">登録済み備蓄品一覧</h2>
+            <h2 className="text-2xl font-bold text-[#1E3A8A]">登録済み備蓄品一覧</h2>
             <p className="text-xl font-semibold text-gray-900">
               備蓄品の合計金額: ¥{totalEstimatedCost.toLocaleString()}
             </p>
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="mt-4 grid grid-cols-1 gap-2">
             {stockItems.length === 0 ? (
-              <p className="sm:col-span-2 text-lg text-gray-900">
+              <p className="sm:col-span-2 text-center text-xl text-gray-900">
                 登録済みの備蓄品はまだありません。
                 <br />
                 上のフォームから備蓄を追加してください。
@@ -441,56 +541,47 @@ export default function StockItemsPage() {
               stockItems.map((item) => (
                 <article
                   key={item.id}
-                  className="flex flex-col justify-between rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.08)]"
+                  className="flex flex-col justify-between rounded-3xl border border-blue-100 bg-blue-50 px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.08)]"
                 >
                   <div className="space-y-3 text-center">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedItemId((prev) => (prev === item.id ? null : item.id))
-                      }
-                      className={`w-full rounded-xl px-2 py-1 text-xl font-bold leading-snug text-slate-800 transition-colors hover:bg-slate-100 hover:text-[#1E3A8A] ${
-                        expandedItemId === item.id ? "text-wrap" : "line-clamp-2"
-                      }`}
-                    >
-                      {item.name}
-                    </button>
-                    <div className="grid gap-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-2xl bg-blue-50 px-4 py-1">
-                          <p className="text-center text-lg font-medium text-gray-900">数量</p>
-                          <div className="mt-1 flex justify-center">
-                            <p className="text-center text-2xl text-slate-900">{item.quantity}</p>
-                          </div>
-                        </div>
-
-                        <div className="rounded-2xl bg-blue-50 px-4 py-1">
-                          <p className="text-center text-lg font-medium text-gray-900">単価</p>
-                          <div className="mt-1 flex justify-center">
-                            <p className="text-center text-2xl text-slate-900">
-                              ¥{item.unitPrice.toLocaleString()}
-                            </p>
-                          </div>
+                    <div className="grid grid-cols-[44px_1fr_44px] items-center gap-2 rounded-xl bg-blue-50 px-2 py-1">
+                      <div />
+                      <h3 className="text-center text-2xl font-bold leading-snug text-[#1E3A8A] line-clamp-2">
+                        {item.name}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(item.id)}
+                        aria-label="削除"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-red-300 bg-white text-red-700 transition-colors hover:bg-red-50"
+                      >
+                        <TrashIcon size={24} weight="bold" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-[0.8fr_0.9fr_1.3fr] gap-2">
+                      <div className="rounded-2xl bg-white px-3 py-2 text-center">
+                        <p className="text-lg font-semibold text-gray-600">数量</p>
+                        <div className="mt-1 flex justify-center">
+                          <p className="text-xl font-semibold text-slate-900">{item.quantity}</p>
                         </div>
                       </div>
 
-                      <div className="rounded-2xl bg-blue-50 px-4 py-1 text-center">
-                        <p className="text-xl font-medium text-gray-900">賞味期限</p>
-                        <p className="mt-1 text-2xl text-slate-900">
+                      <div className="rounded-2xl bg-white px-3 py-2 text-center">
+                        <p className="text-lg font-semibold text-gray-600">単価</p>
+                        <div className="mt-1 flex justify-center">
+                          <p className="text-xl font-semibold text-slate-900">
+                            ¥{item.unitPrice.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl bg-white px-3 py-2 text-center">
+                        <p className="text-lg font-semibold text-gray-600">賞味期限</p>
+                        <p className="mt-1 text-xl font-semibold text-slate-900">
                           <span className="whitespace-nowrap">{formatDate(item.expiresAt)}</span>
                         </p>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="mt-4 flex justify-center">
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(item.id)}
-                      className="inline-flex min-w-[110px] items-center justify-center rounded-2xl border border-red-300 bg-white px-4 py-3 text-lg font-semibold text-red-600 transition-colors hover:bg-red-50"
-                    >
-                      削除
-                    </button>
                   </div>
                 </article>
               ))

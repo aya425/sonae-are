@@ -46,7 +46,7 @@ export default function SignupPage() {
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center bg-slate-50 px-4 py-8">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold">会員登録</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
+          <p className="mt-2 text-lg leading-6 text-slate-600">
             メールアドレスとパスワードを入力して、
             <br />
             そなえアレを始めましょう。
@@ -58,7 +58,7 @@ export default function SignupPage() {
           onSubmit={handleSignup}
         >
           <div className="flex flex-col gap-2">
-            <label htmlFor="email" className="text-sm font-medium">
+            <label htmlFor="email" className="text-lg font-medium">
               メールアドレス
             </label>
             <input
@@ -68,13 +68,13 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#1E3A8A]"
+              className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-lg outline-none transition focus:border-[#1E3A8A]"
               placeholder="example@email.com"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="password" className="text-sm font-medium">
+            <label htmlFor="password" className="text-lg font-medium">
               パスワード
             </label>
             <input
@@ -85,17 +85,17 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#1E3A8A]"
+              className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-lg outline-none transition focus:border-[#1E3A8A]"
               placeholder="6文字以上で入力"
             />
           </div>
 
           {errorMessage ? (
-            <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p>
+            <p className="rounded-lg bg-red-50 px-4 py-3 text-lg text-red-700">{errorMessage}</p>
           ) : null}
 
           {successMessage ? (
-            <p className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            <p className="rounded-xl bg-blue-50 px-4 py-3 text-lg text-blue-800">
               {successMessage}
             </p>
           ) : null}
@@ -103,13 +103,13 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex w-full items-center justify-center rounded-xl bg-[#1E3A8A] px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-[#1E3A8A] px-6 py-3 text-lg font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "登録中..." : "会員登録する"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-600">
+        <p className="mt-6 text-center text-lg text-slate-600">
           すでにアカウントをお持ちの方は{" "}
           <Link
             href="/login"

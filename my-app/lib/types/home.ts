@@ -28,6 +28,7 @@ export type HomeResponse = {
       id: string;
       title: string;
       days: number;
+      familyMemberCount: number;
       totalEstimatedCost: number;
       updatedAt: string;
     }>;

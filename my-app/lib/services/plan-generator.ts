@@ -89,8 +89,11 @@ function chooseCandidateForCategory(
 
 function getPriorityByCategory(category: string): ItemPriority {
   if (category === "主食" || category === "飲料") return "high";
-  if (category === "おかず" || category === "汁物" || category === "おやつ") {
+  if (category === "おかず" || category === "汁物") {
     return "medium";
+  }
+  if (category === "おやつ") {
+    return "low";
   }
   return "low";
 }
