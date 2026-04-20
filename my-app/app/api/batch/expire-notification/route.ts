@@ -120,6 +120,7 @@ export async function POST(request: NextRequest) {
         targetItems: 0,
         failedUsers: 0,
       });
+
       return NextResponse.json({
         ok: true,
         message: "No expiring items found",
@@ -145,6 +146,12 @@ export async function POST(request: NextRequest) {
 
     for (const [userId, userItems] of groupedByUser.entries()) {
       try {
+        logger.info("expire notification user process started", {
+          userId,
+          itemCount: userItems.length,
+          itemIds: userItems.map((item) => item.id),
+        });
+
         const { data: authUserResult, error: authUserError } =
           await supabase.auth.admin.getUserById(userId);
 
@@ -158,6 +165,12 @@ export async function POST(request: NextRequest) {
           throw new Error("User email is missing");
         }
 
+        logger.info("expire notification before send mail", {
+          userId,
+          email,
+          itemCount: userItems.length,
+        });
+
         const mailResult = await sendExpiryNotificationMail({
           to: email,
           subject: "【そなえアレ】賞味期限が近い備蓄品があります",
@@ -169,14 +182,20 @@ export async function POST(request: NextRequest) {
           inventoryUrl: `${appUrl}/stock-items`,
         });
 
-        logger.info("expire notification mail sent", {
+        logger.info("expire notification after send mail", {
           userId,
-          sentItemCount: userItems.length,
+          email,
           mailSuccess: Boolean(mailResult),
         });
 
         const now = new Date().toISOString();
         const itemIds = userItems.map((item) => item.id);
+
+        logger.info("expire notification before update stock_items", {
+          userId,
+          itemIds,
+          notifiedAt: now,
+        });
 
         const { error: updateError } = await supabase
           .from("stock_items")
@@ -189,12 +208,23 @@ export async function POST(request: NextRequest) {
           throw new Error(`Failed to update notified_30days_at: ${updateError.message}`);
         }
 
+        logger.info("expire notification after update stock_items", {
+          userId,
+          updatedItemCount: itemIds.length,
+        });
+
         const notificationLogs = userItems.map((item) => ({
           user_id: userId,
           stock_item_id: item.id,
           notification_type: "expiry_30days",
           sent_at: now,
         }));
+
+        logger.info("expire notification before insert notification_logs", {
+          userId,
+          logCount: notificationLogs.length,
+          stockItemIds: userItems.map((item) => item.id),
+        });
 
         const { error: notificationLogError } = await supabase
           .from("notification_logs")
@@ -203,6 +233,11 @@ export async function POST(request: NextRequest) {
         if (notificationLogError) {
           throw new Error(`Failed to insert notification logs: ${notificationLogError.message}`);
         }
+
+        logger.info("expire notification after insert notification_logs", {
+          userId,
+          logCount: notificationLogs.length,
+        });
 
         logger.info("expire notification user process succeeded", {
           userId,
@@ -214,8 +249,10 @@ export async function POST(request: NextRequest) {
       } catch (userError) {
         logger.error("expire notification user process failed", {
           userId,
-          error: userError instanceof Error ? userError.message : "unknown error",
+          error: userError instanceof Error ? userError.message : String(userError),
+          stack: userError instanceof Error ? userError.stack : undefined,
         });
+
         failedUsers += 1;
       }
     }
@@ -237,7 +274,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     logger.error("expire notification batch failed", {
-      error: error instanceof Error ? error.message : "unknown error",
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
     });
 
     return NextResponse.json(
