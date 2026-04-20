@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import type { HomeResponse } from "@/lib/types/home";
+import { logger } from "@/lib/logger";
+import { getRedis } from "@/lib/redis";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
@@ -20,6 +22,34 @@ export async function GET() {
       },
       { status: 401 }
     );
+  }
+
+  const cacheKey = `home:${user.id}`;
+  const redis = getRedis();
+
+  if (redis) {
+    try {
+      const cachedResponse = await redis.get<HomeResponse>(cacheKey);
+
+      if (cachedResponse) {
+        logger.info("home cache hit", {
+          userId: user.id,
+          cacheKey,
+        });
+        return NextResponse.json(cachedResponse);
+      }
+
+      logger.info("home cache miss", {
+        userId: user.id,
+        cacheKey,
+      });
+    } catch (error) {
+      logger.warn("home cache read failed", {
+        userId: user.id,
+        cacheKey,
+        error: error instanceof Error ? error.message : "unknown error",
+      });
+    }
   }
 
   const { count: memberCount, error: familyError } = await supabase
@@ -196,6 +226,23 @@ export async function GET() {
     },
     error: null,
   };
+
+  if (redis) {
+    try {
+      await redis.set(cacheKey, response, { ex: 60 });
+      logger.info("home cache saved", {
+        userId: user.id,
+        cacheKey,
+        ttlSeconds: 60,
+      });
+    } catch (error) {
+      logger.warn("home cache write failed", {
+        userId: user.id,
+        cacheKey,
+        error: error instanceof Error ? error.message : "unknown error",
+      });
+    }
+  }
 
   return NextResponse.json(response);
 }
