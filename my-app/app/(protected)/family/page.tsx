@@ -8,13 +8,13 @@ const RELATION_OPTIONS = [
   { value: "本人", label: "本人" },
   { value: "夫", label: "夫" },
   { value: "妻", label: "妻" },
-  { value: "子共", label: "子共" },
+  { value: "子ども", label: "子ども" },
   { value: "その他", label: "その他" },
 ] as const;
 
 const AGE_GROUP_OPTIONS = [
   { value: "adult", label: "大人" },
-  { value: "child", label: "子共" },
+  { value: "child", label: "子ども" },
 ] as const;
 
 const ALLERGEN_OPTIONS = [
@@ -115,8 +115,8 @@ function normalizeRole(role: string): string {
     case "wife":
       return "妻";
     case "child":
-    case "子供":
-      return "子共";
+    case "子ども":
+      return "子ども";
     case "other":
       return "その他";
     default:
