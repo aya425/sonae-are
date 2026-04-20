@@ -57,10 +57,17 @@ function createSmtpTransport() {
 }
 
 function createResendClient() {
-  const resendApiKey = process.env.RESEND_API_KEY;
+  const resendApiKey = process.env.RESEND_API_KEY ?? process.env.MAIL_API_KEY;
+
+  console.log("[MAIL_ENV_CHECK]", {
+    mailProvider: process.env.MAIL_PROVIDER ?? "resend",
+    hasResendApiKey: Boolean(process.env.RESEND_API_KEY),
+    hasMailApiKey: Boolean(process.env.MAIL_API_KEY),
+    hasMailFrom: Boolean(process.env.MAIL_FROM),
+  });
 
   if (!resendApiKey) {
-    throw new Error("RESEND_API_KEY is not set.");
+    throw new Error("RESEND_API_KEY or MAIL_API_KEY is not set.");
   }
 
   return new Resend(resendApiKey);
