@@ -81,6 +81,17 @@ function getReasonByCategory(category: string): string {
   return "家族条件と備えのバランスを見て提案しています。";
 }
 
+function getPriorityByCategory(category: string): "high" | "medium" | "low" {
+  if (category === "主食" || category === "飲料") return "high";
+  if (category === "おかず" || category === "汁物") {
+    return "medium";
+  }
+  if (category === "おやつ") {
+    return "low";
+  }
+  return "low";
+}
+
 function getQuantityByCategory(params: {
   category: string;
   familyMemberCount: number;
@@ -345,10 +356,7 @@ async function generatePlanWithOpenAI(params: {
         ...product,
         quantity,
         subtotal,
-        priority:
-          item.priority === "high" || item.priority === "medium" || item.priority === "low"
-            ? item.priority
-            : "medium",
+        priority: getPriorityByCategory(product.category),
         reason: getReasonByCategory(product.category),
       };
     })

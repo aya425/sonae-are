@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SparkleIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
 
@@ -275,13 +276,14 @@ export default function PlanNewPage() {
       <div className="mx-auto w-full max-w-[920px] px-2">
         {hasFamily === false && !errorMessage ? (
           <div className="mb-6 rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
-            <p className="text-sm font-medium text-gray-900">家族情報がまだ登録されていません。</p>
+            <p className="text-xl font-medium text-gray-900">家族情報がまだ登録されていません。</p>
             <div className="mt-4 flex justify-center">
               <Link
                 href="/family"
-                className="inline-flex rounded-xl bg-[#1E3A8A] px-5 py-3 text-sm font-semibold text-white no-underline transition-colors hover:bg-blue-800"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#1E3A8A] px-5 py-3 text-lg font-semibold text-white no-underline transition-colors hover:bg-blue-800"
               >
-                家族情報を登録する
+                <UsersThreeIcon size={24} weight="fill" />
+                <span>家族情報を登録する</span>
               </Link>
             </div>
           </div>
@@ -295,9 +297,10 @@ export default function PlanNewPage() {
               <div className="mt-4 flex justify-center">
                 <Link
                   href="/family"
-                  className="inline-flex rounded-xl bg-[#1E3A8A] px-5 py-3 text-sm font-semibold text-white no-underline transition-colors hover:bg-blue-800"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#1E3A8A] px-5 py-3 text-sm font-semibold text-white no-underline transition-colors hover:bg-blue-800"
                 >
-                  家族情報を登録する
+                  <UsersThreeIcon size={24} weight="fill" />
+                  <span>家族情報を登録する</span>
                 </Link>
               </div>
             ) : null}
@@ -307,7 +310,7 @@ export default function PlanNewPage() {
         <div className="grid grid-cols-1 gap-3">
           <form onSubmit={handleSubmit} className="space-y-6">
             {isSubmitting ? (
-              <section className="mt-30 rounded-2xl border border-slate-200 bg-white px-3 py-5 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
+              <section className="mt-25 rounded-2xl border border-slate-200 bg-white px-3 py-5 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
                 <div className="flex flex-col justify-center">
                   <h2 className="text-center text-xl font-semibold text-gray-900">
                     備えプランを作成中
@@ -342,18 +345,15 @@ export default function PlanNewPage() {
                 </div>
               </section>
             ) : (
-              <section className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
+              <section className="rounded-2xl border border-blue-100 bg-blue-100 px-3 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
                 <h2 className="mt-2 text-center text-xl font-semibold text-gray-900">
-                  AIに伝える条件
+                  条件を選びましょう
                 </h2>
-                <p className="mt-2 text-center text-base font-semibold text-gray-900">
-                  条件を選んで、AIに備えプランを作ってもらいます
-                </p>
 
                 <div className="mt-2 space-y-2">
                   <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
                     <div className="mb-2 flex items-center justify-center gap-2">
-                      <label className="block text-lg font-semibold text-blue-900">想定日数</label>
+                      <label className="block text-xl font-semibold text-blue-900">想定日数</label>
                       <button
                         type="button"
                         onClick={() => setOpenHintModal("days")}
@@ -364,7 +364,7 @@ export default function PlanNewPage() {
                       </button>
                     </div>
 
-                    <p className="mb-2 rounded-xl bg-slate-50 px-3 py-2 text-center text-lg font-medium leading-relaxed text-gray-900">
+                    <p className="mb-2 rounded-xl bg-blue-50 px-3 py-2 text-center text-lg font-medium leading-relaxed text-gray-900">
                       {selectedDaysHelpText}
                     </p>
 
@@ -389,7 +389,7 @@ export default function PlanNewPage() {
 
                   <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
                     <div className="mb-2 flex items-center justify-center gap-2">
-                      <label className="block text-lg font-semibold text-blue-900">候補範囲</label>
+                      <label className="block text-xl font-semibold text-blue-900">候補範囲</label>
                       <button
                         type="button"
                         onClick={() => setOpenHintModal("scope")}
@@ -400,7 +400,7 @@ export default function PlanNewPage() {
                       </button>
                     </div>
 
-                    <p className="mb-2 rounded-xl bg-slate-50 px-3 py-2 text-center text-lg font-medium leading-relaxed text-gray-900">
+                    <p className="mb-2 rounded-xl bg-blue-50 px-3 py-2 text-center text-lg font-medium leading-relaxed text-gray-900">
                       {selectedScopeHelpText}
                     </p>
 
@@ -425,7 +425,7 @@ export default function PlanNewPage() {
 
                   <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
                     <div className="mb-2 flex items-center justify-center gap-2">
-                      <label className="block text-lg font-semibold text-blue-900">優先方針</label>
+                      <label className="block text-xl font-semibold text-blue-900">優先方針</label>
                       <button
                         type="button"
                         onClick={() => setOpenHintModal("priority")}
@@ -436,7 +436,7 @@ export default function PlanNewPage() {
                       </button>
                     </div>
 
-                    <p className="mb-2 rounded-xl bg-slate-50 v py-2 text-center text-lg font-medium leading-relaxed text-gray-900">
+                    <p className="mb-2 rounded-xl bg-blue-50 px-3 py-2 text-center text-lg font-medium leading-relaxed text-gray-900">
                       {selectedPriorityHelpText}
                     </p>
 
@@ -464,9 +464,10 @@ export default function PlanNewPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting || isCheckingFamily}
-                    className="flex min-w-[280px] justify-center rounded-xl bg-[#1E3A8A] px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-8 py-4 text-xl font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isCheckingFamily ? "家族情報を確認中..." : "AIでプランを生成する"}
+                    <SparkleIcon size={22} weight="fill" />
+                    <span>{isCheckingFamily ? "確認中..." : "プラン生成"}</span>
                   </button>
                 </div>
               </section>
