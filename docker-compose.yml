@@ -3,9 +3,6 @@ services:
     build: .
     ports:
       - "3000:3000"
-    volumes:
-      - ./my-app:/app
-      - /app/node_modules
     env_file:
       - ./my-app/.env.local
     environment:
