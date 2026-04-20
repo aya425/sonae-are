@@ -1,34 +1,37 @@
 import { NextResponse } from "next/server";
-import { redis } from "@/lib/redis";
+import { getRedis } from "@/lib/redis";
 
 export async function GET() {
   try {
-    const testKey = "test:redis";
-    const ttlKey = "test:redis:ttl";
+    const redis = getRedis();
 
-    // 普通のset/get
-    await redis.set(testKey, "hello");
-    const value = await redis.get<string>(testKey);
+    if (!redis) {
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            message: "Upstash Redis environment variables are not set.",
+          },
+        },
+        { status: 500 }
+      );
+    }
 
-    // TTL付き保存（60秒で消える）
-    await redis.set(ttlKey, "ttl-hello", { ex: 60 });
-    const ttlValue = await redis.get<string>(ttlKey);
+    const result = await redis.ping();
 
     return NextResponse.json({
-      ok: true,
       data: {
-        message: "Redis set/get success",
-        value,
-        ttlValue,
+        result,
       },
+      error: null,
     });
   } catch (error) {
-    console.error("[REDIS_TEST_ERROR]", error);
-
     return NextResponse.json(
       {
-        ok: false,
-        message: "Redis test failed",
+        data: null,
+        error: {
+          message: error instanceof Error ? error.message : "Redis test failed.",
+        },
       },
       { status: 500 }
     );
