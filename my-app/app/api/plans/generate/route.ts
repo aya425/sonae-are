@@ -63,6 +63,17 @@ type AiPlanResponse = {
   items: AiPlanItem[];
 };
 
+const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+const OPENAI_TIMEOUT_MS = 25000;
+
+function isValidPlanDays(days: number): days is PlanDays {
+  return [3, 7, 14].includes(days);
+}
+
+function isValidPriorityPolicy(value: string): value is PriorityPolicy {
+  return ["minimum", "balanced"].includes(value);
+}
+
 function getReasonByCategory(category: string): string {
   if (category === "主食") {
     return "災害時のエネルギー確保の中心になる主食として選びました。";
@@ -84,12 +95,7 @@ function getReasonByCategory(category: string): string {
 
 function getPriorityByCategory(category: string): "high" | "medium" | "low" {
   if (category === "主食" || category === "飲料") return "high";
-  if (category === "おかず" || category === "汁物") {
-    return "medium";
-  }
-  if (category === "おやつ") {
-    return "low";
-  }
+  if (category === "おかず" || category === "汁物") return "medium";
   return "low";
 }
 
@@ -101,44 +107,27 @@ function getQuantityByCategory(params: {
 }): number {
   const base = params.familyMemberCount * params.days;
 
-  if (params.category === "主食" || params.category === "飲料") {
+  if (params.category === "主食") {
     return base;
   }
 
-  if (params.priorityPolicy === "minimum") {
-    if (params.category === "おかず") {
-      return Math.max(1, Math.ceil(base * 0.6));
-    }
-    if (params.category === "汁物") {
-      return Math.max(1, Math.ceil(base * 0.5));
-    }
-    if (params.category === "おやつ") {
-      return Math.max(1, Math.ceil(base * 0.3));
-    }
-    return 1;
+  if (params.category === "飲料") {
+    return base;
   }
 
   if (params.category === "おかず") {
-    return Math.max(1, Math.ceil(base * 0.8));
+    return Math.max(1, Math.ceil(base * (params.priorityPolicy === "minimum" ? 0.6 : 0.7)));
   }
+
   if (params.category === "汁物") {
-    return Math.max(1, Math.ceil(base * 0.7));
+    return Math.max(1, Math.ceil(base * (params.priorityPolicy === "minimum" ? 0.5 : 0.6)));
   }
+
   if (params.category === "おやつ") {
-    return Math.max(1, Math.ceil(base * 0.5));
+    return Math.max(1, Math.ceil(base * 0.3));
   }
 
   return 1;
-}
-
-const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-
-function isValidPlanDays(days: number): days is PlanDays {
-  return [3, 7, 14].includes(days);
-}
-
-function isValidPriorityPolicy(value: string): value is PriorityPolicy {
-  return ["minimum", "balanced"].includes(value);
 }
 
 function buildFallbackResponse(params: {
@@ -164,12 +153,18 @@ function buildFallbackResponse(params: {
   };
 }
 
-function buildAiPrompt(params: {
-  familyMemberCount: number;
-  days: PlanDays;
-  includeDailyItems: boolean;
-  priorityPolicy: PriorityPolicy;
+function shuffleProducts(products: NormalizedProduct[]) {
+  const shuffled = [...products];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+function selectCandidateProducts(params: {
   products: NormalizedProduct[];
+  includeDailyItems: boolean;
   recentSelectedProducts: RecentSelectedProduct[];
 }) {
   const filteredProducts = params.products
@@ -178,30 +173,62 @@ function buildAiPrompt(params: {
       params.includeDailyItems ? true : product.productType === "emergency_food"
     );
 
-  const categoryOrder = ["主食", "飲料", "おかず", "汁物", "おやつ"] as const;
+  const recentSelectedProductNames = new Set(
+    params.recentSelectedProducts.map((product) => product.name)
+  );
 
-  const shuffleProducts = (products: typeof filteredProducts) => {
-    const shuffled = [...products];
-
-    for (let i = shuffled.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-
-    return shuffled;
+  const perCategoryLimit: Record<string, number> = {
+    主食: 8,
+    飲料: 2,
+    おかず: 8,
+    汁物: 8,
+    おやつ: 8,
   };
 
-  const candidateProducts = categoryOrder
-    .flatMap((category) =>
-      shuffleProducts(filteredProducts.filter((product) => product.category === category))
-    )
-    .map((product) => ({
-      id: product.id,
-      name: product.name,
-      category: product.category,
-      productType: product.productType,
-      price: product.price,
-    }));
+  const categories = ["主食", "飲料", "おかず", "汁物", "おやつ"];
+
+  return categories.flatMap((category) => {
+    const categoryProducts = filteredProducts.filter((product) => product.category === category);
+
+    const preferredProducts = categoryProducts.filter(
+      (product) => !recentSelectedProductNames.has(product.name)
+    );
+
+    const fallbackProducts = categoryProducts.filter((product) =>
+      recentSelectedProductNames.has(product.name)
+    );
+
+    const preferredSelected = shuffleProducts(preferredProducts).slice(
+      0,
+      perCategoryLimit[category] ?? 3
+    );
+
+    if (preferredSelected.length >= (perCategoryLimit[category] ?? 3)) {
+      return preferredSelected;
+    }
+
+    const remainingCount = (perCategoryLimit[category] ?? 3) - preferredSelected.length;
+    const fallbackSelected = shuffleProducts(fallbackProducts).slice(0, remainingCount);
+
+    return [...preferredSelected, ...fallbackSelected];
+  });
+}
+
+function buildAiPrompt(params: {
+  familyMemberCount: number;
+  days: PlanDays;
+  includeDailyItems: boolean;
+  priorityPolicy: PriorityPolicy;
+  candidateProducts: NormalizedProduct[];
+  recentSelectedProducts: RecentSelectedProduct[];
+}) {
+  const candidateProductsText = params.candidateProducts.map((product) => ({
+    id: product.id,
+    name: product.name,
+    category: product.category,
+    productType: product.productType,
+    price: product.price,
+  }));
 
   const recentSelectedProductsText =
     params.recentSelectedProducts.length > 0
@@ -217,8 +244,7 @@ ${params.recentSelectedProducts
 
   return `
 あなたは、食物アレルギー家庭向け防災備蓄支援アプリの提案アシスタントです。
-固定商品マスタは特定28品目不使用品のみです。
-商品の最終安全判定は行わず、提案と説明補助のみを行ってください。
+候補商品一覧にある商品だけを使って、JSONだけを返してください。
 
 入力条件:
 - 家族人数: ${params.familyMemberCount}
@@ -227,52 +253,20 @@ ${params.recentSelectedProducts
 - 優先方針: ${params.priorityPolicy === "minimum" ? "必要優先" : "バランス重視"}
 
 候補商品一覧:
-${JSON.stringify(candidateProducts)}
+${JSON.stringify(candidateProductsText, null, 2)}
 ${recentSelectedProductsText}
-最重要ルール:
+ルール:
 1. 候補商品一覧にある商品だけを使う
-2. items に重複する productId を入れない
-3. includeDailyItems=false のときは emergency_food のみ使う
-4. quantity は 1 以上の整数にする
-5. 数量は必ず家族人数 ✕ 想定日数を基本に考える
-6. 主食と飲料は、必ず同量にする
-7. 必要優先のときは、おかず6割・汁物5割・おやつ3割を目安にする
-8. バランス重視のときは、おかず8割・汁物7割・おやつ5割を目安にする
-9. 同じ条件でも毎回同じ商品名だけに固定しすぎない
-10. 候補商品一覧に複数の妥当な候補がある場合は、商品名のバリエーションが出るように選ぶ
-11. 特に主食・おかず・汁物・おやつは、毎回同じ商品だけを優先し続けない
-12. explanation では、選んだ商品の違いが伝わるようにする
-13. explanation は日本語1〜2文、120文字以内にする
-14. warnings は日本語で最大2件にする
-15. JSON 以外は返さない
+2. items の productId は候補商品の id をそのまま使う
+3. items に重複する productId を入れない
+4. 4〜5件の商品を選ぶ
+5. 主食・飲料・おかず・汁物を優先する
+6. quantity は 1 以上の整数
+7. explanation は日本語1〜2文、120文字以内
+8. warnings は最大2件
+9. JSON以外は返さない
 
-reason:
-- 商品名の言い換えだけにしない
-- そのカテゴリの役割を1文で書く
-- 主食=エネルギー確保、飲料=水分補給、おかず=満足感や栄養補助、汁物=食べやすさや温かさ、おやつ=食べやすさや気持ちの負担軽減
-
-warnings:
-- 原材料・アレルゲン確認を優先して伝える
-- 賞味期限確認と定期的な見直しを伝える
-
-出力例:
-{
-  "explanation": "主食と飲料を優先しつつ、おかずや汁物も含めて備えの偏りを減らす構成にしています。",
-  "warnings": [
-    "購入前に商品ページや公式表示で原材料・アレルゲン情報を確認してください。",
-    "購入後は賞味期限を見ながら定期的に見直してください。"
-  ],
-  "items": [
-    {
-      "productId": "p1",
-      "quantity": 9,
-      "priority": "high",
-      "reason": "災害時のエネルギー確保の中心になる主食として選びました。"
-    }
-  ]
-}
-
-返却形式は必ず JSON のみ:
+返却形式:
 {
   "explanation": "string",
   "warnings": ["string"],
@@ -288,6 +282,105 @@ warnings:
 `.trim();
 }
 
+async function createStructuredPlan(params: {
+  familyMemberCount: number;
+  days: PlanDays;
+  includeDailyItems: boolean;
+  priorityPolicy: PriorityPolicy;
+  candidateProducts: NormalizedProduct[];
+  recentSelectedProducts: RecentSelectedProduct[];
+}): Promise<AiPlanResponse> {
+  const prompt = buildAiPrompt(params);
+
+  logger.info("plans generate openai model selected", {
+    feature: "plan_generate",
+    model: OPENAI_MODEL,
+    candidateProductCount: params.candidateProducts.length,
+  });
+
+  const response = await Promise.race([
+    openai.responses.create({
+      model: OPENAI_MODEL,
+      input: [
+        {
+          role: "system",
+          content: [
+            {
+              type: "input_text",
+              text: "あなたは防災備蓄提案のアシスタントです。必ずJSON Schemaに従って返答してください。",
+            },
+          ],
+        },
+        {
+          role: "user",
+          content: [{ type: "input_text", text: prompt }],
+        },
+      ],
+      text: {
+        format: {
+          type: "json_schema",
+          name: "plan_response",
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            required: ["explanation", "warnings", "items"],
+            properties: {
+              explanation: {
+                type: "string",
+              },
+              warnings: {
+                type: "array",
+                items: { type: "string" },
+                maxItems: 2,
+              },
+              items: {
+                type: "array",
+                minItems: 4,
+                maxItems: 5,
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["productId", "quantity", "priority", "reason"],
+                  properties: {
+                    productId: { type: "string" },
+                    quantity: { type: "integer", minimum: 1 },
+                    priority: {
+                      type: "string",
+                      enum: ["high", "medium", "low"],
+                    },
+                    reason: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          strict: true,
+        },
+      },
+    }),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("OpenAI response timed out.")), OPENAI_TIMEOUT_MS)
+    ),
+  ]);
+
+  const outputText =
+    typeof (response as { output_text?: unknown }).output_text === "string"
+      ? (response as { output_text: string }).output_text
+      : "";
+
+  if (!outputText) {
+    throw new Error("OpenAI structured response is empty.");
+  }
+
+  const parsed = JSON.parse(outputText) as AiPlanResponse;
+
+  if (!parsed || !Array.isArray(parsed.items) || parsed.items.length < 4) {
+    throw new Error("OpenAI structured response items are invalid.");
+  }
+
+  return parsed;
+}
+
 async function generatePlanWithOpenAI(params: {
   familyMemberCount: number;
   days: PlanDays;
@@ -296,54 +389,41 @@ async function generatePlanWithOpenAI(params: {
   products: NormalizedProduct[];
   recentSelectedProducts: RecentSelectedProduct[];
 }) {
-  const prompt = buildAiPrompt(params);
-
-  const completion = await openai.chat.completions.create({
-    model: OPENAI_MODEL,
-    temperature: 0.4,
-    response_format: { type: "json_object" },
-    messages: [
-      {
-        role: "system",
-        content: "あなたは防災備蓄提案のアシスタントです。必ずJSONだけを返してください。",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
+  const candidateProducts = selectCandidateProducts({
+    products: params.products,
+    includeDailyItems: params.includeDailyItems,
+    recentSelectedProducts: params.recentSelectedProducts,
   });
 
-  const content = completion.choices[0]?.message?.content;
+  const parsed = await createStructuredPlan({
+    familyMemberCount: params.familyMemberCount,
+    days: params.days,
+    includeDailyItems: params.includeDailyItems,
+    priorityPolicy: params.priorityPolicy,
+    candidateProducts,
+    recentSelectedProducts: params.recentSelectedProducts,
+  });
 
-  if (!content) {
-    throw new Error("OpenAI response content is empty.");
-  }
-
-  const parsed = JSON.parse(content) as AiPlanResponse;
-
-  if (!parsed || !Array.isArray(parsed.items) || parsed.items.length === 0) {
-    throw new Error("OpenAI response items are invalid.");
-  }
+  logger.info("plans generate ai parsed", {
+    feature: "plan_generate",
+    parsedItemCount: parsed.items.length,
+    parsedProductIds: parsed.items.map((item) => item.productId),
+  });
 
   const productMap = new Map<string, NormalizedProduct>();
-
-  for (const product of params.products) {
+  for (const product of candidateProducts) {
     productMap.set(product.id, product);
-    productMap.set(product.name, product);
   }
-  const usedProductIds = new Set<string>();
-  const usedCategories = new Set<string>();
 
-  const items = parsed.items
+  const usedProductIds = new Set<string>();
+
+  const mappedItems = parsed.items
     .map((item) => {
       const product = productMap.get(item.productId);
       if (!product) return null;
       if (usedProductIds.has(product.id)) return null;
-      if (usedCategories.has(product.category)) return null;
 
       usedProductIds.add(product.id);
-      usedCategories.add(product.category);
 
       const quantity = getQuantityByCategory({
         category: product.category,
@@ -351,6 +431,7 @@ async function generatePlanWithOpenAI(params: {
         days: params.days,
         priorityPolicy: params.priorityPolicy,
       });
+
       const subtotal = product.price * quantity;
 
       return {
@@ -358,21 +439,77 @@ async function generatePlanWithOpenAI(params: {
         quantity,
         subtotal,
         priority: getPriorityByCategory(product.category),
-        reason: getReasonByCategory(product.category),
+        reason:
+          typeof item.reason === "string" && item.reason.trim().length > 0
+            ? item.reason
+            : getReasonByCategory(product.category),
       };
     })
-    .filter((item) => item !== null);
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 
-  if (items.length === 0) {
-    throw new Error("OpenAI response could not be mapped to products.");
+  logger.info("plans generate ai mapped", {
+    feature: "plan_generate",
+    mappedItemCount: mappedItems.length,
+    mappedProductIds: mappedItems.map((item) => item.id),
+    mappedCategories: mappedItems.map((item) => item.category),
+  });
+
+  const requiredCategories = ["主食", "飲料", "おかず", "汁物", "おやつ"] as const;
+
+  const selectedItems: typeof mappedItems = [];
+  const selectedProductIds = new Set<string>();
+
+  for (const category of requiredCategories) {
+    const existingItem = mappedItems.find((item) => item.category === category);
+
+    if (existingItem) {
+      selectedItems.push(existingItem);
+      selectedProductIds.add(existingItem.id);
+      continue;
+    }
+
+    const fallbackProduct = candidateProducts.find(
+      (product) => product.category === category && !selectedProductIds.has(product.id)
+    );
+
+    if (!fallbackProduct) {
+      continue;
+    }
+
+    const quantity = getQuantityByCategory({
+      category: fallbackProduct.category,
+      familyMemberCount: params.familyMemberCount,
+      days: params.days,
+      priorityPolicy: params.priorityPolicy,
+    });
+
+    selectedItems.push({
+      ...fallbackProduct,
+      quantity,
+      subtotal: fallbackProduct.price * quantity,
+      priority: getPriorityByCategory(fallbackProduct.category),
+      reason: getReasonByCategory(fallbackProduct.category),
+    });
+    selectedProductIds.add(fallbackProduct.id);
   }
 
-  const totalCost = items.reduce((sum, item) => sum + item.subtotal, 0);
+  logger.info("plans generate ai normalized", {
+    feature: "plan_generate",
+    normalizedItemCount: selectedItems.length,
+    normalizedProductIds: selectedItems.map((item) => item.id),
+    normalizedCategories: selectedItems.map((item) => item.category),
+  });
 
+  if (selectedItems.length < 4) {
+    throw new Error("OpenAI response could not be normalized to enough products.");
+  }
+
+  const totalCost = selectedItems.reduce((sum, item) => sum + item.subtotal, 0);
   const annualCost = Math.round(
-    items.reduce((sum, item) => {
-      return sum + (item.price * item.quantity * 12) / item.shelfLifeMonths;
-    }, 0)
+    selectedItems.reduce(
+      (sum, item) => sum + (item.price * item.quantity * 12) / item.shelfLifeMonths,
+      0
+    )
   );
 
   return {
@@ -387,7 +524,7 @@ async function generatePlanWithOpenAI(params: {
       typeof parsed.explanation === "string" && parsed.explanation.trim().length > 0
         ? parsed.explanation
         : "家族条件と候補条件をもとに、備えのバランスを見ながら提案しています。",
-    items,
+    items: selectedItems,
     warnings:
       Array.isArray(parsed.warnings) && parsed.warnings.length > 0
         ? parsed.warnings
@@ -400,9 +537,11 @@ async function generatePlanWithOpenAI(params: {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as GeneratePlanRequest;
+
     logger.info("plans generate started", {
       feature: "plan_generate",
     });
+
     const { days, includeDailyItems, priorityPolicy } = body;
 
     logger.info("plans generate request validated", {
