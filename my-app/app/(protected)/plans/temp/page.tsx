@@ -276,7 +276,7 @@ export default function TempPlanPage() {
                       {item.category}
                     </span>
                   </div>
-                  <p className="mr-2 text-lg font-semibold text-gray-900">数量：{item.quantity}</p>
+                  <p className="mr-1 text-lg font-semibold text-gray-900">数量：{item.quantity}</p>
                 </div>
               </div>
 
