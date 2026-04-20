@@ -7,12 +7,20 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET() {
   const supabase = await createClient();
 
+  logger.info("home api started", {
+    feature: "home",
+  });
+
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
+    logger.warn("home api unauthorized", {
+      feature: "home",
+      error: authError?.message ?? "user not found",
+    });
     return NextResponse.json(
       {
         data: null,
@@ -23,6 +31,11 @@ export async function GET() {
       { status: 401 }
     );
   }
+
+  logger.info("home api authorized", {
+    feature: "home",
+    userId: user.id,
+  });
 
   const cacheKey = `home:${user.id}`;
   const redis = getRedis();
@@ -58,6 +71,11 @@ export async function GET() {
     .eq("user_id", user.id);
 
   if (familyError) {
+    logger.error("home api family fetch failed", {
+      feature: "home",
+      userId: user.id,
+      error: familyError.message,
+    });
     return NextResponse.json(
       {
         data: null,
@@ -91,6 +109,11 @@ export async function GET() {
     .order("expires_at", { ascending: true });
 
   if (stockError) {
+    logger.error("home api stock fetch failed", {
+      feature: "home",
+      userId: user.id,
+      error: stockError.message,
+    });
     return NextResponse.json(
       {
         data: null,
@@ -103,6 +126,11 @@ export async function GET() {
   }
 
   if (expiringItemsError) {
+    logger.error("home api expiring items fetch failed", {
+      feature: "home",
+      userId: user.id,
+      error: expiringItemsError.message,
+    });
     return NextResponse.json(
       {
         data: null,
@@ -121,6 +149,11 @@ export async function GET() {
     .order("updated_at", { ascending: false });
 
   if (plansError) {
+    logger.error("home api plans fetch failed", {
+      feature: "home",
+      userId: user.id,
+      error: plansError.message,
+    });
     return NextResponse.json(
       {
         data: null,
@@ -139,6 +172,11 @@ export async function GET() {
     .order("created_at", { ascending: false });
 
   if (subscriptionError) {
+    logger.error("home api subscriptions fetch failed", {
+      feature: "home",
+      userId: user.id,
+      error: subscriptionError.message,
+    });
     return NextResponse.json(
       {
         data: null,
@@ -166,6 +204,11 @@ export async function GET() {
       .maybeSingle();
 
     if (planMasterError) {
+      logger.error("home api plan master fetch failed", {
+        feature: "home",
+        userId: user.id,
+        error: planMasterError.message,
+      });
       return NextResponse.json(
         {
           data: null,
@@ -227,6 +270,15 @@ export async function GET() {
     error: null,
   };
 
+  logger.info("home api response built", {
+    feature: "home",
+    userId: user.id,
+    familyMemberCount: memberCount ?? 0,
+    stockCount: stockCount ?? 0,
+    savedPlanCount: plans?.length ?? 0,
+    expiringItemCount: expiringStockItems?.length ?? 0,
+  });
+
   if (redis) {
     try {
       await redis.set(cacheKey, response, { ex: 60 });
@@ -244,5 +296,9 @@ export async function GET() {
     }
   }
 
+  logger.info("home api succeeded", {
+    feature: "home",
+    userId: user.id,
+  });
   return NextResponse.json(response);
 }
