@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { openai } from "@/lib/openai";
 import { generatePlan } from "@/lib/services/plan-generator";
+import { logger } from "@/lib/logger";
 import type { ProductType } from "@/lib/types/product";
 import type { GeneratePlanRequest, PlanDays, PriorityPolicy } from "@/lib/types/plan";
 
@@ -399,7 +400,17 @@ async function generatePlanWithOpenAI(params: {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as GeneratePlanRequest;
+    logger.info("plans generate started", {
+      feature: "plan_generate",
+    });
     const { days, includeDailyItems, priorityPolicy } = body;
+
+    logger.info("plans generate request validated", {
+      feature: "plan_generate",
+      days,
+      includeDailyItems,
+      priorityPolicy,
+    });
 
     if (!isValidPlanDays(days)) {
       return NextResponse.json(
@@ -450,6 +461,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    logger.info("plans generate authorized", {
+      feature: "plan_generate",
+      userId: user.id,
+    });
+
     const { data: familyMembers, error: familyError } = await supabase
       .from("family_members")
       .select("id")
@@ -470,6 +486,12 @@ export async function POST(request: NextRequest) {
     }
 
     const familyMemberCount = ((familyMembers ?? []) as FamilyMemberRow[]).length;
+
+    logger.info("plans generate family members fetched", {
+      feature: "plan_generate",
+      userId: user.id,
+      familyMemberCount,
+    });
 
     if (familyMemberCount === 0) {
       return NextResponse.json(
@@ -519,6 +541,12 @@ export async function POST(request: NextRequest) {
       isActive: product.is_active,
     }));
 
+    logger.info("plans generate products fetched", {
+      feature: "plan_generate",
+      userId: user.id,
+      productCount: normalizedProducts.length,
+    });
+
     let recentSelectedProducts: RecentSelectedProduct[] = [];
 
     const { data: recentPlans, error: recentPlansError } = await supabase
@@ -529,7 +557,11 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (recentPlansError) {
-      console.warn("[plans/generate] recent plans fetch failed", recentPlansError);
+      logger.warn("plans generate recent plans fetch failed", {
+        feature: "plan_generate",
+        userId: user.id,
+        error: recentPlansError.message,
+      });
     } else {
       const latestPlan = (recentPlans?.[0] ?? null) as RecentPlanRow | null;
 
@@ -540,7 +572,11 @@ export async function POST(request: NextRequest) {
           .eq("plan_id", latestPlan.id);
 
         if (recentPlanItemsError) {
-          console.warn("[plans/generate] recent plan items fetch failed", recentPlanItemsError);
+          logger.warn("plans generate recent plan items fetch failed", {
+            feature: "plan_generate",
+            userId: user.id,
+            error: recentPlanItemsError.message,
+          });
         } else {
           recentSelectedProducts = ((recentPlanItems ?? []) as PlanItemWithProductRow[])
             .flatMap((item) => item.product ?? [])
@@ -561,6 +597,12 @@ export async function POST(request: NextRequest) {
       products: normalizedProducts,
     });
 
+    logger.info("plans generate fallback prepared", {
+      feature: "plan_generate",
+      userId: user.id,
+      fallbackItemCount: fallbackResponse.items.length,
+    });
+
     try {
       const aiGeneratedPlan = await generatePlanWithOpenAI({
         familyMemberCount,
@@ -569,6 +611,12 @@ export async function POST(request: NextRequest) {
         priorityPolicy,
         products: normalizedProducts,
         recentSelectedProducts,
+      });
+
+      logger.info("plans generate ai succeeded", {
+        feature: "plan_generate",
+        userId: user.id,
+        generatedItemCount: aiGeneratedPlan.items.length,
       });
 
       return NextResponse.json(
@@ -581,7 +629,17 @@ export async function POST(request: NextRequest) {
         { status: 200 }
       );
     } catch (aiError) {
-      console.warn("[plans/generate] openai failed, fallback to local generator", aiError);
+      logger.warn("plans generate ai failed, fallback to local generator", {
+        feature: "plan_generate",
+        userId: user.id,
+        error: aiError instanceof Error ? aiError.message : "unknown error",
+      });
+
+      logger.info("plans generate fallback succeeded", {
+        feature: "plan_generate",
+        userId: user.id,
+        generatedItemCount: fallbackResponse.items.length,
+      });
 
       return NextResponse.json(
         {
@@ -594,7 +652,10 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error("[plans/generate] unexpected error", error);
+    logger.error("plans generate unexpected error", {
+      feature: "plan_generate",
+      error: error instanceof Error ? error.message : "unknown error",
+    });
 
     return NextResponse.json(
       {

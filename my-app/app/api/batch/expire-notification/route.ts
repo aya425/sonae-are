@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendExpiryNotificationMail } from "@/lib/mail";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -89,6 +90,11 @@ export async function POST(request: NextRequest) {
     const fromDate = toDateOnlyString(today);
     const toDate = toDateOnlyString(targetDate);
 
+    logger.info("expire notification batch started", {
+      fromDate,
+      toDate,
+    });
+
     const { data: stockItems, error: stockItemsError } = await supabase
       .from("stock_items")
       .select("id, user_id, product_name, expires_at, notified_30days_at")
@@ -102,13 +108,18 @@ export async function POST(request: NextRequest) {
 
     const items = (stockItems ?? []) as StockItemRow[];
 
-    console.log("[EXPIRE_NOTIFICATION_FETCH_RESULT]", {
-      count: items.length,
+    logger.info("expire notification fetch completed", {
+      targetItemCount: items.length,
       fromDate,
       toDate,
     });
 
     if (items.length === 0) {
+      logger.info("expire notification batch completed with no targets", {
+        targetUsers: 0,
+        targetItems: 0,
+        failedUsers: 0,
+      });
       return NextResponse.json({
         ok: true,
         message: "No expiring items found",
@@ -158,10 +169,10 @@ export async function POST(request: NextRequest) {
           inventoryUrl: `${appUrl}/stock-items`,
         });
 
-        console.log("[EXPIRE_NOTIFICATION_MAIL_RESULT]", {
+        logger.info("expire notification mail sent", {
           userId,
-          email,
-          mailResult,
+          sentItemCount: userItems.length,
+          mailSuccess: Boolean(mailResult),
         });
 
         const now = new Date().toISOString();
@@ -193,7 +204,7 @@ export async function POST(request: NextRequest) {
           throw new Error(`Failed to insert notification logs: ${notificationLogError.message}`);
         }
 
-        console.log("[EXPIRE_NOTIFICATION_SUCCESS]", {
+        logger.info("expire notification user process succeeded", {
           userId,
           sentItemCount: userItems.length,
         });
@@ -201,13 +212,19 @@ export async function POST(request: NextRequest) {
         sentUsers += 1;
         sentItems += userItems.length;
       } catch (userError) {
-        console.error("[EXPIRE_NOTIFICATION_USER_PROCESS_ERROR]", {
+        logger.error("expire notification user process failed", {
           userId,
-          error: userError,
+          error: userError instanceof Error ? userError.message : "unknown error",
         });
         failedUsers += 1;
       }
     }
+
+    logger.info("expire notification batch completed", {
+      targetUsers: sentUsers,
+      targetItems: sentItems,
+      failedUsers,
+    });
 
     return NextResponse.json({
       ok: true,
@@ -219,7 +236,9 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("[EXPIRE_NOTIFICATION_BATCH_ERROR]", error);
+    logger.error("expire notification batch failed", {
+      error: error instanceof Error ? error.message : "unknown error",
+    });
 
     return NextResponse.json(
       {
