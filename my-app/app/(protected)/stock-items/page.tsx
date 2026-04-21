@@ -885,8 +885,7 @@ export default function StockItemsPage() {
                               pattern="[0-9]*"
                               value={editingItem.unitPrice}
                               onChange={(e) => {
-                                const numericValue = e.target.value.replace(/[^0-9]/g, "");
-                                handleEditValueChange(item.id, "unitPrice", numericValue);
+                                handleEditValueChange(item.id, "unitPrice", e.target.value);
                               }}
                               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold text-slate-900"
                             />
@@ -943,46 +942,17 @@ export default function StockItemsPage() {
                                 formattedValue.replace(/\//g, "-")
                               );
                             }}
-                            onBlur={(e) => {
-                              const rawValue = e.target.value.trim();
-
-                              if (!rawValue) {
-                                handleEditValueChange(item.id, "expiresAt", "");
-                                return;
-                              }
-
-                              const match = rawValue.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
-                              if (!match) {
-                                handleEditValueChange(item.id, "expiresAt", "");
-                                return;
-                              }
-
-                              const year = Number(match[1]);
-                              const month = Number(match[2]);
-                              const day = Number(match[3]);
-                              const candidate = new Date(year, month - 1, day);
-                              const isValidDate =
-                                candidate.getFullYear() === year &&
-                                candidate.getMonth() === month - 1 &&
-                                candidate.getDate() === day;
-
-                              handleEditValueChange(
-                                item.id,
-                                "expiresAt",
-                                isValidDate ? `${match[1]}-${match[2]}-${match[3]}` : ""
-                              );
-                            }}
                             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold text-slate-900 placeholder:text-slate-400"
                           />
                         </div>
                       </div>
                     </div>
 
-                    <div className="mt-4 flex justify-end gap-2">
+                    <div className="mt-4 flex items-center justify-center gap-3">
                       <button
                         type="button"
                         onClick={() => handleSave(item.id)}
-                        className="inline-flex items-center justify-center rounded-2xl bg-[#1E3A8A] px-5 py-2.5 text-base font-semibold text-white transition-colors hover:bg-blue-800"
+                        className="inline-flex min-w-[120px] items-center justify-center rounded-2xl bg-[#1E3A8A] px-5 py-2.5 text-base font-semibold text-white transition-colors hover:bg-blue-800"
                       >
                         保存
                       </button>
@@ -991,10 +961,9 @@ export default function StockItemsPage() {
                         type="button"
                         onClick={() => handleDelete(item.id)}
                         aria-label="削除"
-                        className="inline-flex items-center justify-center rounded-2xl border border-red-300 bg-white px-5 py-2.5 text-base font-semibold text-red-700 transition-colors hover:bg-red-50"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-red-300 bg-white text-red-700 transition-colors hover:bg-red-50"
                       >
-                        <TrashIcon size={20} weight="bold" />
-                        <span className="ml-1">削除</span>
+                        <TrashIcon size={22} weight="bold" />
                       </button>
                     </div>
                   </article>
