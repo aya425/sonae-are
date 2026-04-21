@@ -856,30 +856,44 @@ export default function StockItemsPage() {
                           <label className="mb-2 block text-lg font-semibold text-gray-600">
                             数量
                           </label>
-                          <input
-                            type="number"
-                            min="1"
+                          <select
                             value={editingItem.quantity}
                             onChange={(e) =>
                               handleEditValueChange(item.id, "quantity", e.target.value)
                             }
                             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold text-slate-900"
-                          />
+                          >
+                            {Array.from({ length: 30 }, (_, index) => {
+                              const value = String(index + 1);
+                              return (
+                                <option key={value} value={value}>
+                                  {value}
+                                </option>
+                              );
+                            })}
+                          </select>
                         </div>
 
                         <div className="rounded-2xl bg-white px-3 py-3 text-center">
                           <label className="mb-2 block text-lg font-semibold text-gray-600">
                             単価
                           </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={editingItem.unitPrice}
-                            onChange={(e) =>
-                              handleEditValueChange(item.id, "unitPrice", e.target.value)
-                            }
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold text-slate-900"
-                          />
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={editingItem.unitPrice}
+                              onChange={(e) => {
+                                const numericValue = e.target.value.replace(/[^0-9]/g, "");
+                                handleEditValueChange(item.id, "unitPrice", numericValue);
+                              }}
+                              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold text-slate-900"
+                            />
+                            <span className="shrink-0 text-base font-semibold text-slate-700">
+                              円
+                            </span>
+                          </div>
                         </div>
 
                         <div className="rounded-2xl bg-white px-3 py-3 text-center">
@@ -900,10 +914,7 @@ export default function StockItemsPage() {
                               if (numericValue.length > 4 && numericValue.length <= 6) {
                                 formattedValue = `${numericValue.slice(0, 4)}/${numericValue.slice(4)}`;
                               } else if (numericValue.length > 6) {
-                                formattedValue = `${numericValue.slice(0, 4)}/${numericValue.slice(
-                                  4,
-                                  6
-                                )}/${numericValue.slice(6)}`;
+                                formattedValue = `${numericValue.slice(0, 4)}/${numericValue.slice(4, 6)}/${numericValue.slice(6)}`;
                               }
 
                               if (numericValue.length === 8) {
@@ -920,10 +931,7 @@ export default function StockItemsPage() {
                                   item.id,
                                   "expiresAt",
                                   isValidDate
-                                    ? `${String(year).padStart(4, "0")}-${String(month).padStart(
-                                        2,
-                                        "0"
-                                      )}-${String(day).padStart(2, "0")}`
+                                    ? `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
                                     : editingItem.expiresAt
                                 );
                                 return;
