@@ -145,6 +145,17 @@ export default function StockItemsPage() {
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
 
+  const [editingItems, setEditingItems] = useState<
+    Record<
+      string,
+      {
+        quantity: string;
+        unitPrice: string;
+        expiresAt: string;
+      }
+    >
+  >({});
+
   const expiringItems: ExpiringItem[] = stockItems
     .map((item) => {
       const today = new Date();
@@ -332,10 +343,44 @@ export default function StockItemsPage() {
       }
 
       setStockItems((prev) => prev.filter((item) => item.id !== stockItemId));
+      setEditingItems((prev) => {
+        const next = { ...prev };
+        delete next[stockItemId];
+        return next;
+      });
     } catch (error) {
       console.error(error);
       setErrorMessage(error instanceof Error ? error.message : "削除に失敗しました。");
     }
+  };
+
+  const handleEditValueChange = (
+    stockItemId: string,
+    field: "quantity" | "unitPrice" | "expiresAt",
+    value: string
+  ) => {
+    const targetItem = stockItems.find((item) => item.id === stockItemId);
+
+    setEditingItems((prev) => ({
+      ...prev,
+      [stockItemId]: {
+        quantity: prev[stockItemId]?.quantity ?? String(targetItem?.quantity ?? ""),
+        unitPrice: prev[stockItemId]?.unitPrice ?? String(targetItem?.unitPrice ?? ""),
+        expiresAt: prev[stockItemId]?.expiresAt ?? targetItem?.expiresAt ?? "",
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSave = async (stockItemId: string) => {
+    const editingItem = editingItems[stockItemId];
+
+    if (!editingItem) return;
+
+    console.log("save target", stockItemId, editingItem);
+
+    // ここではUIのみ先に作る
+    // 後で PATCH /api/stock-items/:id につなぐ
   };
 
   const totalEstimatedCost = stockItems.reduce(
@@ -566,7 +611,7 @@ export default function StockItemsPage() {
                     <input
                       type="text"
                       inputMode="numeric"
-                      placeholder="年/月/日"
+                      placeholder="YYYY/MM/DD"
                       value={formatDateInputDisplay(form.expiresAt)}
                       onChange={(e) => {
                         const numericValue = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
@@ -591,7 +636,10 @@ export default function StockItemsPage() {
                           setForm((prev) => ({
                             ...prev,
                             expiresAt: isValidDate
-                              ? `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+                              ? `${String(year).padStart(4, "0")}-${String(month).padStart(
+                                  2,
+                                  "0"
+                                )}-${String(day).padStart(2, "0")}`
                               : prev.expiresAt,
                           }));
                           return;
@@ -782,53 +830,145 @@ export default function StockItemsPage() {
                 上のフォームから備蓄を追加してください。
               </p>
             ) : (
-              stockItems.map((item) => (
-                <article
-                  key={item.id}
-                  className="flex flex-col justify-between rounded-3xl border border-blue-100 bg-blue-50 px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.08)]"
-                >
-                  <div className="space-y-3 text-center">
-                    <div className="grid grid-cols-[44px_1fr_44px] items-center gap-2 rounded-xl bg-blue-50 px-2 py-1">
-                      <div />
-                      <h3 className="text-center text-2xl font-bold leading-snug text-[#1E3A8A] line-clamp-2">
-                        {item.name}
-                      </h3>
+              stockItems.map((item) => {
+                const editingItem = editingItems[item.id] ?? {
+                  quantity: String(item.quantity),
+                  unitPrice: String(item.unitPrice),
+                  expiresAt: item.expiresAt,
+                };
+
+                return (
+                  <article
+                    key={item.id}
+                    className="flex flex-col justify-between rounded-3xl border border-blue-100 bg-blue-50 px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.08)]"
+                  >
+                    <div className="space-y-3 text-center">
+                      <div className="grid grid-cols-[44px_1fr_44px] items-center gap-2 rounded-xl bg-blue-50 px-2 py-1">
+                        <div />
+                        <h3 className="text-center text-2xl font-bold leading-snug text-[#1E3A8A] line-clamp-2">
+                          {item.name}
+                        </h3>
+                        <div />
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <div className="rounded-2xl bg-white px-3 py-3 text-center">
+                          <label className="mb-2 block text-lg font-semibold text-gray-600">
+                            数量
+                          </label>
+                          <select
+                            value={editingItem.quantity}
+                            onChange={(e) =>
+                              handleEditValueChange(item.id, "quantity", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold text-slate-900"
+                          >
+                            {Array.from({ length: 30 }, (_, index) => {
+                              const value = String(index + 1);
+                              return (
+                                <option key={value} value={value}>
+                                  {value}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+
+                        <div className="rounded-2xl bg-white px-3 py-3 text-center">
+                          <label className="mb-2 block text-lg font-semibold text-gray-600">
+                            単価
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={editingItem.unitPrice}
+                              onChange={(e) => {
+                                handleEditValueChange(item.id, "unitPrice", e.target.value);
+                              }}
+                              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold text-slate-900"
+                            />
+                            <span className="shrink-0 text-base font-semibold text-slate-700">
+                              円
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl bg-white px-3 py-3 text-center">
+                          <label className="mb-2 block text-lg font-semibold text-gray-600">
+                            賞味期限
+                          </label>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="YYYY/MM/DD"
+                            value={formatDateInputDisplay(editingItem.expiresAt)}
+                            onChange={(e) => {
+                              const numericValue = e.target.value
+                                .replace(/[^0-9]/g, "")
+                                .slice(0, 8);
+
+                              let formattedValue = numericValue;
+                              if (numericValue.length > 4 && numericValue.length <= 6) {
+                                formattedValue = `${numericValue.slice(0, 4)}/${numericValue.slice(4)}`;
+                              } else if (numericValue.length > 6) {
+                                formattedValue = `${numericValue.slice(0, 4)}/${numericValue.slice(4, 6)}/${numericValue.slice(6)}`;
+                              }
+
+                              if (numericValue.length === 8) {
+                                const year = Number(numericValue.slice(0, 4));
+                                const month = Number(numericValue.slice(4, 6));
+                                const day = Number(numericValue.slice(6, 8));
+                                const candidate = new Date(year, month - 1, day);
+                                const isValidDate =
+                                  candidate.getFullYear() === year &&
+                                  candidate.getMonth() === month - 1 &&
+                                  candidate.getDate() === day;
+
+                                handleEditValueChange(
+                                  item.id,
+                                  "expiresAt",
+                                  isValidDate
+                                    ? `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+                                    : editingItem.expiresAt
+                                );
+                                return;
+                              }
+
+                              handleEditValueChange(
+                                item.id,
+                                "expiresAt",
+                                formattedValue.replace(/\//g, "-")
+                              );
+                            }}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold text-slate-900 placeholder:text-slate-400"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleSave(item.id)}
+                        className="inline-flex min-w-[120px] items-center justify-center rounded-2xl bg-[#1E3A8A] px-5 py-2.5 text-base font-semibold text-white transition-colors hover:bg-blue-800"
+                      >
+                        保存
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handleDelete(item.id)}
                         aria-label="削除"
                         className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-red-300 bg-white text-red-700 transition-colors hover:bg-red-50"
                       >
-                        <TrashIcon size={24} weight="bold" />
+                        <TrashIcon size={22} weight="bold" />
                       </button>
                     </div>
-                    <div className="grid grid-cols-[0.8fr_0.9fr_1.3fr] gap-2">
-                      <div className="rounded-2xl bg-white px-3 py-2 text-center">
-                        <p className="text-lg font-semibold text-gray-600">数量</p>
-                        <div className="mt-1 flex justify-center">
-                          <p className="text-xl font-semibold text-slate-900">{item.quantity}</p>
-                        </div>
-                      </div>
-
-                      <div className="rounded-2xl bg-white px-3 py-2 text-center">
-                        <p className="text-lg font-semibold text-gray-600">単価</p>
-                        <div className="mt-1 flex justify-center">
-                          <p className="text-xl font-semibold text-slate-900">
-                            ¥{item.unitPrice.toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="rounded-2xl bg-white px-3 py-2 text-center">
-                        <p className="text-lg font-semibold text-gray-600">賞味期限</p>
-                        <p className="mt-1 text-xl font-semibold text-slate-900">
-                          <span className="whitespace-nowrap">{formatDate(item.expiresAt)}</span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              ))
+                  </article>
+                );
+              })
             )}
           </div>
         </section>
