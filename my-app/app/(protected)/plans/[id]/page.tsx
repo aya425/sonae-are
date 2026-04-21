@@ -2,6 +2,7 @@
 
 import {
   ArrowsClockwiseIcon,
+  CheckCircleIcon,
   FloppyDiskIcon,
   PackageIcon,
   ShoppingBagOpenIcon,
@@ -65,6 +66,7 @@ export default function PlanDetailPage() {
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [actionSuccess, setActionSuccess] = useState("");
 
   useEffect(() => {
     const planId = params.id;
@@ -141,6 +143,7 @@ export default function PlanDetailPage() {
     }
 
     setActionError("");
+    setActionSuccess("");
     setIsRecalculating(true);
 
     try {
@@ -211,6 +214,7 @@ export default function PlanDetailPage() {
     }
 
     setActionError("");
+    setActionSuccess("");
     setIsSaving(true);
 
     try {
@@ -243,6 +247,7 @@ export default function PlanDetailPage() {
         days: editDays,
       }));
       setIsEditing(false);
+      setActionSuccess("保存完了");
     } catch (error) {
       console.error("save failed", error);
       setActionError(error instanceof Error ? error.message : "プランの保存に失敗しました。");
@@ -339,6 +344,7 @@ export default function PlanDetailPage() {
               onChange={(e) => {
                 setEditTitle(e.target.value);
                 setIsEditing(true);
+                setActionSuccess("");
               }}
               className="mt-2 w-full rounded-xl border border-black px-3 py-2 text-lg font-semibold text-gray-900 outline-none focus:border-black"
             />
@@ -354,6 +360,7 @@ export default function PlanDetailPage() {
                 onChange={(e) => {
                   setEditFamilyMemberCount(Number(e.target.value));
                   setIsEditing(true);
+                  setActionSuccess("");
                 }}
                 className="mt-2 w-full rounded-xl border border-black px-3 py-2 text-lg font-semibold text-gray-900 outline-none focus:border-black"
               />
@@ -366,6 +373,7 @@ export default function PlanDetailPage() {
                 onChange={(e) => {
                   setEditDays(Number(e.target.value) as 3 | 7 | 14);
                   setIsEditing(true);
+                  setActionSuccess("");
                 }}
                 className="mt-2 w-full rounded-xl border border-black px-3 py-2 text-lg font-semibold text-gray-900 outline-none focus:border-black"
               >
@@ -527,7 +535,7 @@ export default function PlanDetailPage() {
         </div>
       </section>
 
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex flex-wrap items-center justify-center gap-3">
         <button
           type="button"
           onClick={handleSaveClick}
@@ -537,6 +545,12 @@ export default function PlanDetailPage() {
           <FloppyDiskIcon size={22} weight="bold" />
           <span>{isSaving ? "保存中..." : "保存"}</span>
         </button>
+        {actionSuccess ? (
+          <div className="inline-flex items-center gap-2 text-lg font-semibold text-[#1E3A8A]">
+            <CheckCircleIcon size={40} weight="fill" />
+            <p>{actionSuccess}</p>
+          </div>
+        ) : null}
         <button
           type="button"
           onClick={handleDelete}
