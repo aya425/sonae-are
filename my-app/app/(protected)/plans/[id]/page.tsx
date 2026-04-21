@@ -62,6 +62,9 @@ export default function PlanDetailPage() {
   const [editFamilyMemberCount, setEditFamilyMemberCount] = useState(0);
   const [editDays, setEditDays] = useState<3 | 7 | 14>(3);
   const [isEditing, setIsEditing] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
     const planId = params.id;
@@ -129,12 +132,123 @@ export default function PlanDetailPage() {
 
   const includeDailyItemsLabel = plan.includeDailyItems ? "普段の食品も含める" : "防災食だけで選ぶ";
 
-  const handleRecalculateClick = () => {
-    setIsEditing(true);
+  const handleRecalculateClick = async () => {
+    const planId = params.id;
+
+    if (!planId) {
+      setActionError("再計算対象のプランIDが取得できませんでした。");
+      return;
+    }
+
+    setActionError("");
+    setIsRecalculating(true);
+
+    try {
+      const response = await fetch(`/api/plans/${planId}/recalculate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          familyMemberCount: editFamilyMemberCount,
+          days: editDays,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error?.message || "数量の再計算に失敗しました。");
+      }
+
+      const recalculated = result.data as {
+        summary: {
+          title: string;
+          familyMemberCount: number;
+          days: 3 | 7 | 14;
+          totalEstimatedCost: number;
+          annualCost: number;
+        };
+        items: PlanItem[];
+      };
+
+      setPlan((prev) => ({
+        ...prev,
+        familyMemberCount: recalculated.summary.familyMemberCount,
+        days: recalculated.summary.days,
+        totalCost: recalculated.summary.totalEstimatedCost,
+        annualCost: recalculated.summary.annualCost,
+      }));
+      setPlanItems(recalculated.items);
+      setIsEditing(true);
+    } catch (error) {
+      console.error("recalculate failed", error);
+      setActionError(error instanceof Error ? error.message : "数量の再計算に失敗しました。");
+    } finally {
+      setIsRecalculating(false);
+    }
   };
 
-  const handleSaveClick = () => {
-    setIsEditing(false);
+  const handleSaveClick = async () => {
+    const planId = params.id;
+
+    if (!planId) {
+      setActionError("保存対象のプランIDが取得できませんでした。");
+      return;
+    }
+
+    const itemsForSave = planItems.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    }));
+
+    const hasMissingProductId = itemsForSave.some((item) => !item.productId);
+
+    if (hasMissingProductId) {
+      setActionError("保存に必要な商品IDが不足しています。");
+      return;
+    }
+
+    setActionError("");
+    setIsSaving(true);
+
+    try {
+      const response = await fetch(`/api/plans/${planId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          title: editTitle,
+          familyMemberCount: editFamilyMemberCount,
+          days: editDays,
+          totalEstimatedCost: plan.totalCost,
+          annualCost: plan.annualCost,
+          items: itemsForSave,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error?.message || "プランの保存に失敗しました。");
+      }
+
+      setPlan((prev) => ({
+        ...prev,
+        title: editTitle,
+        familyMemberCount: editFamilyMemberCount,
+        days: editDays,
+      }));
+      setIsEditing(false);
+    } catch (error) {
+      console.error("save failed", error);
+      setActionError(error instanceof Error ? error.message : "プランの保存に失敗しました。");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getProductTypeLabel = (productType: PlanItem["productType"]) =>
@@ -276,15 +390,19 @@ export default function PlanDetailPage() {
           <button
             type="button"
             onClick={handleRecalculateClick}
-            className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-4 py-3 text-lg font-semibold text-white hover:bg-blue-800"
+            disabled={isRecalculating || isSaving}
+            className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-4 py-3 text-lg font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <ArrowsClockwiseIcon size={22} weight="bold" />
-            <span>再計算</span>
+            <span>{isRecalculating ? "再計算中..." : "再計算"}</span>
           </button>
         </div>
 
+        {actionError ? (
+          <p className="mt-3 text-center text-sm font-medium text-red-600">{actionError}</p>
+        ) : null}
         {isEditing ? (
-          <p className="mt-3 text-center text-sm font-medium text-slate-600">
+          <p className="mt-4 text-center text-xl font-semibold text-slate-900">
             編集内容はまだ保存されていません。
           </p>
         ) : null}
@@ -413,10 +531,11 @@ export default function PlanDetailPage() {
         <button
           type="button"
           onClick={handleSaveClick}
-          className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-4 py-3 text-lg font-semibold text-white hover:bg-blue-800"
+          disabled={isSaving || isRecalculating}
+          className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-4 py-3 text-lg font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <FloppyDiskIcon size={22} weight="bold" />
-          <span>保存</span>
+          <span>{isSaving ? "保存中..." : "保存"}</span>
         </button>
         <button
           type="button"
