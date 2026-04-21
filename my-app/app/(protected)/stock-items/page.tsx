@@ -1,7 +1,7 @@
 "use client";
 
 import { BowlFoodIcon, CalendarBlankIcon, PackageIcon, TrashIcon } from "@phosphor-icons/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type ExpiringItem = {
   id: string;
@@ -76,6 +76,55 @@ type ProductsResponse = {
   } | null;
 };
 
+const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
+
+type CalendarCell = {
+  date: Date;
+  dateKey: string;
+  day: number;
+  isCurrentMonth: boolean;
+};
+
+const formatDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const getCalendarCells = (displayMonth: Date): CalendarCell[] => {
+  const firstDayOfMonth = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), 1);
+  const startDay = firstDayOfMonth.getDay();
+  const calendarStart = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), 1 - startDay);
+
+  const cells = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(calendarStart);
+    date.setDate(calendarStart.getDate() + index);
+
+    return {
+      date,
+      dateKey: formatDateKey(date),
+      day: date.getDate(),
+      isCurrentMonth: date.getMonth() === displayMonth.getMonth(),
+    };
+  });
+
+  while (cells.length > 35) {
+    const lastWeek = cells.slice(-7);
+    const hasCurrentMonthDay = lastWeek.some((cell) => cell.isCurrentMonth);
+
+    if (hasCurrentMonthDay) {
+      break;
+    }
+
+    cells.splice(-7, 7);
+  }
+
+  return cells;
+};
+
 export default function StockItemsPage() {
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [productCandidates, setProductCandidates] = useState<ProductCandidate[]>([]);
@@ -89,7 +138,12 @@ export default function StockItemsPage() {
     unitPrice: "",
   });
   const [selectedProductId, setSelectedProductId] = useState("");
-  const expiresAtInputRef = useRef<HTMLInputElement | null>(null);
+  const expiryPickerRef = useRef<HTMLDivElement | null>(null);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
 
   const expiringItems: ExpiringItem[] = stockItems
     .map((item) => {
@@ -106,6 +160,8 @@ export default function StockItemsPage() {
     })
     .filter((item) => item.daysLeft >= 0 && item.daysLeft <= 30)
     .sort((a, b) => a.daysLeft - b.daysLeft);
+
+  const calendarCells = useMemo(() => getCalendarCells(calendarMonth), [calendarMonth]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -151,6 +207,27 @@ export default function StockItemsPage() {
 
     fetchInitialData();
   }, []);
+
+  useEffect(() => {
+    if (!isDatePickerOpen) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      if (!expiryPickerRef.current) return;
+
+      const target = event.target;
+      if (target instanceof Node && !expiryPickerRef.current.contains(target)) {
+        setIsDatePickerOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, [isDatePickerOpen]);
 
   const handleChangeSelectedProduct = (value: string) => {
     setSelectedProductId(value);
@@ -277,21 +354,38 @@ export default function StockItemsPage() {
 
   const formatDateInputDisplay = (value: string) => {
     if (!value) return "";
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return value.replace(/-/g, "/");
+    }
+
     return value.replace(/-/g, "/");
   };
 
   const openDatePicker = () => {
-    const input = expiresAtInputRef.current;
-    if (!input) return;
-
-    if (typeof input.showPicker === "function") {
-      input.showPicker();
-      return;
-    }
-
-    input.focus();
-    input.click();
+    const baseDate = form.expiresAt ? new Date(form.expiresAt) : new Date();
+    setCalendarMonth(new Date(baseDate.getFullYear(), baseDate.getMonth(), 1));
+    setIsDatePickerOpen(true);
   };
+
+  const closeDatePicker = () => {
+    setIsDatePickerOpen(false);
+  };
+
+  const moveCalendarMonth = (diff: number) => {
+    setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + diff, 1));
+  };
+
+  const handleSelectExpiryDate = (dateKey: string) => {
+    setForm((prev) => ({
+      ...prev,
+      expiresAt: dateKey,
+    }));
+    setIsDatePickerOpen(false);
+  };
+
+  const selectedExpiryDateKey = form.expiresAt;
+  const todayDateKey = formatDateKey(new Date());
 
   const getFriendlyCreateErrorMessage = (
     error: CreateStockItemResponse["error"] | null,
@@ -359,7 +453,6 @@ export default function StockItemsPage() {
   return (
     <main className="mx-auto max-w-none bg-white px-2 py-2">
       <div className="space-y-4">
-        {/* 期限が近い商品 */}
         {expiringItems.length > 0 ? (
           <section className="mx-auto max-w-4xl rounded-3xl border border-amber-300 bg-amber-100 p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
             <div className="flex items-center justify-center gap-2">
@@ -391,7 +484,6 @@ export default function StockItemsPage() {
           </div>
         ) : null}
 
-        {/* 登録フォーム */}
         <section className="mx-auto max-w-2xl rounded-3xl border border-blue-100 bg-blue-50 p-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
           <h2 className="text-center text-2xl font-bold text-[#1E3A8A]">登録フォーム</h2>
 
@@ -434,7 +526,6 @@ export default function StockItemsPage() {
                 </div>
               ) : null}
 
-              {/* 数量 */}
               <div>
                 <label className="mb-2 block text-xl font-semibold text-slate-800">数量</label>
                 <input
@@ -451,7 +542,6 @@ export default function StockItemsPage() {
                 />
               </div>
 
-              {/* 単価 */}
               <div>
                 <label className="mb-2 block text-xl font-semibold text-slate-800">単価</label>
                 <input
@@ -469,44 +559,199 @@ export default function StockItemsPage() {
                 />
               </div>
 
-              {/* 賞味期限 */}
               <div className="sm:col-span-2">
                 <label className="mb-2 block text-xl font-semibold text-slate-800">賞味期限</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    readOnly
-                    placeholder="年 / 月 / 日"
-                    value={formatDateInputDisplay(form.expiresAt)}
-                    onClick={openDatePicker}
-                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-lg"
-                  />
-                  <button
-                    type="button"
-                    onClick={openDatePicker}
-                    aria-label="賞味期限を選択"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-800"
-                  >
-                    <CalendarBlankIcon size={24} weight="bold" />
-                  </button>
-                  <input
-                    ref={expiresAtInputRef}
-                    type="date"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    value={form.expiresAt}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        expiresAt: e.target.value,
-                      }))
-                    }
-                    className="pointer-events-none absolute right-4 top-1/2 h-10 w-10 -translate-y-1/2 opacity-0"
-                  />
+                <div ref={expiryPickerRef} className="relative">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="年/月/日"
+                      value={formatDateInputDisplay(form.expiresAt)}
+                      onChange={(e) => {
+                        const numericValue = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
+
+                        let formattedValue = numericValue;
+                        if (numericValue.length > 4 && numericValue.length <= 6) {
+                          formattedValue = `${numericValue.slice(0, 4)}/${numericValue.slice(4)}`;
+                        } else if (numericValue.length > 6) {
+                          formattedValue = `${numericValue.slice(0, 4)}/${numericValue.slice(4, 6)}/${numericValue.slice(6)}`;
+                        }
+
+                        if (numericValue.length === 8) {
+                          const year = Number(numericValue.slice(0, 4));
+                          const month = Number(numericValue.slice(4, 6));
+                          const day = Number(numericValue.slice(6, 8));
+                          const candidate = new Date(year, month - 1, day);
+                          const isValidDate =
+                            candidate.getFullYear() === year &&
+                            candidate.getMonth() === month - 1 &&
+                            candidate.getDate() === day;
+
+                          setForm((prev) => ({
+                            ...prev,
+                            expiresAt: isValidDate
+                              ? `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+                              : prev.expiresAt,
+                          }));
+                          return;
+                        }
+
+                        setForm((prev) => ({
+                          ...prev,
+                          expiresAt: formattedValue.replace(/\//g, "-"),
+                        }));
+                      }}
+                      onBlur={(e) => {
+                        const rawValue = e.target.value.trim();
+
+                        if (!rawValue) {
+                          setForm((prev) => ({
+                            ...prev,
+                            expiresAt: "",
+                          }));
+                          return;
+                        }
+
+                        const match = rawValue.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+                        if (!match) {
+                          setForm((prev) => ({
+                            ...prev,
+                            expiresAt: "",
+                          }));
+                          return;
+                        }
+
+                        const year = Number(match[1]);
+                        const month = Number(match[2]);
+                        const day = Number(match[3]);
+                        const candidate = new Date(year, month - 1, day);
+                        const isValidDate =
+                          candidate.getFullYear() === year &&
+                          candidate.getMonth() === month - 1 &&
+                          candidate.getDate() === day;
+
+                        setForm((prev) => ({
+                          ...prev,
+                          expiresAt: isValidDate ? `${match[1]}-${match[2]}-${match[3]}` : "",
+                        }));
+                      }}
+                      aria-label="賞味期限"
+                      className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 pr-14 text-center text-lg text-slate-800 placeholder:text-slate-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isDatePickerOpen) {
+                          closeDatePicker();
+                          return;
+                        }
+                        openDatePicker();
+                      }}
+                      aria-label="賞味期限カレンダーを開く"
+                      aria-expanded={isDatePickerOpen}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-800"
+                    >
+                      <CalendarBlankIcon size={24} weight="bold" />
+                    </button>
+                  </div>
+
+                  {isDatePickerOpen ? (
+                    <div className="absolute left-1/2 top-full z-30 mt-2 w-full -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-[0_12px_24px_rgba(15,23,42,0.18)]">
+                      <div className="flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => moveCalendarMonth(-1)}
+                          className="rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                        >
+                          前月
+                        </button>
+                        <p className="text-base font-bold text-slate-900">
+                          {calendarMonth.getFullYear()}年{calendarMonth.getMonth() + 1}月
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => moveCalendarMonth(1)}
+                          className="rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                        >
+                          次月
+                        </button>
+                      </div>
+
+                      <div className="mt-2 grid grid-cols-7 gap-1 text-center text-sm font-semibold text-slate-500">
+                        {WEEK_LABELS.map((label) => (
+                          <div
+                            key={label}
+                            className={
+                              label === "日"
+                                ? "text-red-500"
+                                : label === "土"
+                                  ? "text-blue-600"
+                                  : ""
+                            }
+                          >
+                            {label}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-1.5 grid grid-cols-7 gap-1">
+                        {calendarCells.map((cell) => {
+                          const isSelected = selectedExpiryDateKey === cell.dateKey;
+                          const isToday = todayDateKey === cell.dateKey;
+                          const isPast =
+                            startOfDay(cell.date).getTime() < startOfDay(new Date()).getTime();
+
+                          return (
+                            <button
+                              key={cell.dateKey}
+                              type="button"
+                              onClick={() => handleSelectExpiryDate(cell.dateKey)}
+                              className={[
+                                "flex h-8 items-center justify-center rounded-lg text-sm font-semibold transition-colors",
+                                cell.isCurrentMonth ? "text-slate-900" : "text-slate-300",
+                                isSelected
+                                  ? "bg-[#1E3A8A] text-white hover:bg-[#1E40AF]"
+                                  : "hover:bg-blue-50",
+                                !isSelected && isToday
+                                  ? "border border-blue-300"
+                                  : "border border-transparent",
+                                isPast && cell.isCurrentMonth ? "text-slate-400" : "",
+                              ].join(" ")}
+                            >
+                              {cell.day}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setForm((prev) => ({
+                              ...prev,
+                              expiresAt: "",
+                            }));
+                            closeDatePicker();
+                          }}
+                          className="rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100"
+                        >
+                          クリア
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectExpiryDate(todayDateKey)}
+                          className="rounded-lg px-3 py-1.5 text-sm font-semibold text-[#1E3A8A] transition-colors hover:bg-blue-50"
+                        >
+                          今日
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
-              {/* ボタン */}
               <div className="sm:col-span-2 flex justify-center">
                 <button
                   type="submit"
@@ -521,7 +766,6 @@ export default function StockItemsPage() {
           </form>
         </section>
 
-        {/* 一覧 */}
         <section className="mx-auto w-full rounded-3xl border border-slate-200 bg-white px-3 py-5 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
           <div className="space-y-1 text-center">
             <h2 className="text-2xl font-bold text-[#1E3A8A]">登録済み備蓄品一覧</h2>
