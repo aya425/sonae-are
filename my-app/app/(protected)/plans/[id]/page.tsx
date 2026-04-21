@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  ArrowsClockwiseIcon,
+  FloppyDiskIcon,
   PackageIcon,
   ShoppingBagOpenIcon,
   SparkleIcon,
@@ -56,6 +58,10 @@ export default function PlanDetailPage() {
   });
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editFamilyMemberCount, setEditFamilyMemberCount] = useState(0);
+  const [editDays, setEditDays] = useState<3 | 7 | 14>(3);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const planId = params.id;
@@ -103,6 +109,10 @@ export default function PlanDetailPage() {
           warnings: fetchedPlan.warnings,
         });
 
+        setEditTitle(fetchedPlan.title);
+        setEditFamilyMemberCount(fetchedPlan.familyMemberCount);
+        setEditDays(fetchedPlan.days);
+
         setPlanItems(fetchedPlan.items);
       } catch (error) {
         console.error("プラン詳細の取得に失敗しました", error);
@@ -118,6 +128,14 @@ export default function PlanDetailPage() {
     plan.priorityPolicy === "minimum" ? "必要なものを優先する" : "いろいろバランスよくそろえる";
 
   const includeDailyItemsLabel = plan.includeDailyItems ? "普段の食品も含める" : "防災食だけで選ぶ";
+
+  const handleRecalculateClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleSaveClick = () => {
+    setIsEditing(false);
+  };
 
   const getProductTypeLabel = (productType: PlanItem["productType"]) =>
     productType === "daily_item" ? "日常品" : "防災食";
@@ -197,16 +215,55 @@ export default function PlanDetailPage() {
     <main className="mx-auto w-full max-w-[920px] px-2 py-4">
       <section className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-4 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
         <h2 className="text-center text-xl font-semibold text-[#1E3A8A]">プラン条件</h2>
+
+        <div className="mt-4 space-y-3">
+          <label className="block rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <span className="block text-lg font-semibold text-slate-600">プラン名</span>
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => {
+                setEditTitle(e.target.value);
+                setIsEditing(true);
+              }}
+              className="mt-2 w-full rounded-xl border border-black px-3 py-2 text-lg font-semibold text-gray-900 outline-none focus:border-black"
+            />
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <span className="block text-lg font-semibold text-slate-600">人数</span>
+              <input
+                type="number"
+                min={1}
+                value={editFamilyMemberCount}
+                onChange={(e) => {
+                  setEditFamilyMemberCount(Number(e.target.value));
+                  setIsEditing(true);
+                }}
+                className="mt-2 w-full rounded-xl border border-black px-3 py-2 text-lg font-semibold text-gray-900 outline-none focus:border-black"
+              />
+            </label>
+
+            <label className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <span className="block text-lg font-semibold text-slate-600">日数</span>
+              <select
+                value={editDays}
+                onChange={(e) => {
+                  setEditDays(Number(e.target.value) as 3 | 7 | 14);
+                  setIsEditing(true);
+                }}
+                className="mt-2 w-full rounded-xl border border-black px-3 py-2 text-lg font-semibold text-gray-900 outline-none focus:border-black"
+              >
+                <option value={3}>3日</option>
+                <option value={7}>7日</option>
+                <option value={14}>14日</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
         <div className="mt-4 flex flex-wrap justify-center gap-2">
-          <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-lg font-semibold text-gray-900">
-            {plan.title}
-          </span>
-          <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-lg font-semibold text-gray-900">
-            {plan.familyMemberCount}人家族
-          </span>
-          <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-lg font-semibold text-gray-900">
-            {plan.days}日分
-          </span>
           <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-lg font-semibold text-gray-900">
             {includeDailyItemsLabel}
           </span>
@@ -214,9 +271,26 @@ export default function PlanDetailPage() {
             {priorityPolicyLabel}
           </span>
         </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={handleRecalculateClick}
+            className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-4 py-3 text-lg font-semibold text-white hover:bg-blue-800"
+          >
+            <ArrowsClockwiseIcon size={22} weight="bold" />
+            <span>再計算</span>
+          </button>
+        </div>
+
+        {isEditing ? (
+          <p className="mt-3 text-center text-sm font-medium text-slate-600">
+            編集内容はまだ保存されていません。
+          </p>
+        ) : null}
       </section>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+      <div className="mb-4 grid grid-cols-2 gap-3">
         <section className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-4 text-center shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
           <h2 className="text-xl font-semibold text-[#1E3A8A]">初期費用</h2>
           <p className="mt-2 text-2xl font-bold text-gray-900">
@@ -262,7 +336,7 @@ export default function PlanDetailPage() {
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="mt-4 grid grid-cols-3 gap-3">
                 <div className="rounded-xl bg-white px-3 py-3 text-center">
                   <p className="text-base font-semibold text-gray-700">単価</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900">
@@ -288,22 +362,22 @@ export default function PlanDetailPage() {
                 <p className="mt-1 text-lg leading-relaxed text-gray-900">{item.reason}</p>
               </div>
 
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <div className="mt-4 grid grid-cols-2 gap-3">
                 <a
                   href={item.purchaseUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex min-w-[132px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#1E3A8A] px-4 py-3 text-lg font-semibold text-white hover:bg-blue-800"
+                  className="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-4 py-3 text-lg font-semibold text-white hover:bg-blue-800"
                 >
                   <ShoppingBagOpenIcon size={22} weight="fill" />
-                  <span>商品を見る</span>
+                  <span className="truncate">商品を見る</span>
                 </a>
                 <a
                   href="/stock-items"
-                  className="inline-flex min-w-[132px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-300 bg-white px-4 py-3 text-lg font-semibold text-gray-700 hover:bg-slate-50"
+                  className="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-lg font-semibold text-gray-700 hover:bg-slate-50"
                 >
                   <PackageIcon size={24} weight="fill" />
-                  <span>備蓄登録</span>
+                  <span className="truncate">備蓄登録</span>
                 </a>
               </div>
             </article>
@@ -335,7 +409,15 @@ export default function PlanDetailPage() {
         </div>
       </section>
 
-      <div className="flex justify-center">
+      <div className="flex items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={handleSaveClick}
+          className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-4 py-3 text-lg font-semibold text-white hover:bg-blue-800"
+        >
+          <FloppyDiskIcon size={22} weight="bold" />
+          <span>保存</span>
+        </button>
         <button
           type="button"
           onClick={handleDelete}
