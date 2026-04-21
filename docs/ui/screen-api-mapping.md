@@ -6,22 +6,25 @@
 
 フロントエンド実装とバックエンドAPI設計の整合を取ることを目的とする。
 
+今回の追加対応として、備蓄品一覧画面（UI-009）における登録済み備蓄商品の編集機能を扱う。
+編集対象は `数量 / 単価 / 賞味期限` の3項目に限定し、カード上で編集して保存できる前提とする。
+
 ---
 
 ## 2. 一覧（サマリ）
 
-| 画面ID | API                                                                        |
-| ------ | -------------------------------------------------------------------------- |
-| UI-002 | POST /auth/signup                                                          |
-| UI-003 | POST /auth/login                                                           |
-| UI-004 | GET /dashboard                                                             |
-| UI-005 | GET /families, POST /families                                              |
-| UI-006 | POST /plans/generate                                                       |
-| UI-007 | GET /plans/:id, POST /plans/:id/recalculate, PATCH /plans/:id, POST /plans |
-| UI-008 | GET /plans, DELETE /plans/:id                                              |
-| UI-009 | GET /inventory, POST /inventory, DELETE /inventory/:id                     |
-| UI-010 | POST /billing/checkout                                                     |
-| UI-011 | GET /billing/status                                                        |
+| 画面ID | API                                                                                  |
+| ------ | ------------------------------------------------------------------------------------ |
+| UI-002 | POST /auth/signup                                                                    |
+| UI-003 | POST /auth/login                                                                     |
+| UI-004 | GET /dashboard                                                                       |
+| UI-005 | GET /families, POST /families                                                        |
+| UI-006 | POST /plans/generate                                                                 |
+| UI-007 | GET /plans/:id, POST /plans/:id/recalculate, PATCH /plans/:id, POST /plans           |
+| UI-008 | GET /plans, DELETE /plans/:id                                                        |
+| UI-009 | GET /stock-items, POST /stock-items, PATCH /stock-items/:id, DELETE /stock-items/:id |
+| UI-010 | POST /billing/checkout                                                               |
+| UI-011 | GET /billing/status                                                                  |
 
 ---
 
@@ -200,15 +203,19 @@ DELETE /plans/:id
 
 ### API①（一覧取得）
 
-GET /inventory
+GET /stock-items
 
 ### API②（登録）
 
-POST /inventory
+POST /stock-items
 
-### API③（削除）
+### API③（更新）
 
-DELETE /inventory/:id
+PATCH /stock-items/:id
+
+### API④（削除）
+
+DELETE /stock-items/:id
 
 ### 登録リクエスト
 
@@ -217,11 +224,35 @@ DELETE /inventory/:id
 - expiryDate
 - price
 
+### 更新リクエスト
+
+- quantity
+- expiryDate
+- price
+
+### 更新対象
+
+- 数量
+- 単価
+- 賞味期限
+
 ### 必要データ
 
 - 期限が近い商品
 - 登録済み備蓄一覧
 - 合計コスト
+- 各備蓄商品の編集対象値
+  - quantity
+  - expiryDate
+  - price
+
+### 補足
+
+- 登録済み備蓄商品のカードは、表示兼編集フォームとして扱う
+- 商品名は表示のみとし、編集対象外とする
+- 保存ボタン押下時にのみ更新APIを呼ぶ
+- 削除ボタンは従来どおり個別商品削除に利用する
+- 保存と削除の導線が混乱しないよう、カード単位で動作を分ける
 
 ---
 
@@ -264,6 +295,8 @@ GET /billing/status
 
 - 400：入力エラー
 - 401：未認証
+- 404：対象データなし
+- 422：業務ルール違反
 - 500：サーバーエラー
 
 ---
@@ -275,3 +308,6 @@ GET /billing/status
 - 通知はメールのみ（UIなし）
 - 専用の編集画面は作らないが、備えプラン詳細画面（UI-007）に追加機能として限定的な編集を実装する
 - 編集可能項目は `プラン名 / 人数 / 日数` に限定し、再計算対象は `商品の数量のみ` とする
+- 備蓄品一覧画面では、登録済み備蓄商品の `数量 / 単価 / 賞味期限` のみ編集対象とする
+- 備蓄商品更新APIでは、本人データのみ更新可能とする
+- 備蓄商品更新時も、数量・単価・賞味期限のバリデーションを行う

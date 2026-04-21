@@ -1010,7 +1010,7 @@ Stripe Webhook を受信し、契約状態を更新する。
 ## 8. 画面との対応
 
 | 画面             | 主に利用するAPI                                                                                         |
-| ---------------- | ------------------------------------------------------------------------------------------------------- |
+| ---------------- | ------------------------------------------------------------------------------------------------------- | --- |
 | /login           | POST /auth/login                                                                                        |
 | /signup          | POST /auth/signup                                                                                       |
 | /dashboard       | GET /dashboard                                                                                          |
@@ -1018,9 +1018,9 @@ Stripe Webhook を受信し、契約状態を更新する。
 | /plan/new        | POST /plans/generate                                                                                    |
 | /plans           | GET /plans, DELETE /plans/:id                                                                           |
 | /plans/:id       | GET /plans/:id, POST /plans/:id/recalculate, PATCH /plans/:id, POST /plans, DELETE /plans/:id           |
-| /inventory       | GET /stock-items, POST /stock-items, DELETE /stock-items/:id                                            |
-| /billing         | GET /me, POST /payments/checkout                                                                        |
-| /billing/success | GET /me                                                                                                 |
+| /stock-items     | GET /stock-items, POST /stock-items, PATCH /stock-items/:id, DELETE /stock-items/:id                    |
+| /billing         | POST /billing/checkout                                                                                  |
+| /billing/success | GET /billing/status                                                                                     |     |
 
 ---
 
