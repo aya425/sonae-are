@@ -10,18 +10,18 @@
 
 ## 2. 一覧（サマリ）
 
-| 画面ID | API |
-|--------|-----|
-| UI-002 | POST /auth/signup |
-| UI-003 | POST /auth/login |
-| UI-004 | GET /dashboard |
-| UI-005 | GET /families, POST /families |
-| UI-006 | POST /plans/generate |
-| UI-007 | GET /plans/:id, POST /plans |
-| UI-008 | GET /plans, DELETE /plans/:id |
-| UI-009 | GET /inventory, POST /inventory, DELETE /inventory/:id |
-| UI-010 | POST /billing/checkout |
-| UI-011 | GET /billing/status |
+| 画面ID | API                                                                        |
+| ------ | -------------------------------------------------------------------------- |
+| UI-002 | POST /auth/signup                                                          |
+| UI-003 | POST /auth/login                                                           |
+| UI-004 | GET /dashboard                                                             |
+| UI-005 | GET /families, POST /families                                              |
+| UI-006 | POST /plans/generate                                                       |
+| UI-007 | GET /plans/:id, POST /plans/:id/recalculate, PATCH /plans/:id, POST /plans |
+| UI-008 | GET /plans, DELETE /plans/:id                                              |
+| UI-009 | GET /inventory, POST /inventory, DELETE /inventory/:id                     |
+| UI-010 | POST /billing/checkout                                                     |
+| UI-011 | GET /billing/status                                                        |
 
 ---
 
@@ -32,13 +32,16 @@
 ## UI-002 会員登録
 
 ### API
+
 POST /auth/signup
 
 ### リクエスト
+
 - email
 - password
 
 ### レスポンス
+
 - userId
 - token
 
@@ -47,13 +50,16 @@ POST /auth/signup
 ## UI-003 ログイン
 
 ### API
+
 POST /auth/login
 
 ### リクエスト
+
 - email
 - password
 
 ### レスポンス
+
 - userId
 - token
 
@@ -62,9 +68,11 @@ POST /auth/login
 ## UI-004 ダッシュボード
 
 ### API
+
 GET /dashboard
 
 ### 必要データ
+
 - 家族人数
 - 保存済みプラン数
 - 年間維持コスト
@@ -78,12 +86,15 @@ GET /dashboard
 ## UI-005 家族情報
 
 ### API①（取得）
+
 GET /families
 
 ### API②（登録・更新）
+
 POST /families
 
 ### リクエスト
+
 - familyMembers[]
   - role（続柄）
   - ageGroup（大人/子ども）
@@ -91,6 +102,7 @@ POST /families
   - memo
 
 ### レスポンス
+
 - familyId
 
 ---
@@ -98,14 +110,17 @@ POST /families
 ## UI-006 備えプラン作成
 
 ### API
+
 POST /plans/generate
 
 ### リクエスト
+
 - days（3 or 7）
 - policy（最低限 / バランス）
 - includeDailyItems（boolean）
 
 ### レスポンス
+
 - plan（未保存）
   - items[]
   - totalCost
@@ -117,13 +132,27 @@ POST /plans/generate
 ## UI-007 備えプラン詳細
 
 ### API①（取得）
+
 GET /plans/:id
 
-### API②（保存）
+### API②（再計算）
+
+POST /plans/:id/recalculate
+
+### API③（更新保存）
+
+PATCH /plans/:id
+
+### API④（初回保存）
+
 POST /plans
 
 ### 必要データ
+
 - プラン条件
+  - プラン名
+  - 人数
+  - 日数
 - 初期費用
 - 年間維持コスト
 - 商品一覧
@@ -136,17 +165,28 @@ POST /plans
 - AI説明
 - 注意文
 
+### 補足
+
+- 備えプラン編集機能は当初MVP対象外として整理していたが、追加機能として UI-007 に対するAPI対応を整理する
+- 編集可能項目は `プラン名 / 人数 / 日数` に限定する
+- 人数・日数変更時の再計算対象は `商品の数量のみ` とする
+- 再計算は保存と分けて扱う
+- POST /plans は初回保存用として扱い、保存済みプランの更新保存とは分ける
+
 ---
 
 ## UI-008 保存済みプラン一覧
 
 ### API①（一覧取得）
+
 GET /plans
 
 ### API②（削除）
+
 DELETE /plans/:id
 
 ### 必要データ
+
 - プラン一覧
   - id
   - 日数
@@ -159,21 +199,26 @@ DELETE /plans/:id
 ## UI-009 備蓄品一覧
 
 ### API①（一覧取得）
+
 GET /inventory
 
 ### API②（登録）
+
 POST /inventory
 
 ### API③（削除）
+
 DELETE /inventory/:id
 
 ### 登録リクエスト
+
 - name
 - quantity
 - expiryDate
 - price
 
 ### 必要データ
+
 - 期限が近い商品
 - 登録済み備蓄一覧
 - 合計コスト
@@ -183,12 +228,15 @@ DELETE /inventory/:id
 ## UI-010 料金プラン
 
 ### API
+
 POST /billing/checkout
 
 ### リクエスト
+
 - planType（free / premium）
 
 ### レスポンス
+
 - checkoutUrl
 
 ---
@@ -196,9 +244,11 @@ POST /billing/checkout
 ## UI-011 決済完了
 
 ### API
+
 GET /billing/status
 
 ### レスポンス
+
 - status（success / fail）
 - planType
 
@@ -207,9 +257,11 @@ GET /billing/status
 ## 4. 共通仕様
 
 ### 認証
+
 - Bearer Token（JWT）
 
 ### エラーハンドリング
+
 - 400：入力エラー
 - 401：未認証
 - 500：サーバーエラー
@@ -221,4 +273,5 @@ GET /billing/status
 - AIは説明補助のみ（安全判定しない）
 - 商品購入は外部サイト遷移
 - 通知はメールのみ（UIなし）
-- 編集機能はMVPでは非対応
+- 専用の編集画面は作らないが、備えプラン詳細画面（UI-007）に追加機能として限定的な編集を実装する
+- 編集可能項目は `プラン名 / 人数 / 日数` に限定し、再計算対象は `商品の数量のみ` とする

@@ -28,7 +28,9 @@
 - 商品は固定商品マスタ `products` を参照する
 - 備えプランは「生成」と「保存」を分離する
 - 保存済み備えプランのみDBに保持する
-- 備えプラン編集機能はMVP対象外
+- 備えプラン編集機能は当初MVP対象外として整理していたが、追加機能として限定実装する
+  - 編集可能項目は plans.title / plans.family_member_count / plans.days
+  - 再計算対象は plan_items.quantity のみを追記する。
 - 備蓄商品編集機能はMVP対象外
 - 備蓄商品は商品マスタから選択して登録できるが、自由入力商品も登録可能とする
 - そのため `stock_items.product_id` は NULL 許容、`product_name` は必須とする
@@ -73,13 +75,13 @@
 
 ## 4. 認証 / 認可
 
-| 区分 | 内容 |
-|------|------|
-| 認証方式 | Bearer JWT |
-| 認証基盤 | Supabase Auth |
-| 必須API | Auth系以外すべて |
-| Webhook | Stripe署名検証を行う |
-| 通知API | 内部実行用キーで保護する |
+| 区分     | 内容                     |
+| -------- | ------------------------ |
+| 認証方式 | Bearer JWT               |
+| 認証基盤 | Supabase Auth            |
+| 必須API  | Auth系以外すべて         |
+| Webhook  | Stripe署名検証を行う     |
+| 通知API  | 内部実行用キーで保護する |
 
 ### 補足
 
@@ -121,17 +123,17 @@
 
 ### 5.3 ステータスコード
 
-| コード | 意味 |
-|--------|------|
-| 200 | 成功 |
-| 201 | 作成成功 |
-| 400 | 入力エラー |
-| 401 | 未認証 |
-| 403 | 権限なし |
-| 404 | データなし |
-| 409 | 競合 |
-| 422 | 業務ルール違反 |
-| 500 | サーバエラー |
+| コード | 意味           |
+| ------ | -------------- |
+| 200    | 成功           |
+| 201    | 作成成功       |
+| 400    | 入力エラー     |
+| 401    | 未認証         |
+| 403    | 権限なし       |
+| 404    | データなし     |
+| 409    | 競合           |
+| 422    | 業務ルール違反 |
+| 500    | サーバエラー   |
 
 ### 5.4 422 の代表例
 
@@ -146,30 +148,32 @@
 
 ## 6. API一覧
 
-| カテゴリ | メソッド | エンドポイント | 概要 |
-|----------|----------|----------------|------|
-| Auth | POST | /auth/signup | ユーザー登録 |
-| Auth | POST | /auth/login | ログイン |
-| Auth | POST | /auth/logout | ログアウト |
-| Me | GET | /me | 自分情報取得 |
-| Family | GET | /family-members | 家族一覧取得 |
-| Family | POST | /family-members | 家族メンバー登録 |
-| Family | PATCH | /family-members/:id | 家族メンバー更新 |
-| Family | PUT | /family-members/:id/allergens | アレルゲン一覧更新 |
-| Plans | POST | /plans/generate | 備えプラン生成 |
-| Plans | GET | /plans | 保存済みプラン一覧取得 |
-| Plans | GET | /plans/:id | 保存済みプラン詳細取得 |
-| Plans | POST | /plans | 備えプラン保存 |
-| Plans | DELETE | /plans/:id | 保存済みプラン削除 |
-| Products | GET | /products | 商品一覧取得 |
-| Products | GET | /products/:id | 商品詳細取得 |
-| StockItems | GET | /stock-items | 備蓄一覧取得 |
-| StockItems | POST | /stock-items | 備蓄登録 |
-| StockItems | DELETE | /stock-items/:id | 備蓄削除 |
-| Dashboard | GET | /dashboard | ダッシュボード取得 |
-| Payments | POST | /payments/checkout | Stripe Checkout セッション作成 |
-| Payments | POST | /payments/webhook | Stripe Webhook受信 |
-| Notifications | POST | /notifications/expiry/run | 賞味期限通知実行 |
+| カテゴリ      | メソッド | エンドポイント                | 概要                           |
+| ------------- | -------- | ----------------------------- | ------------------------------ |
+| Auth          | POST     | /auth/signup                  | ユーザー登録                   |
+| Auth          | POST     | /auth/login                   | ログイン                       |
+| Auth          | POST     | /auth/logout                  | ログアウト                     |
+| Me            | GET      | /me                           | 自分情報取得                   |
+| Family        | GET      | /family-members               | 家族一覧取得                   |
+| Family        | POST     | /family-members               | 家族メンバー登録               |
+| Family        | PATCH    | /family-members/:id           | 家族メンバー更新               |
+| Family        | PUT      | /family-members/:id/allergens | アレルゲン一覧更新             |
+| Plans         | POST     | /plans/generate               | 備えプラン生成                 |
+| Plans         | GET      | /plans                        | 保存済みプラン一覧取得         |
+| Plans         | GET      | /plans/:id                    | 保存済みプラン詳細取得         |
+| Plans         | POST     | /plans/:id/recalculate        | 備えプラン数量再計算           |
+| Plans         | PATCH    | /plans/:id                    | 保存済み備えプラン更新         |
+| Plans         | POST     | /plans                        | 備えプラン保存                 |
+| Plans         | DELETE   | /plans/:id                    | 保存済みプラン削除             |
+| Products      | GET      | /products                     | 商品一覧取得                   |
+| Products      | GET      | /products/:id                 | 商品詳細取得                   |
+| StockItems    | GET      | /stock-items                  | 備蓄一覧取得                   |
+| StockItems    | POST     | /stock-items                  | 備蓄登録                       |
+| StockItems    | DELETE   | /stock-items/:id              | 備蓄削除                       |
+| Dashboard     | GET      | /dashboard                    | ダッシュボード取得             |
+| Payments      | POST     | /payments/checkout            | Stripe Checkout セッション作成 |
+| Payments      | POST     | /payments/webhook             | Stripe Webhook受信             |
+| Notifications | POST     | /notifications/expiry/run     | 賞味期限通知実行               |
 
 ---
 
@@ -180,6 +184,7 @@
 #### POST /auth/signup
 
 ##### 用途
+
 ユーザー登録を行う。
 
 ##### Request
@@ -208,6 +213,7 @@
 #### POST /auth/login
 
 ##### 用途
+
 ユーザーログインを行う。
 
 ##### Request
@@ -235,6 +241,7 @@
 #### POST /auth/logout
 
 ##### 用途
+
 ログアウトを行う。
 
 ##### Response
@@ -253,6 +260,7 @@
 #### GET /me
 
 ##### 用途
+
 ログインユーザー情報と契約状態を取得する。
 
 ##### Response
@@ -282,6 +290,7 @@
 #### GET /family-members
 
 ##### 用途
+
 ログインユーザーに紐づく家族メンバー一覧と各アレルゲン一覧を取得する。
 
 ##### Response
@@ -315,6 +324,7 @@
 #### POST /family-members
 
 ##### 用途
+
 家族メンバーを新規登録する。
 
 ##### Request
@@ -345,6 +355,7 @@
 #### PATCH /family-members/:id
 
 ##### 用途
+
 家族メンバー情報を更新する。
 
 ##### Request
@@ -373,6 +384,7 @@
 #### PUT /family-members/:id/allergens
 
 ##### 用途
+
 対象メンバーのアレルゲン一覧をまとめて更新する。
 
 ##### Request
@@ -401,6 +413,7 @@
 #### GET /products
 
 ##### 用途
+
 商品一覧を取得する。
 
 ##### Query Parameters
@@ -438,6 +451,7 @@
 #### GET /products/:id
 
 ##### 用途
+
 商品詳細を取得する。
 
 ##### Response
@@ -466,6 +480,7 @@
 #### POST /plans/generate
 
 ##### 用途
+
 家族情報・固定商品マスタ・条件をもとにAIが備えプランを生成する。生成結果は保存しない。
 
 ##### Request
@@ -508,6 +523,7 @@
 ```
 
 ##### 補足
+
 - `family_member_count` はログインユーザーに紐づく `family_members` 件数を使う
 - `annual_cost` は表示時に計算する派生値であり、DBには保存しない
 
@@ -516,6 +532,7 @@
 #### GET /plans
 
 ##### 用途
+
 保存済み備えプラン一覧を取得する。
 
 ##### Response
@@ -544,6 +561,7 @@
 #### GET /plans/:id
 
 ##### 用途
+
 保存済み備えプラン詳細を取得する。
 
 ##### Response
@@ -579,13 +597,109 @@
 ```
 
 ##### 補足
+
 - `annual_cost` は `updated_at` が最新の保存済みプラン1件を算出元として、`products.price`、`plan_items.quantity`、`products.shelf_life_months` から表示時に算出する
+
+---
+
+#### POST /plans/:id/recalculate
+
+##### 用途
+
+保存済み備えプランの人数・日数変更時に、商品の数量のみを再計算する。
+
+##### Request
+
+```json
+{
+  "family_member_count": 4,
+  "days": 7
+}
+```
+
+##### Response
+
+```json
+{
+  "data": {
+    "summary": {
+      "family_member_count": 4,
+      "days": 7,
+      "total_estimated_cost": 18000,
+      "annual_cost": 12000
+    },
+    "items": [
+      {
+        "product_id": "uuid",
+        "product_name": "アルファ米",
+        "quantity": 12,
+        "priority": "high",
+        "purpose_note": "主食を確保するため",
+        "unit_price": 400,
+        "category": "主食",
+        "product_type": "emergency_food",
+        "purchase_url": "https://example.com/item"
+      }
+    ]
+  },
+  "error": null
+}
+```
+
+##### 業務ルール
+
+- 再計算対象は `plan_items.quantity` のみとする
+- 商品構成、商品ID、カテゴリ、商品種別は変更しない
+- `title` の変更は再計算に影響しない
+
+---
+
+#### PATCH /plans/:id
+
+##### 用途
+
+保存済み備えプランのプラン名・人数・日数・再計算後数量を更新保存する。
+
+##### Request
+
+```json
+{
+  "title": "7日分見直しプラン",
+  "family_member_count": 4,
+  "days": 7,
+  "items": [
+    {
+      "product_id": "uuid",
+      "quantity": 12
+    }
+  ]
+}
+```
+
+##### Response
+
+```json
+{
+  "data": {
+    "updated": true,
+    "plan_id": "uuid"
+  },
+  "error": null
+}
+```
+
+##### 業務ルール
+
+- 更新可能項目は title、family_member_count、days、items[].quantity に限定する
+- 商品構成の追加・削除・差し替えは行わない
+- 本人が所有する保存済みプランのみ更新可能とする
 
 ---
 
 #### POST /plans
 
 ##### 用途
+
 生成済みの備えプランを保存する。
 
 ##### Request
@@ -622,6 +736,7 @@
 ```
 
 ##### 業務ルール
+
 - 無料プランは保存可能件数1件まで
 - 有料プランは保存件数制限を解除する
 - 保存件数上限を超える場合は `422` を返す
@@ -631,6 +746,7 @@
 #### DELETE /plans/:id
 
 ##### 用途
+
 保存済み備えプランを削除する。
 
 ##### Response
@@ -651,6 +767,7 @@
 #### GET /stock-items
 
 ##### 用途
+
 備蓄品一覧を取得する。通知メールの遷移先としても利用する。
 
 ##### Response
@@ -687,6 +804,7 @@
 ```
 
 ##### 補足
+
 - 一覧は `expires_at` 昇順を基本とする
 - `stock_total_cost = Σ(unit_price × quantity)`
 
@@ -695,6 +813,7 @@
 #### POST /stock-items
 
 ##### 用途
+
 備蓄商品を登録する。
 
 ##### Request（商品マスタから選択する場合）
@@ -733,6 +852,7 @@
 ```
 
 ##### 補足
+
 - `purchased_at` は入力項目とせず、登録日時を自動保存する
 - `product_id` は任意
 - `product_name` は必須
@@ -742,6 +862,7 @@
 #### DELETE /stock-items/:id
 
 ##### 用途
+
 備蓄商品を削除する。
 
 ##### Response
@@ -762,6 +883,7 @@
 #### GET /dashboard
 
 ##### 用途
+
 ダッシュボード表示に必要な情報をまとめて取得する。
 
 ##### Response
@@ -808,6 +930,7 @@
 #### POST /payments/checkout
 
 ##### 用途
+
 Stripe Checkout セッションを作成する。
 
 ##### Request
@@ -836,6 +959,7 @@ Stripe Checkout セッションを作成する。
 #### POST /payments/webhook
 
 ##### 用途
+
 Stripe Webhook を受信し、契約状態を更新する。
 
 ##### Response
@@ -856,9 +980,11 @@ Stripe Webhook を受信し、契約状態を更新する。
 #### POST /notifications/expiry/run
 
 ##### 用途
+
 賞味期限30日前の商品を対象に、1日1回まとめて通知メールを送信する。
 
 ##### 認可
+
 内部実行専用
 
 ##### Response
@@ -874,6 +1000,7 @@ Stripe Webhook を受信し、契約状態を更新する。
 ```
 
 ##### 通知内容
+
 - 期限が近い備蓄商品の一覧
 - 備蓄品一覧画面へのリンク
 - 確認を促す文面
@@ -882,18 +1009,18 @@ Stripe Webhook を受信し、契約状態を更新する。
 
 ## 8. 画面との対応
 
-| 画面 | 主に利用するAPI |
-|------|------------------|
-| /login | POST /auth/login |
-| /signup | POST /auth/signup |
-| /dashboard | GET /dashboard |
-| /family | GET /family-members, POST /family-members, PATCH /family-members/:id, PUT /family-members/:id/allergens |
-| /plan/new | POST /plans/generate |
-| /plans | GET /plans, DELETE /plans/:id |
-| /plans/:id | GET /plans/:id, POST /plans, DELETE /plans/:id |
-| /inventory | GET /stock-items, POST /stock-items, DELETE /stock-items/:id |
-| /billing | GET /me, POST /payments/checkout |
-| /billing/success | GET /me |
+| 画面             | 主に利用するAPI                                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------------------- |
+| /login           | POST /auth/login                                                                                        |
+| /signup          | POST /auth/signup                                                                                       |
+| /dashboard       | GET /dashboard                                                                                          |
+| /family          | GET /family-members, POST /family-members, PATCH /family-members/:id, PUT /family-members/:id/allergens |
+| /plan/new        | POST /plans/generate                                                                                    |
+| /plans           | GET /plans, DELETE /plans/:id                                                                           |
+| /plans/:id       | GET /plans/:id, POST /plans/:id/recalculate, PATCH /plans/:id, POST /plans, DELETE /plans/:id           |
+| /inventory       | GET /stock-items, POST /stock-items, DELETE /stock-items/:id                                            |
+| /billing         | GET /me, POST /payments/checkout                                                                        |
+| /billing/success | GET /me                                                                                                 |
 
 ---
 
@@ -905,7 +1032,9 @@ Stripe Webhook を受信し、契約状態を更新する。
 - `stock_items.product_id` は NULL 許容だが、`product_name` は必須
 - `purchased_at` は備蓄登録日時を自動保存する
 - 年間維持コストと備蓄コスト目安は表示時に計算する
-- 備えプラン編集、備蓄商品編集、見直し専用画面はMVP対象外
+- 見直し専用画面はMVP対象外
+- 専用の備えプラン編集画面は作らないが、備えプラン詳細画面に追加機能として限定的な編集を実装する
+- 編集可能項目は `プラン名 / 人数 / 日数` に限定し、再計算対象は `商品の数量のみ` とする
 - 商品情報やAI提案は最終安全判定ではないため、注意文を表示する
 
 ---
