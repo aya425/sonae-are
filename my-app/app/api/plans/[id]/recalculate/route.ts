@@ -48,22 +48,22 @@ function getQuantityByCategory(params: {
 }): number {
   const { category, familyMemberCount, days, priorityPolicy } = params;
 
-  const baseQuantity = familyMemberCount * days;
+  const mealBase = familyMemberCount * days * 3;
   const isMinimum = priorityPolicy === "minimum";
 
   switch (category) {
     case "主食":
-      return baseQuantity;
+      return mealBase;
     case "飲料":
-      return baseQuantity;
+      return mealBase;
     case "おかず":
-      return Math.max(1, Math.ceil(baseQuantity * (isMinimum ? 0.6 : 1)));
+      return Math.max(1, Math.ceil(mealBase * (isMinimum ? 0.7 : 0.7)));
     case "汁物":
-      return Math.max(1, Math.ceil(baseQuantity * (isMinimum ? 0.3 : 0.5)));
+      return Math.max(1, Math.ceil(mealBase * (isMinimum ? 0.6 : 0.6)));
     case "おやつ":
-      return Math.max(1, Math.ceil(baseQuantity * (isMinimum ? 0.2 : 0.4)));
+      return Math.max(1, Math.ceil(mealBase * 0.3));
     default:
-      return Math.max(1, Math.ceil(baseQuantity * (isMinimum ? 0.5 : 0.8)));
+      return 1;
   }
 }
 
