@@ -105,29 +105,80 @@ function getQuantityByCategory(params: {
   days: PlanDays;
   priorityPolicy: PriorityPolicy;
 }): number {
-  const base = params.familyMemberCount * params.days;
+  const mealBase = params.familyMemberCount * params.days * 3;
 
   if (params.category === "主食") {
-    return base;
+    return mealBase;
   }
 
   if (params.category === "飲料") {
-    return base;
+    return mealBase;
   }
 
   if (params.category === "おかず") {
-    return Math.max(1, Math.ceil(base * (params.priorityPolicy === "minimum" ? 0.6 : 0.7)));
+    return Math.max(1, Math.ceil(mealBase * (params.priorityPolicy === "minimum" ? 0.6 : 0.7)));
   }
 
   if (params.category === "汁物") {
-    return Math.max(1, Math.ceil(base * (params.priorityPolicy === "minimum" ? 0.5 : 0.6)));
+    return Math.max(1, Math.ceil(mealBase * (params.priorityPolicy === "minimum" ? 0.5 : 0.6)));
   }
 
   if (params.category === "おやつ") {
-    return Math.max(1, Math.ceil(base * 0.3));
+    return Math.max(1, Math.ceil(mealBase * 0.3));
   }
 
   return 1;
+}
+
+function buildPlanExplanation(params: {
+  familyMemberCount: number;
+  days: PlanDays;
+  includeDailyItems: boolean;
+  priorityPolicy: PriorityPolicy;
+  items: Array<{
+    category: string;
+    productType: ProductType;
+  }>;
+}): string {
+  const categories = Array.from(new Set(params.items.map((item) => item.category)));
+  const hasDailyItems = params.items.some((item) => item.productType === "daily_item");
+  const hasEmergencyFoods = params.items.some((item) => item.productType === "emergency_food");
+
+  const sourceText =
+    hasDailyItems && hasEmergencyFoods
+      ? "防災食と日常品を組み合わせて"
+      : hasDailyItems
+        ? "日常品も活用して"
+        : "防災食を中心に";
+
+  const policyText =
+    params.priorityPolicy === "minimum"
+      ? "主食と飲料を優先しつつ、必要な副菜を絞って"
+      : "主食・飲料に加えて、おかずや汁物も含めて";
+
+  const categoryText = categories.length > 0 ? categories.join("・") : "主食・飲料・おかず";
+
+  return `${params.familyMemberCount}人×${params.days}日分を1日3食ベースで考え、${sourceText}${policyText}備えています。${categoryText}を含めて、続けやすさと食べやすさのバランスを取りました。`;
+}
+
+function buildPlanWarnings(params: {
+  includeDailyItems: boolean;
+  items: Array<{
+    productType: ProductType;
+  }>;
+}): string[] {
+  const warnings = [
+    "購入前に必ず商品ページやパッケージで原材料・アレルゲン表示を確認してください。",
+    "保存目安や賞味期限を確認し、入れ替えしやすい場所で管理してください。",
+  ];
+
+  const hasDailyItems = params.items.some((item) => item.productType === "daily_item");
+
+  if (params.includeDailyItems && hasDailyItems) {
+    warnings[1] = "日常品を含むため、普段の消費と入れ替えを前提に早めに見直してください。";
+  }
+
+  return warnings;
 }
 
 function buildFallbackResponse(params: {
@@ -238,12 +289,14 @@ ${params.recentSelectedProducts
   .map((product) => `- ${product.category}: ${product.name}`)
   .join("\n")}
 
-可能であれば、今回はこれらと異なる商品を優先してください。
+上記と異なる商品を必ず優先してください。
 `
       : "";
 
   return `
 あなたは、食物アレルギー家庭向け防災備蓄支援アプリの提案アシスタントです。
+固定商品マスタは特定28品目不使用品のみです。
+商品の最終安全判定は行わず、提案と説明補助のみを行ってください。
 候補商品一覧にある商品だけを使って、JSONだけを返してください。
 
 入力条件:
@@ -255,18 +308,60 @@ ${params.recentSelectedProducts
 候補商品一覧:
 ${JSON.stringify(candidateProductsText, null, 2)}
 ${recentSelectedProductsText}
-ルール:
+最重要ルール:
 1. 候補商品一覧にある商品だけを使う
 2. items の productId は候補商品の id をそのまま使う
 3. items に重複する productId を入れない
-4. 4〜5件の商品を選ぶ
-5. 主食・飲料・おかず・汁物を優先する
-6. quantity は 1 以上の整数
-7. explanation は日本語1〜2文、120文字以内
-8. warnings は最大2件
-9. JSON以外は返さない
+4. includeDailyItems=false のときは emergency_food のみ使う
+5. items には、主食・飲料・おかず・汁物・おやつをそれぞれ最低1件ずつ含める
+6. 同じ条件でも毎回同じ商品名だけに固定しない
+7. 候補商品一覧に複数の妥当な候補がある場合は、直近で選ばれた商品ではなく、別の商品を優先して選ぶ
+8. 特に主食・おかず・汁物・おやつは、直近で選ばれた商品を優先し続けない
+9. explanation では、選んだ商品の違いや備え方の考え方が伝わるようにする
+10. explanation は日本語1〜2文、120文字以内にする
+11. warnings は日本語で最大2件にする 
+12. JSON 以外は返さない
 
-返却形式:
+reason:
+- 商品名の言い換えだけにしない
+- 商品名を入れない
+- そのカテゴリの役割を1文で書く
+- 主食=エネルギー確保、飲料=水分補給、おかず=満足感や栄養補助、汁物=食べやすさや温かさ、おやつ=食べやすさや気持ちの負担軽減
+- 良い例：災害時のエネルギー確保の中心になる主食として選びました。
+- 良い例：水分補給に必要な飲料として優先して入れています。
+- 良い例：主食だけでは不足しやすい満足感や栄養を補うために入れています。
+- 良い例：食べやすさや温かさを補うために入れています。
+- 良い例：食べやすさや気持ちの負担軽減につながる備えとして入れています。
+
+explanation:
+- 良い例：防災食を中心に必要なカテゴリをそろえながら、家族が食べ進めやすいように主食・飲料・おかず・汁物をバランスよく組み合わせています。
+- 良い例：日常品も活用しながら、主食と飲料を優先して確保しつつ、おかずや汁物も加えて備えの偏りを減らしています。
+- 良い例：災害時に必要な主食と飲料を優先しつつ、おかずや汁物も組み合わせて、家族分の食事を無理なく続けやすい内容にしています。
+- 良い例：主食と飲料を中心にそろえながら、おかずや汁物も含めて、食べやすさと続けやすさのバランスを取りました。
+- 良い例：家族分の食数を確保しやすい主食と飲料を軸にしつつ、満足感や食べやすさを補えるようにおかずや汁物も入れています。
+
+warnings:
+- 原材料・アレルゲン確認を優先して伝える
+- 賞味期限確認と定期的な見直しを伝える
+
+出力例:
+{
+  "explanation": "主食と飲料を優先しつつ、おかずや汁物も含めて備えの偏りを減らす構成にしています。",
+  "warnings": [
+    "購入前に商品ページや公式表示で原材料・アレルゲン情報を確認してください。",
+    "購入後は賞味期限を見ながら定期的に見直してください。"
+  ],
+  "items": [
+    {
+      "productId": "p1",
+      "quantity": 9,
+      "priority": "high",
+      "reason": "災害時のエネルギー確保の中心になる主食として選びました。"
+    }
+  ]
+}
+
+返却形式は必ず JSON のみ:
 {
   "explanation": "string",
   "warnings": ["string"],
@@ -381,6 +476,78 @@ async function createStructuredPlan(params: {
   return parsed;
 }
 
+// --- validation helpers for AI-generated explanation and warnings ---
+
+function isAcceptableExplanation(value: string | null | undefined): value is string {
+  if (typeof value !== "string") return false;
+
+  const normalized = value.trim();
+
+  if (normalized.length < 30 || normalized.length > 120) {
+    return false;
+  }
+
+  const blockedPatterns = [
+    "商品id",
+    "productid",
+    "json",
+    "候補商品一覧",
+    "instructions",
+    "ルール:",
+    "返却形式",
+    "```",
+    "<",
+    ">",
+  ];
+
+  const lower = normalized.toLowerCase();
+
+  return !blockedPatterns.some((pattern) => lower.includes(pattern));
+}
+
+function normalizeWarnings(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter((item) => item.length >= 10 && item.length <= 80)
+    .filter(
+      (item) =>
+        !["json", "productid", "候補商品一覧", "返却形式", "```"].some((pattern) =>
+          item.toLowerCase().includes(pattern)
+        )
+    )
+    .slice(0, 2);
+}
+
+function isAcceptableItemReason(value: string | null | undefined): value is string {
+  if (typeof value !== "string") return false;
+
+  const normalized = value.trim();
+
+  if (normalized.length < 20 || normalized.length > 80) {
+    return false;
+  }
+
+  const blockedPatterns = [
+    "商品id",
+    "productid",
+    "json",
+    "候補商品一覧",
+    "instructions",
+    "ルール:",
+    "返却形式",
+    "```",
+    "<",
+    ">",
+  ];
+
+  const lower = normalized.toLowerCase();
+
+  return !blockedPatterns.some((pattern) => lower.includes(pattern));
+}
+
 async function generatePlanWithOpenAI(params: {
   familyMemberCount: number;
   days: PlanDays;
@@ -439,10 +606,9 @@ async function generatePlanWithOpenAI(params: {
         quantity,
         subtotal,
         priority: getPriorityByCategory(product.category),
-        reason:
-          typeof item.reason === "string" && item.reason.trim().length > 0
-            ? item.reason
-            : getReasonByCategory(product.category),
+        reason: isAcceptableItemReason(item.reason)
+          ? item.reason.trim()
+          : getReasonByCategory(product.category),
       };
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
@@ -520,17 +686,28 @@ async function generatePlanWithOpenAI(params: {
     priorityPolicy: params.priorityPolicy,
     totalCost,
     annualCost,
-    explanation:
-      typeof parsed.explanation === "string" && parsed.explanation.trim().length > 0
-        ? parsed.explanation
-        : "家族条件と候補条件をもとに、備えのバランスを見ながら提案しています。",
+    explanation: isAcceptableExplanation(parsed.explanation)
+      ? parsed.explanation.trim()
+      : buildPlanExplanation({
+          familyMemberCount: params.familyMemberCount,
+          days: params.days,
+          includeDailyItems: params.includeDailyItems,
+          priorityPolicy: params.priorityPolicy,
+          items: selectedItems.map((item) => ({
+            category: item.category,
+            productType: item.productType,
+          })),
+        }),
     items: selectedItems,
     warnings:
-      Array.isArray(parsed.warnings) && parsed.warnings.length > 0
-        ? parsed.warnings
-        : [
-            "最終的な安全確認は、必ず商品ページや公式表示の原材料・アレルゲン情報を確認してください。",
-          ],
+      normalizeWarnings(parsed.warnings).length > 0
+        ? normalizeWarnings(parsed.warnings)
+        : buildPlanWarnings({
+            includeDailyItems: params.includeDailyItems,
+            items: selectedItems.map((item) => ({
+              productType: item.productType,
+            })),
+          }),
   };
 }
 
