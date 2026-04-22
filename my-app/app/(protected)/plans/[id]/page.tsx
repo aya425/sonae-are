@@ -202,7 +202,7 @@ export default function PlanDetailPage() {
     }
 
     const itemsForSave = planItems.map((item) => ({
-      productId: item.productId,
+      productId: item.productId ?? item.id,
       quantity: item.quantity,
     }));
 
@@ -344,6 +344,7 @@ export default function PlanDetailPage() {
               onChange={(e) => {
                 setEditTitle(e.target.value);
                 setIsEditing(true);
+                setActionError("");
                 setActionSuccess("");
               }}
               className="mt-2 w-full rounded-xl border border-black px-3 py-2 text-lg font-semibold text-gray-900 outline-none focus:border-black"
@@ -360,6 +361,7 @@ export default function PlanDetailPage() {
                 onChange={(e) => {
                   setEditFamilyMemberCount(Number(e.target.value));
                   setIsEditing(true);
+                  setActionError("");
                   setActionSuccess("");
                 }}
                 className="mt-2 w-full rounded-xl border border-black px-3 py-2 text-lg font-semibold text-gray-900 outline-none focus:border-black"
@@ -373,6 +375,7 @@ export default function PlanDetailPage() {
                 onChange={(e) => {
                   setEditDays(Number(e.target.value) as 3 | 7 | 14);
                   setIsEditing(true);
+                  setActionError("");
                   setActionSuccess("");
                 }}
                 className="mt-2 w-full rounded-xl border border-black px-3 py-2 text-lg font-semibold text-gray-900 outline-none focus:border-black"

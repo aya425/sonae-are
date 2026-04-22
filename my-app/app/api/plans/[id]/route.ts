@@ -59,6 +59,15 @@ function getPriorityByCategory(category: string): "high" | "medium" | "low" {
   return "low";
 }
 
+function getCategoryOrder(category: string): number {
+  if (category === "主食") return 1;
+  if (category === "飲料") return 2;
+  if (category === "おかず") return 3;
+  if (category === "汁物") return 4;
+  if (category === "おやつ") return 5;
+  return 99;
+}
+
 function isValidPlanDays(value: number): value is 3 | 7 | 14 {
   return value === 3 || value === 7 || value === 14;
 }
@@ -197,11 +206,12 @@ export async function GET(_request: Request, context: RouteContext) {
               isActive: product.is_active,
               quantity: item.quantity,
               subtotal: product.price * item.quantity,
-              priority: getPriorityByCategory(product.category),
+              priority: item.priority ?? getPriorityByCategory(product.category),
               reason: item.purpose_note ?? "家族条件と備えのバランスを見て提案しています。",
             };
           })
-          .filter((item) => item !== null),
+          .filter((item) => item !== null)
+          .sort((a, b) => getCategoryOrder(a.category) - getCategoryOrder(b.category)),
       },
       error: null,
     });
