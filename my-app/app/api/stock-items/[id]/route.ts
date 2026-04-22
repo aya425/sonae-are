@@ -182,7 +182,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           data: null,
           error: {
             code: "INVALID_EXPIRES_AT",
-            message: "賞味期限は登録日より後の日付を入力してください。",
+            message: "賞味期限は今日より後の日付を入力してください。",
             details: null,
           },
         },
@@ -204,6 +204,20 @@ export async function PATCH(request: Request, context: RouteContext) {
       .single();
 
     if (error) {
+      if (error.code === "PGRST116") {
+        return NextResponse.json(
+          {
+            data: null,
+            error: {
+              code: "STOCK_ITEM_NOT_FOUND",
+              message: "対象の備蓄商品が見つかりません。",
+              details: null,
+            },
+          },
+          { status: 404 }
+        );
+      }
+
       return NextResponse.json(
         {
           data: null,
