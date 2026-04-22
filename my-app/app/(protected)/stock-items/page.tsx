@@ -7,7 +7,7 @@ import {
   PackageIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 type ExpiringItem = {
   id: string;
@@ -82,6 +82,86 @@ type ProductsResponse = {
   } | null;
 };
 
+type CustomSelectOption = {
+  value: string;
+  label: string;
+};
+
+type CustomSelectProps = {
+  label: string;
+  value: string;
+  options: readonly CustomSelectOption[];
+  disabled?: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
+  onSelect: (value: string) => void;
+  buttonRef: RefObject<HTMLButtonElement | null>;
+};
+
+function CustomSelect({
+  label,
+  value,
+  options,
+  disabled = false,
+  isOpen,
+  onToggle,
+  onSelect,
+  buttonRef,
+}: CustomSelectProps) {
+  const selectedLabel =
+    options.find((option) => option.value === value)?.label ?? "商品を選択してください";
+
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label={label}
+        onClick={onToggle}
+        disabled={disabled}
+        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-xl text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <div className="flex items-center justify-center gap-3">
+          <span className={`whitespace-nowrap ${value ? "text-slate-900" : "text-slate-500"}`}>
+            {selectedLabel}
+          </span>
+          <span className="text-base text-slate-700">▼</span>
+        </div>
+      </button>
+
+      {isOpen ? (
+        <div className="absolute left-0 right-0 z-30 mt-2 max-h-64 overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-300 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.16)]">
+          <div role="listbox" aria-label={label} className="py-1">
+            {options.map((option) => {
+              const isSelected = option.value === value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => onSelect(option.value)}
+                  className={`flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-base font-semibold transition-colors ${
+                    isSelected
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-slate-800 hover:bg-blue-50"
+                  }`}
+                >
+                  <span className="leading-none">{option.label}</span>
+                  <span className="shrink-0">{isSelected ? "✓" : ""}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 
 type CalendarCell = {
@@ -148,6 +228,9 @@ export default function StockItemsPage() {
   const [selectedProductId, setSelectedProductId] = useState("");
   const expiryPickerRef = useRef<HTMLDivElement | null>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
+  const productDropdownRef = useRef<HTMLDivElement | null>(null);
+  const productDropdownButtonRef = useRef<HTMLButtonElement | null>(null);
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
@@ -248,8 +331,36 @@ export default function StockItemsPage() {
     };
   }, [isDatePickerOpen]);
 
+  useEffect(() => {
+    if (!isProductDropdownOpen) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target;
+      if (target instanceof Node && !productDropdownRef.current?.contains(target)) {
+        setIsProductDropdownOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsProductDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isProductDropdownOpen]);
+
   const handleChangeSelectedProduct = (value: string) => {
     setSelectedProductId(value);
+    setIsProductDropdownOpen(false);
 
     if (value === "") {
       setForm((prev) => ({
@@ -320,6 +431,7 @@ export default function StockItemsPage() {
         unitPrice: "",
       });
       setSelectedProductId("");
+      setIsProductDropdownOpen(false);
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -589,19 +701,24 @@ export default function StockItemsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <label className="mb-2 block text-xl font-semibold text-slate-800">商品名</label>
-                <select
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-xl"
-                  value={selectedProductId}
-                  onChange={(e) => handleChangeSelectedProduct(e.target.value)}
-                >
-                  <option value="">商品を選択してください</option>
-                  <option value="manual">自由入力する</option>
-                  {productCandidates.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id}>
-                      {candidate.name}（¥{candidate.price.toLocaleString()}）
-                    </option>
-                  ))}
-                </select>
+                <div ref={productDropdownRef}>
+                  <CustomSelect
+                    label="商品名"
+                    value={selectedProductId}
+                    options={[
+                      { value: "", label: "商品を選択してください" },
+                      { value: "manual", label: "自由入力する" },
+                      ...productCandidates.map((candidate) => ({
+                        value: candidate.id,
+                        label: `${candidate.name}（¥${candidate.price.toLocaleString()}）`,
+                      })),
+                    ]}
+                    isOpen={isProductDropdownOpen}
+                    onToggle={() => setIsProductDropdownOpen((prev) => !prev)}
+                    onSelect={handleChangeSelectedProduct}
+                    buttonRef={productDropdownButtonRef}
+                  />
+                </div>
               </div>
 
               {selectedProductId === "manual" ? (
