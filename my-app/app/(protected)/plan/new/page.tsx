@@ -272,7 +272,7 @@ export default function PlanNewPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white px-0 py-2">
+    <main className="bg-white px-0 py-2 pb-24">
       <div className="mx-auto w-full max-w-[920px] px-2">
         {hasFamily === false && !errorMessage ? (
           <div className="mb-6 rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
@@ -310,12 +310,12 @@ export default function PlanNewPage() {
         <div className="grid grid-cols-1 gap-3">
           <form onSubmit={handleSubmit} className="space-y-6">
             {isSubmitting ? (
-              <section className="mt-25 rounded-2xl border border-slate-200 bg-white px-3 py-5 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
+              <section className="rounded-2xl border border-slate-200 bg-white px-3 py-5 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
                 <div className="flex flex-col justify-center">
                   <h2 className="text-center text-xl font-semibold text-gray-900">
                     備えプランを作成中
                   </h2>
-                  <p className="mt-1 text-center text-base text-gray-900">
+                  <p className="mt-1 text-center text-xl text-gray-900">
                     条件に合う商品候補を整理しています
                   </p>
 
@@ -327,7 +327,7 @@ export default function PlanNewPage() {
                       return (
                         <div
                           key={step}
-                          className={`rounded-xl px-4 py-3 text-center text-base font-semibold transition-colors ${
+                          className={`rounded-xl px-4 py-3 text-center text-lg font-semibold transition-colors ${
                             isActive
                               ? "bg-blue-50 text-blue-900"
                               : isDone
@@ -341,7 +341,7 @@ export default function PlanNewPage() {
                     })}
                   </div>
 
-                  <p className="mt-5 text-center text-base text-gray-900">{LOADING_FOOTER_TEXT}</p>
+                  <p className="mt-5 text-center text-xl text-gray-900">{LOADING_FOOTER_TEXT}</p>
                 </div>
               </section>
             ) : (
