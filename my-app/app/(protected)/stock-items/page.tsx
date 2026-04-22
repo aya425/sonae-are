@@ -131,6 +131,8 @@ export default function StockItemsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [savingItemId, setSavingItemId] = useState<string | null>(null);
+  const [itemErrorMessages, setItemErrorMessages] = useState<Record<string, string>>({});
   const [form, setForm] = useState<StockItemForm>({
     productName: "",
     quantity: "",
@@ -374,13 +376,67 @@ export default function StockItemsPage() {
 
   const handleSave = async (stockItemId: string) => {
     const editingItem = editingItems[stockItemId];
-
     if (!editingItem) return;
 
-    console.log("save target", stockItemId, editingItem);
+    setSavingItemId(stockItemId);
+    setItemErrorMessages((prev) => ({
+      ...prev,
+      [stockItemId]: "",
+    }));
 
-    // ここではUIのみ先に作る
-    // 後で PATCH /api/stock-items/:id につなぐ
+    try {
+      const response = await fetch(`/api/stock-items/${stockItemId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          quantity: Number(editingItem.quantity),
+          unitPrice: Number(editingItem.unitPrice),
+          expiresAt: editingItem.expiresAt,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.data) {
+        throw new Error(result.error?.message ?? "備蓄商品の更新に失敗しました。");
+      }
+
+      const updatedItem = result.data;
+
+      // 一覧更新
+      setStockItems((prev) =>
+        prev.map((item) =>
+          item.id === stockItemId
+            ? {
+                ...item,
+                quantity: updatedItem.quantity,
+                unitPrice: updatedItem.unitPrice,
+                expiresAt: updatedItem.expiresAt,
+              }
+            : item
+        )
+      );
+
+      // 編集状態も同期
+      setEditingItems((prev) => ({
+        ...prev,
+        [stockItemId]: {
+          quantity: String(updatedItem.quantity),
+          unitPrice: String(updatedItem.unitPrice),
+          expiresAt: updatedItem.expiresAt,
+        },
+      }));
+    } catch (error) {
+      setItemErrorMessages((prev) => ({
+        ...prev,
+        [stockItemId]: error instanceof Error ? error.message : "備蓄商品の更新に失敗しました。",
+      }));
+    } finally {
+      setSavingItemId(null);
+    }
   };
 
   const totalEstimatedCost = stockItems.reduce(
@@ -921,23 +977,33 @@ export default function StockItemsPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleSave(item.id)}
-                        className="inline-flex min-w-[120px] items-center justify-center rounded-2xl bg-[#1E3A8A] px-5 py-2.5 text-base font-semibold text-white transition-colors hover:bg-blue-800"
-                      >
-                        保存
-                      </button>
+                    <div className="mt-4 space-y-2">
+                      {itemErrorMessages[item.id] ? (
+                        <p className="text-center text-sm font-medium text-red-600">
+                          {itemErrorMessages[item.id]}
+                        </p>
+                      ) : null}
 
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(item.id)}
-                        aria-label="削除"
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-red-300 bg-white text-red-700 transition-colors hover:bg-red-50"
-                      >
-                        <TrashIcon size={22} weight="bold" />
-                      </button>
+                      <div className="flex items-center justify-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleSave(item.id)}
+                          disabled={savingItemId === item.id}
+                          className="inline-flex min-w-[120px] items-center justify-center rounded-2xl bg-[#1E3A8A] px-5 py-2.5 text-base font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {savingItemId === item.id ? "保存中..." : "保存"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item.id)}
+                          aria-label="削除"
+                          disabled={savingItemId === item.id}
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-red-300 bg-white text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <TrashIcon size={22} weight="bold" />
+                        </button>
+                      </div>
                     </div>
                   </article>
                 );
