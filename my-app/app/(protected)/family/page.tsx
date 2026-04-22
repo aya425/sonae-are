@@ -123,7 +123,7 @@ function CustomSelect({
   const selectedLabel = options.find((option) => option.value === value)?.label ?? placeholder;
 
   return (
-    <div className="relative flex justify-center">
+    <div className="relative flex w-full justify-center">
       <button
         ref={buttonRef}
         type="button"
@@ -132,18 +132,20 @@ function CustomSelect({
         aria-label={label}
         onClick={onToggle}
         disabled={disabled}
-        className="w-[80%] rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-xl leading-normal text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full max-w-[220px] rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-xl leading-normal text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <div className="flex items-center justify-center gap-3">
-          <span className={`whitespace-nowrap ${value ? "text-slate-900" : "text-slate-500"}`}>
+        <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+          <span
+            className={`min-w-0 pl-7 text-center whitespace-nowrap ${value ? "text-slate-900" : "text-slate-500"}`}
+          >
             {selectedLabel}
           </span>
-          <span className="text-base text-slate-700">▼</span>
+          <span className="justify-self-end text-base text-slate-700">▼</span>
         </div>
       </button>
 
       {isOpen ? (
-        <div className="absolute left-1/2 top-full z-30 mt-2 max-h-64 w-[80%] -translate-x-1/2 overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-300 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.16)]">
+        <div className="absolute left-1/2 top-full z-30 mt-2 max-h-64 w-full max-w-[220px] -translate-x-1/2 overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-300 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.16)]">
           <div role="listbox" aria-label={label} className="py-1">
             {options.map((option) => {
               const isSelected = option.value === value;
@@ -330,6 +332,8 @@ export default function FamilyPage() {
   const [openAgeDropdownIndex, setOpenAgeDropdownIndex] = useState<number | null>(null);
   const roleButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const ageButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const roleDropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const ageDropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
   const openAllergenModal = (index: number) => {
     setActiveMemberIndex(index);
     setIsAllergenModalOpen(true);
@@ -391,14 +395,18 @@ export default function FamilyPage() {
     const handlePointerDown = (event: MouseEvent) => {
       const target = event.target as Node;
 
-      const clickedRoleButton = roleButtonRefs.current.some((button) => button?.contains(target));
-      const clickedAgeButton = ageButtonRefs.current.some((button) => button?.contains(target));
+      const clickedRoleDropdown = roleDropdownRefs.current.some((dropdown) =>
+        dropdown?.contains(target)
+      );
+      const clickedAgeDropdown = ageDropdownRefs.current.some((dropdown) =>
+        dropdown?.contains(target)
+      );
 
-      if (!clickedRoleButton) {
+      if (!clickedRoleDropdown) {
         setOpenRoleDropdownIndex(null);
       }
 
-      if (!clickedAgeButton) {
+      if (!clickedAgeDropdown) {
         setOpenAgeDropdownIndex(null);
       }
     };
@@ -609,7 +617,12 @@ export default function FamilyPage() {
                       <label className="mb-2 block text-xl font-semibold text-slate-800">
                         続柄
                       </label>
-                      <div className="flex justify-center">
+                      <div
+                        ref={(node) => {
+                          roleDropdownRefs.current[index] = node;
+                        }}
+                        className="flex justify-center"
+                      >
                         <CustomSelect
                           label="続柄"
                           value={member.role}
@@ -640,7 +653,12 @@ export default function FamilyPage() {
                       <label className="mb-2 block text-xl font-semibold text-slate-800">
                         年齢区分
                       </label>
-                      <div className="flex justify-center">
+                      <div
+                        ref={(node) => {
+                          ageDropdownRefs.current[index] = node;
+                        }}
+                        className="flex justify-center"
+                      >
                         <CustomSelect
                           label="年齢区分"
                           value={member.ageGroup}
