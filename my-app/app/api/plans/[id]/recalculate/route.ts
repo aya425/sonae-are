@@ -72,6 +72,15 @@ function getProductFromRelation(products: PlanItemRow["products"]): ProductRow |
   return Array.isArray(products) ? (products[0] ?? null) : products;
 }
 
+function getCategoryOrder(category: string): number {
+  if (category === "主食") return 1;
+  if (category === "飲料") return 2;
+  if (category === "おかず") return 3;
+  if (category === "汁物") return 4;
+  if (category === "おやつ") return 5;
+  return 99;
+}
+
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient();
@@ -237,7 +246,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
           purposeNote: item.purpose_note,
         };
       })
-      .filter((item): item is NonNullable<typeof item> => item !== null);
+      .filter((item): item is NonNullable<typeof item> => item !== null)
+      .sort((a, b) => getCategoryOrder(a.category) - getCategoryOrder(b.category));
 
     const totalEstimatedCost = recalculatedItems.reduce((sum, item) => sum + item.subtotal, 0);
     const annualCost = Math.round(
