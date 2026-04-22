@@ -96,6 +96,10 @@ type CustomSelectProps = {
   onToggle: () => void;
   onSelect: (value: string) => void;
   buttonRef: RefObject<HTMLButtonElement | null>;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  emptyMessage?: string;
+  hasNoSearchResults?: boolean;
 };
 
 function CustomSelect({
@@ -107,9 +111,14 @@ function CustomSelect({
   onToggle,
   onSelect,
   buttonRef,
+  searchValue,
+  onSearchChange,
+  emptyMessage = "該当する項目がありません",
+  hasNoSearchResults = false,
 }: CustomSelectProps) {
   const selectedLabel =
     options.find((option) => option.value === value)?.label ?? "商品を選択してください";
+  const isSearchEnabled = typeof searchValue === "string" && typeof onSearchChange === "function";
 
   return (
     <div className="relative">
@@ -123,38 +132,64 @@ function CustomSelect({
         disabled={disabled}
         className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-xl text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <div className="flex items-center justify-center gap-3">
-          <span className={`whitespace-nowrap ${value ? "text-slate-900" : "text-slate-500"}`}>
+        <div className="flex items-center gap-3">
+          <span
+            className={`min-w-0 flex-1 truncate text-center ${value ? "text-slate-900" : "text-slate-700"}`}
+            title={selectedLabel}
+          >
             {selectedLabel}
           </span>
-          <span className="text-base text-slate-700">▼</span>
+          <span className="shrink-0 text-lg text-slate-700">▼</span>
         </div>
       </button>
 
       {isOpen ? (
         <div className="absolute left-0 right-0 z-30 mt-2 max-h-64 overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-300 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.16)]">
+          {isSearchEnabled ? (
+            <div className="border-b border-slate-200 px-3 py-2">
+              <input
+                type="text"
+                value={searchValue}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="商品名で検索"
+                aria-label={`${label}を検索`}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-lg text-slate-900 placeholder:text-slate-700"
+              />
+            </div>
+          ) : null}
           <div role="listbox" aria-label={label} className="py-1">
-            {options.map((option) => {
-              const isSelected = option.value === value;
+            {hasNoSearchResults ? (
+              <p className="px-4 py-3 text-center text-xl font-medium text-slate-900">
+                {emptyMessage}
+              </p>
+            ) : null}
+            {options.length === 0 ? (
+              <p className="px-4 py-3 text-center text-xl font-medium text-slate-900">
+                {emptyMessage}
+              </p>
+            ) : (
+              options.map((option) => {
+                const isSelected = option.value === value;
 
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  onClick={() => onSelect(option.value)}
-                  className={`flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-base font-semibold transition-colors ${
-                    isSelected
-                      ? "bg-blue-500 text-white"
-                      : "bg-white text-slate-800 hover:bg-blue-50"
-                  }`}
-                >
-                  <span className="leading-none">{option.label}</span>
-                  <span className="shrink-0">{isSelected ? "✓" : ""}</span>
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => onSelect(option.value)}
+                    className={`flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-lg font-semibold transition-colors ${
+                      isSelected
+                        ? "bg-blue-500 text-white"
+                        : "bg-white text-slate-800 hover:bg-blue-50"
+                    }`}
+                  >
+                    <span className="leading-none">{option.label}</span>
+                    <span className="shrink-0">{isSelected ? "✓" : ""}</span>
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
       ) : null}
@@ -229,6 +264,7 @@ export default function StockItemsPage() {
   const expiryPickerRef = useRef<HTMLDivElement | null>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
+  const [productSearchKeyword, setProductSearchKeyword] = useState("");
   const productDropdownRef = useRef<HTMLDivElement | null>(null);
   const productDropdownButtonRef = useRef<HTMLButtonElement | null>(null);
   const [calendarMonth, setCalendarMonth] = useState(() => {
@@ -264,6 +300,20 @@ export default function StockItemsPage() {
     .sort((a, b) => a.daysLeft - b.daysLeft);
 
   const calendarCells = useMemo(() => getCalendarCells(calendarMonth), [calendarMonth]);
+  const filteredProductCandidates = useMemo(() => {
+    const keyword = productSearchKeyword.trim().toLowerCase();
+
+    if (!keyword) {
+      return productCandidates;
+    }
+
+    return productCandidates.filter((candidate) => candidate.name.toLowerCase().includes(keyword));
+  }, [productCandidates, productSearchKeyword]);
+  useEffect(() => {
+    if (!isProductDropdownOpen) {
+      setProductSearchKeyword("");
+    }
+  }, [isProductDropdownOpen]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -361,6 +411,7 @@ export default function StockItemsPage() {
   const handleChangeSelectedProduct = (value: string) => {
     setSelectedProductId(value);
     setIsProductDropdownOpen(false);
+    setProductSearchKeyword("");
 
     if (value === "") {
       setForm((prev) => ({
@@ -432,6 +483,7 @@ export default function StockItemsPage() {
       });
       setSelectedProductId("");
       setIsProductDropdownOpen(false);
+      setProductSearchKeyword("");
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -708,22 +760,29 @@ export default function StockItemsPage() {
                     options={[
                       { value: "", label: "商品を選択してください" },
                       { value: "manual", label: "自由入力する" },
-                      ...productCandidates.map((candidate) => ({
+                      ...filteredProductCandidates.map((candidate) => ({
                         value: candidate.id,
-                        label: `${candidate.name}（¥${candidate.price.toLocaleString()}）`,
+                        label: candidate.name,
                       })),
                     ]}
                     isOpen={isProductDropdownOpen}
                     onToggle={() => setIsProductDropdownOpen((prev) => !prev)}
                     onSelect={handleChangeSelectedProduct}
                     buttonRef={productDropdownButtonRef}
+                    searchValue={productSearchKeyword}
+                    onSearchChange={setProductSearchKeyword}
+                    emptyMessage="該当する商品がありません"
+                    hasNoSearchResults={
+                      productSearchKeyword.trim().length > 0 &&
+                      filteredProductCandidates.length === 0
+                    }
                   />
                 </div>
               </div>
 
               {selectedProductId === "manual" ? (
                 <div className="col-span-2">
-                  <label className="mb-2 block text-lg font-semibold text-slate-800">
+                  <label className="mb-2 block text-xl font-semibold text-slate-800">
                     商品名を自由入力
                   </label>
                   <input
