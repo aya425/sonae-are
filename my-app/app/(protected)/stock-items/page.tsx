@@ -586,8 +586,8 @@ export default function StockItemsPage() {
           <h2 className="text-center text-2xl font-bold text-[#1E3A8A]">登録フォーム</h2>
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
                 <label className="mb-2 block text-xl font-semibold text-slate-800">商品名</label>
                 <select
                   className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-xl"
@@ -605,7 +605,7 @@ export default function StockItemsPage() {
               </div>
 
               {selectedProductId === "manual" ? (
-                <div className="sm:col-span-2">
+                <div className="col-span-2">
                   <label className="mb-2 block text-lg font-semibold text-slate-800">
                     商品名を自由入力
                   </label>
@@ -657,7 +657,7 @@ export default function StockItemsPage() {
                 />
               </div>
 
-              <div className="sm:col-span-2">
+              <div className="col-span-2">
                 <label className="mb-2 block text-xl font-semibold text-slate-800">賞味期限</label>
                 <div ref={expiryPickerRef} className="relative">
                   <div className="relative">
@@ -853,7 +853,7 @@ export default function StockItemsPage() {
                 </div>
               </div>
 
-              <div className="sm:col-span-2 flex justify-center">
+              <div className="col-span-2 flex justify-center">
                 <button
                   type="submit"
                   disabled={isSubmitting}
