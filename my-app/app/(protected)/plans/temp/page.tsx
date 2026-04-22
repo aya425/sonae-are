@@ -234,7 +234,7 @@ export default function TempPlanPage() {
         </div>
       </section>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+      <div className="mb-4 grid grid-cols-2 gap-3">
         <section className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-4 text-center shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
           <h2 className="text-xl font-semibold text-[#1E3A8A]">初期費用</h2>
           <p className="mt-2 text-2xl font-bold text-gray-900">
@@ -280,7 +280,7 @@ export default function TempPlanPage() {
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="mt-4 grid grid-cols-3 gap-3">
                 <div className="rounded-xl bg-white px-3 py-3 text-center">
                   <p className="text-base font-semibold text-gray-700">単価</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900">
@@ -370,7 +370,7 @@ export default function TempPlanPage() {
               disabled={isSaving}
               className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-5 py-3 text-lg font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <FloppyDiskIcon size={25} weight="fill" />
+              <FloppyDiskIcon size={24} weight="fill" />
               <span>{isSaving ? "保存中..." : "保存"}</span>
             </button>
             <Link

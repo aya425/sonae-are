@@ -1,6 +1,12 @@
 "use client";
 
-import { BowlFoodIcon, CalendarBlankIcon, PackageIcon, TrashIcon } from "@phosphor-icons/react";
+import {
+  BowlFoodIcon,
+  CalendarBlankIcon,
+  FloppyDiskIcon,
+  PackageIcon,
+  TrashIcon,
+} from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type ExpiringItem = {
@@ -444,15 +450,6 @@ export default function StockItemsPage() {
     0
   );
 
-  const formatDate = (value: string) => {
-    if (!value) return "-";
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-
-    return date.toLocaleDateString("ja-JP");
-  };
-
   const formatDateInputDisplay = (value: string) => {
     if (!value) return "";
 
@@ -667,7 +664,7 @@ export default function StockItemsPage() {
                     <input
                       type="text"
                       inputMode="numeric"
-                      placeholder="YYYY/MM/DD"
+                      placeholder="年/月/日"
                       value={formatDateInputDisplay(form.expiresAt)}
                       onChange={(e) => {
                         const numericValue = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
@@ -907,7 +904,7 @@ export default function StockItemsPage() {
                         <div />
                       </div>
 
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="grid grid-cols-2 gap-3">
                         <div className="rounded-2xl bg-white px-3 py-3 text-center">
                           <label className="mb-2 block text-lg font-semibold text-gray-600">
                             数量
@@ -945,13 +942,13 @@ export default function StockItemsPage() {
                           </div>
                         </div>
 
-                        <div className="rounded-2xl bg-white px-3 py-3 text-center sm:col-span-2">
+                        <div className="col-span-2 rounded-2xl bg-white px-3 py-3 text-center">
                           <label className="mb-2 block text-lg font-semibold text-gray-600">
                             賞味期限
                           </label>
                           <input
                             type="text"
-                            placeholder="YYYY/MM/DD"
+                            placeholder="年/月/日"
                             value={formatDateInputDisplay(editingItem.expiresAt)}
                             onChange={(e) => {
                               const numericValue = e.target.value
@@ -989,9 +986,10 @@ export default function StockItemsPage() {
                           type="button"
                           onClick={() => handleSave(item.id)}
                           disabled={savingItemId === item.id}
-                          className="inline-flex min-w-[120px] items-center justify-center rounded-2xl bg-[#1E3A8A] px-5 py-2.5 text-base font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex min-w-[120px] items-center justify-center gap-2 rounded-2xl bg-[#1E3A8A] px-5 py-2.5 text-lg font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {savingItemId === item.id ? "保存中..." : "保存"}
+                          <FloppyDiskIcon size={24} weight="bold" />
+                          <span>{savingItemId === item.id ? "保存中..." : "保存"}</span>
                         </button>
 
                         <button
@@ -1001,7 +999,7 @@ export default function StockItemsPage() {
                           disabled={savingItemId === item.id}
                           className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-red-300 bg-white text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <TrashIcon size={22} weight="bold" />
+                          <TrashIcon size={25} weight="bold" />
                         </button>
                       </div>
                     </div>

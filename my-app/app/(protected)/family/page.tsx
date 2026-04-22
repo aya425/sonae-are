@@ -598,7 +598,7 @@ export default function FamilyPage() {
             disabled={isFormDisabled}
             className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-8 py-4 text-xl font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <FloppyDiskIcon size={22} weight="fill" />
+            <FloppyDiskIcon size={24} weight="fill" />
             <span>{isSubmitting ? "保存中..." : "保存してプラン作成へ"}</span>
           </button>
         </div>

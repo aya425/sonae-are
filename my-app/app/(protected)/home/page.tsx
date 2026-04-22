@@ -222,7 +222,7 @@ export default function DashboardPage() {
                       {plan.title}
                     </h3>
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <div className="mt-4 grid grid-cols-3 gap-3">
                       <div className="rounded-xl bg-white px-3 py-3 text-center">
                         <p className="text-lg font-semibold text-gray-600">家族人数</p>
                         <p className="mt-1 text-xl font-semibold text-gray-900">
@@ -266,7 +266,7 @@ export default function DashboardPage() {
             href="/plan/new"
             className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-6 py-3 text-lg font-semibold text-white transition-colors hover:bg-blue-800"
           >
-            <SparkleIcon size={20} weight="fill" />
+            <SparkleIcon size={25} weight="fill" />
             <span>新しく備えプランを作る</span>
           </Link>
         </div>

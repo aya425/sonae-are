@@ -138,7 +138,7 @@ export default function PlansPage() {
               href="/plan/new"
               className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#1E3A8A] px-5 py-3 text-xl font-semibold text-white hover:bg-blue-800"
             >
-              <SparkleIcon size={20} weight="fill" />
+              <SparkleIcon size={25} weight="fill" />
               <span>備えプランを作る</span>
             </Link>
           </div>
@@ -153,7 +153,7 @@ export default function PlansPage() {
               <div className="mx-auto max-w-[520px]">
                 <h2 className="text-center text-2xl font-semibold text-[#1E3A8A]">{plan.title}</h2>
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="mt-4 grid grid-cols-3 gap-3">
                   <div className="rounded-xl bg-white px-3 py-3 text-center">
                     <p className="text-lg font-semibold text-gray-600">家族人数</p>
                     <p className="mt-1 text-xl font-semibold text-gray-900">

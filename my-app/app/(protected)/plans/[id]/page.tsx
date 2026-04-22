@@ -445,23 +445,25 @@ export default function PlanDetailPage() {
             >
               <div>
                 <p className="text-xl font-semibold text-gray-900">{item.name}</p>
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap gap-2">
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 flex-nowrap gap-2 overflow-hidden">
                     <span
-                      className={`inline-flex rounded-full px-3 py-1 text-base font-semibold ${getPriorityBadgeClass(item.priority)}`}
+                      className={`inline-flex shrink-0 rounded-full px-3 py-1 text-base font-semibold ${getPriorityBadgeClass(item.priority)}`}
                     >
                       優先度 {getPriorityLabel(item.priority)}
                     </span>
                     <span
-                      className={`inline-flex rounded-full px-3 py-1 text-base font-semibold ${getCategoryBadgeClass(item.productType)}`}
+                      className={`inline-flex shrink-0 rounded-full px-3 py-1 text-base font-semibold ${getCategoryBadgeClass(item.productType)}`}
                     >
                       {getProductTypeLabel(item.productType)}
                     </span>
-                    <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-base font-semibold text-slate-700">
+                    <span className="inline-flex shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-base font-semibold text-slate-700">
                       {item.category}
                     </span>
                   </div>
-                  <p className="mr-1 text-lg font-semibold text-gray-900">数量：{item.quantity}</p>
+                  <p className="ml-2 shrink-0 text-lg font-semibold text-gray-900">
+                    数量：{item.quantity}
+                  </p>
                 </div>
               </div>
 
@@ -545,7 +547,7 @@ export default function PlanDetailPage() {
           disabled={isSaving || isRecalculating}
           className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-4 py-3 text-lg font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <FloppyDiskIcon size={22} weight="bold" />
+          <FloppyDiskIcon size={24} weight="bold" />
           <span>{isSaving ? "保存中..." : "保存"}</span>
         </button>
         {actionSuccess ? (
