@@ -858,6 +858,8 @@ export default function StockItemsPage() {
                           </label>
                           <input
                             type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             value={editingItem.quantity}
                             onChange={(e) =>
                               handleEditValueChange(item.id, "quantity", e.target.value)
@@ -873,6 +875,8 @@ export default function StockItemsPage() {
                           <div className="flex items-center gap-2">
                             <input
                               type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
                               value={editingItem.unitPrice}
                               onChange={(e) =>
                                 handleEditValueChange(item.id, "unitPrice", e.target.value)
