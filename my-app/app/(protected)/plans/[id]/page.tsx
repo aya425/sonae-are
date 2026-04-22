@@ -547,7 +547,7 @@ export default function PlanDetailPage() {
           disabled={isSaving || isRecalculating}
           className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-4 py-3 text-lg font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <FloppyDiskIcon size={22} weight="bold" />
+          <FloppyDiskIcon size={24} weight="bold" />
           <span>{isSaving ? "保存中..." : "保存"}</span>
         </button>
         {actionSuccess ? (

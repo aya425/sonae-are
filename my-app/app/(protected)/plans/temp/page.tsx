@@ -370,7 +370,7 @@ export default function TempPlanPage() {
               disabled={isSaving}
               className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-5 py-3 text-lg font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <FloppyDiskIcon size={25} weight="fill" />
+              <FloppyDiskIcon size={24} weight="fill" />
               <span>{isSaving ? "保存中..." : "保存"}</span>
             </button>
             <Link

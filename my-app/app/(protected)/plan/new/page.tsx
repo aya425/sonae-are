@@ -282,7 +282,7 @@ export default function PlanNewPage() {
                 href="/family"
                 className="inline-flex items-center gap-2 rounded-xl bg-[#1E3A8A] px-5 py-3 text-lg font-semibold text-white no-underline transition-colors hover:bg-blue-800"
               >
-                <UsersThreeIcon size={24} weight="fill" />
+                <UsersThreeIcon size={30} weight="fill" />
                 <span>家族情報を登録する</span>
               </Link>
             </div>
@@ -299,7 +299,7 @@ export default function PlanNewPage() {
                   href="/family"
                   className="inline-flex items-center gap-2 rounded-xl bg-[#1E3A8A] px-5 py-3 text-sm font-semibold text-white no-underline transition-colors hover:bg-blue-800"
                 >
-                  <UsersThreeIcon size={24} weight="fill" />
+                  <UsersThreeIcon size={30} weight="fill" />
                   <span>家族情報を登録する</span>
                 </Link>
               </div>
@@ -466,7 +466,7 @@ export default function PlanNewPage() {
                     disabled={isSubmitting || isCheckingFamily}
                     className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-8 py-4 text-xl font-semibold text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <SparkleIcon size={22} weight="fill" />
+                    <SparkleIcon size={25} weight="fill" />
                     <span>{isCheckingFamily ? "確認中..." : "プラン生成"}</span>
                   </button>
                 </div>

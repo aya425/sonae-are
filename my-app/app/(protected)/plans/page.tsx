@@ -138,7 +138,7 @@ export default function PlansPage() {
               href="/plan/new"
               className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#1E3A8A] px-5 py-3 text-xl font-semibold text-white hover:bg-blue-800"
             >
-              <SparkleIcon size={20} weight="fill" />
+              <SparkleIcon size={25} weight="fill" />
               <span>備えプランを作る</span>
             </Link>
           </div>

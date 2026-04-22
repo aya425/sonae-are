@@ -266,7 +266,7 @@ export default function DashboardPage() {
             href="/plan/new"
             className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] px-6 py-3 text-lg font-semibold text-white transition-colors hover:bg-blue-800"
           >
-            <SparkleIcon size={20} weight="fill" />
+            <SparkleIcon size={25} weight="fill" />
             <span>新しく備えプランを作る</span>
           </Link>
         </div>
