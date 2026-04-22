@@ -11,7 +11,7 @@ import {
   WarningIcon,
 } from "@phosphor-icons/react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type PlanCondition = {
   title: string;
@@ -42,6 +42,80 @@ type PlanItem = {
   reason: string;
 };
 
+type CustomSelectOption<T extends string | number> = {
+  value: T;
+  label: string;
+};
+
+type CustomSelectProps<T extends string | number> = {
+  label: string;
+  value: T;
+  options: readonly CustomSelectOption<T>[];
+  disabled?: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
+  onSelect: (value: T) => void;
+};
+
+function CustomSelect<T extends string | number>({
+  label,
+  value,
+  options,
+  disabled = false,
+  isOpen,
+  onToggle,
+  onSelect,
+}: CustomSelectProps<T>) {
+  const selectedLabel = options.find((option) => option.value === value)?.label ?? "選択";
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label={label}
+        onClick={onToggle}
+        disabled={disabled}
+        className="mt-2 w-full rounded-xl border border-black px-3 py-2 text-lg font-semibold text-gray-900 outline-none disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <span className="whitespace-nowrap">{selectedLabel}</span>
+          <span className="text-sm text-slate-700">▼</span>
+        </div>
+      </button>
+
+      {isOpen ? (
+        <div className="absolute left-0 right-0 z-30 mt-2 max-h-64 overflow-y-auto overflow-x-hidden rounded-xl border border-slate-300 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.16)]">
+          <div role="listbox" aria-label={label} className="py-1">
+            {options.map((option) => {
+              const isSelected = option.value === value;
+
+              return (
+                <button
+                  key={String(option.value)}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => onSelect(option.value)}
+                  className={`flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-base font-semibold transition-colors ${
+                    isSelected
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-slate-800 hover:bg-blue-50"
+                  }`}
+                >
+                  <span className="whitespace-nowrap leading-none">{option.label}</span>
+                  <span className="shrink-0">{isSelected ? "✓" : ""}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function PlanDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -67,6 +141,8 @@ export default function PlanDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
+  const [isDaysDropdownOpen, setIsDaysDropdownOpen] = useState(false);
+  const daysDropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const planId = params.id;
@@ -129,6 +205,30 @@ export default function PlanDetailPage() {
     fetchPlanDetail();
   }, [params.id]);
 
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+
+      if (!daysDropdownRef.current?.contains(target)) {
+        setIsDaysDropdownOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsDaysDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   const priorityPolicyLabel =
     plan.priorityPolicy === "minimum" ? "必要なものを優先する" : "いろいろバランスよくそろえる";
 
@@ -144,6 +244,7 @@ export default function PlanDetailPage() {
 
     setActionError("");
     setActionSuccess("");
+    setIsDaysDropdownOpen(false);
     setIsRecalculating(true);
 
     try {
@@ -215,6 +316,7 @@ export default function PlanDetailPage() {
 
     setActionError("");
     setActionSuccess("");
+    setIsDaysDropdownOpen(false);
     setIsSaving(true);
 
     try {
@@ -370,20 +472,27 @@ export default function PlanDetailPage() {
 
             <label className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
               <span className="block text-lg font-semibold text-slate-600">日数</span>
-              <select
-                value={editDays}
-                onChange={(e) => {
-                  setEditDays(Number(e.target.value) as 3 | 7 | 14);
-                  setIsEditing(true);
-                  setActionError("");
-                  setActionSuccess("");
-                }}
-                className="mt-2 w-full rounded-xl border border-black px-3 py-2 text-lg font-semibold text-gray-900 outline-none focus:border-black"
-              >
-                <option value={3}>3日</option>
-                <option value={7}>7日</option>
-                <option value={14}>14日</option>
-              </select>
+              <div ref={daysDropdownRef}>
+                <CustomSelect
+                  label="日数"
+                  value={editDays}
+                  options={[
+                    { value: 3, label: "3日" },
+                    { value: 7, label: "7日" },
+                    { value: 14, label: "14日" },
+                  ]}
+                  disabled={isSaving || isRecalculating}
+                  isOpen={isDaysDropdownOpen}
+                  onToggle={() => setIsDaysDropdownOpen((prev) => !prev)}
+                  onSelect={(value) => {
+                    setEditDays(value as 3 | 7 | 14);
+                    setIsEditing(true);
+                    setActionError("");
+                    setActionSuccess("");
+                    setIsDaysDropdownOpen(false);
+                  }}
+                />
+              </div>
             </label>
           </div>
         </div>

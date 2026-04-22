@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import { FloppyDiskIcon, TrashIcon, UserPlusIcon } from "@phosphor-icons/react";
 
@@ -91,6 +91,87 @@ type ApiResponse<T> = {
 type DeleteFamilyMemberResponse = {
   id: string;
 };
+
+type CustomSelectOption = {
+  value: string;
+  label: string;
+};
+
+type CustomSelectProps = {
+  label: string;
+  value: string;
+  placeholder?: string;
+  options: readonly CustomSelectOption[];
+  disabled?: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
+  onSelect: (value: string) => void;
+  buttonRef: RefObject<HTMLButtonElement | null>;
+};
+
+function CustomSelect({
+  label,
+  value,
+  placeholder = "選択",
+  options,
+  disabled = false,
+  isOpen,
+  onToggle,
+  onSelect,
+  buttonRef,
+}: CustomSelectProps) {
+  const selectedLabel = options.find((option) => option.value === value)?.label ?? placeholder;
+
+  return (
+    <div className="relative flex justify-center">
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label={label}
+        onClick={onToggle}
+        disabled={disabled}
+        className="w-[80%] rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-xl leading-normal text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <div className="flex items-center justify-center gap-3">
+          <span className={`whitespace-nowrap ${value ? "text-slate-900" : "text-slate-500"}`}>
+            {selectedLabel}
+          </span>
+          <span className="text-base text-slate-700">▼</span>
+        </div>
+      </button>
+
+      {isOpen ? (
+        <div className="absolute left-1/2 top-full z-30 mt-2 max-h-64 w-[80%] -translate-x-1/2 overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-300 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.16)]">
+          <div role="listbox" aria-label={label} className="py-1">
+            {options.map((option) => {
+              const isSelected = option.value === value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => onSelect(option.value)}
+                  className={`flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-lg font-semibold transition-colors ${
+                    isSelected
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-slate-800 hover:bg-blue-50"
+                  }`}
+                >
+                  <span className="whitespace-nowrap leading-none">{option.label}</span>
+                  <span className="shrink-0">{isSelected ? "✓" : ""}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function createLocalId() {
   return crypto.randomUUID();
@@ -245,6 +326,10 @@ export default function FamilyPage() {
   const [isAllergenModalOpen, setIsAllergenModalOpen] = useState(false);
   const [activeMemberIndex, setActiveMemberIndex] = useState<number | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [openRoleDropdownIndex, setOpenRoleDropdownIndex] = useState<number | null>(null);
+  const [openAgeDropdownIndex, setOpenAgeDropdownIndex] = useState<number | null>(null);
+  const roleButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const ageButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const openAllergenModal = (index: number) => {
     setActiveMemberIndex(index);
     setIsAllergenModalOpen(true);
@@ -302,8 +387,42 @@ export default function FamilyPage() {
     };
   }, [isAllergenModalOpen]);
 
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+
+      const clickedRoleButton = roleButtonRefs.current.some((button) => button?.contains(target));
+      const clickedAgeButton = ageButtonRefs.current.some((button) => button?.contains(target));
+
+      if (!clickedRoleButton) {
+        setOpenRoleDropdownIndex(null);
+      }
+
+      if (!clickedAgeButton) {
+        setOpenAgeDropdownIndex(null);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpenRoleDropdownIndex(null);
+        setOpenAgeDropdownIndex(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   const addMember = () => {
     setMembers((prev) => [...prev, createEmptyMember()]);
+    setOpenRoleDropdownIndex(null);
+    setOpenAgeDropdownIndex(null);
   };
 
   const updateMemberField = (
@@ -382,6 +501,8 @@ export default function FamilyPage() {
       } else {
         setMembers(nextMembers);
       }
+      setOpenRoleDropdownIndex(null);
+      setOpenAgeDropdownIndex(null);
     } catch (error) {
       console.error(error);
       setErrorMessage(error instanceof Error ? error.message : "家族情報の削除に失敗しました。");
@@ -488,38 +609,62 @@ export default function FamilyPage() {
                       <label className="mb-2 block text-xl font-semibold text-slate-800">
                         続柄
                       </label>
-                      <select
-                        className="w-[80%] rounded-2xl border border-slate-300 bg-white pl-8 pr-3 py-3 text-center text-xl leading-normal"
-                        value={member.role}
-                        onChange={(e) => updateMemberField(index, "role", e.target.value)}
-                        disabled={isFormDisabled || isDeleting}
-                      >
-                        <option value="">選択</option>
-                        {RELATION_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex justify-center">
+                        <CustomSelect
+                          label="続柄"
+                          value={member.role}
+                          options={RELATION_OPTIONS}
+                          disabled={isFormDisabled || isDeleting}
+                          isOpen={openRoleDropdownIndex === index}
+                          onToggle={() => {
+                            setOpenAgeDropdownIndex(null);
+                            setOpenRoleDropdownIndex((prev) => (prev === index ? null : index));
+                          }}
+                          onSelect={(value) => {
+                            updateMemberField(index, "role", value);
+                            setOpenRoleDropdownIndex(null);
+                          }}
+                          buttonRef={{
+                            get current() {
+                              return roleButtonRefs.current[index] ?? null;
+                            },
+                            set current(value: HTMLButtonElement | null) {
+                              roleButtonRefs.current[index] = value;
+                            },
+                          }}
+                        />
+                      </div>
                     </div>
 
                     <div>
                       <label className="mb-2 block text-xl font-semibold text-slate-800">
                         年齢区分
                       </label>
-                      <select
-                        className="w-[80%] rounded-2xl border border-slate-300 bg-white pl-8 pr-3 py-3 text-center text-xl leading-normal"
-                        value={member.ageGroup}
-                        onChange={(e) => updateMemberField(index, "ageGroup", e.target.value)}
-                        disabled={isFormDisabled || isDeleting}
-                      >
-                        <option value="">選択</option>
-                        {AGE_GROUP_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex justify-center">
+                        <CustomSelect
+                          label="年齢区分"
+                          value={member.ageGroup}
+                          options={AGE_GROUP_OPTIONS}
+                          disabled={isFormDisabled || isDeleting}
+                          isOpen={openAgeDropdownIndex === index}
+                          onToggle={() => {
+                            setOpenRoleDropdownIndex(null);
+                            setOpenAgeDropdownIndex((prev) => (prev === index ? null : index));
+                          }}
+                          onSelect={(value) => {
+                            updateMemberField(index, "ageGroup", value);
+                            setOpenAgeDropdownIndex(null);
+                          }}
+                          buttonRef={{
+                            get current() {
+                              return ageButtonRefs.current[index] ?? null;
+                            },
+                            set current(value: HTMLButtonElement | null) {
+                              ageButtonRefs.current[index] = value;
+                            },
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
 

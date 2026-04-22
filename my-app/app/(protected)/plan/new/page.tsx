@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { SparkleIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from "react";
 
 const DAYS_OPTIONS = [
   { value: 3, label: "3日（まずはこれ）" },
@@ -139,6 +139,80 @@ type FamilyMembersResponse = {
 
 type HintModalKey = keyof typeof HINT_MODAL_CONTENT;
 
+type CustomSelectOption<T extends string | number> = {
+  value: T;
+  label: string;
+};
+
+type CustomSelectProps<T extends string | number> = {
+  label: string;
+  value: T;
+  options: readonly CustomSelectOption<T>[];
+  disabled?: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
+  onSelect: (value: T) => void;
+};
+
+function CustomSelect<T extends string | number>({
+  label,
+  value,
+  options,
+  disabled = false,
+  isOpen,
+  onToggle,
+  onSelect,
+}: CustomSelectProps<T>) {
+  const selectedLabel = options.find((option) => option.value === value)?.label ?? "選択";
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label={label}
+        onClick={onToggle}
+        disabled={disabled}
+        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <div className="flex items-center justify-center gap-3">
+          <span className="whitespace-nowrap">{selectedLabel}</span>
+          <span className="text-sm text-slate-700">▼</span>
+        </div>
+      </button>
+
+      {isOpen ? (
+        <div className="absolute left-0 right-0 z-30 mt-2 max-h-64 overflow-y-auto overflow-x-hidden rounded-xl border border-slate-300 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.16)]">
+          <div role="listbox" aria-label={label} className="py-1">
+            {options.map((option) => {
+              const isSelected = option.value === value;
+
+              return (
+                <button
+                  key={String(option.value)}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => onSelect(option.value)}
+                  className={`flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-base font-semibold transition-colors ${
+                    isSelected
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-slate-800 hover:bg-blue-50"
+                  }`}
+                >
+                  <span className="whitespace-nowrap leading-none">{option.label}</span>
+                  <span className="shrink-0">{isSelected ? "✓" : ""}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function PlanNewPage() {
   const router = useRouter();
 
@@ -155,6 +229,8 @@ export default function PlanNewPage() {
   const [isCheckingFamily, setIsCheckingFamily] = useState(false);
   const [openHintModal, setOpenHintModal] = useState<HintModalKey | null>(null);
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
+  const [openDropdown, setOpenDropdown] = useState<HintModalKey | null>(null);
+  const dropdownContainerRef = useRef<HTMLDivElement | null>(null);
 
   const selectedDaysHelpText = DAYS_HELP_TEXT[form.days];
   const selectedScopeHelpText = form.includeDailyItems
@@ -203,10 +279,35 @@ export default function PlanNewPage() {
     return () => window.clearInterval(intervalId);
   }, [isSubmitting]);
 
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+
+      if (!dropdownContainerRef.current?.contains(target)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     e.preventDefault();
     setErrorMessage("");
     setNeedsFamilyRegistration(false);
+    setOpenDropdown(null);
 
     if (isSubmitting || isCheckingFamily) return;
 
@@ -350,13 +451,16 @@ export default function PlanNewPage() {
                   条件を選びましょう
                 </h2>
 
-                <div className="mt-2 space-y-2">
+                <div ref={dropdownContainerRef} className="mt-2 space-y-2">
                   <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
                     <div className="mb-2 flex items-center justify-center gap-2">
                       <label className="block text-xl font-semibold text-blue-900">想定日数</label>
                       <button
                         type="button"
-                        onClick={() => setOpenHintModal("days")}
+                        onClick={() => {
+                          setOpenDropdown(null);
+                          setOpenHintModal("days");
+                        }}
                         className="flex h-7 w-7 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-100"
                         aria-label="想定日数のヒントを表示"
                       >
@@ -368,23 +472,21 @@ export default function PlanNewPage() {
                       {selectedDaysHelpText}
                     </p>
 
-                    <select
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold text-gray-900"
+                    <CustomSelect
+                      label="想定日数"
                       value={form.days}
-                      onChange={(e) =>
+                      options={DAYS_OPTIONS}
+                      disabled={isSubmitting || isCheckingFamily}
+                      isOpen={openDropdown === "days"}
+                      onToggle={() => setOpenDropdown((prev) => (prev === "days" ? null : "days"))}
+                      onSelect={(value) => {
                         setForm((prev) => ({
                           ...prev,
-                          days: Number(e.target.value) as 3 | 7 | 14,
-                        }))
-                      }
-                      disabled={isSubmitting || isCheckingFamily}
-                    >
-                      {DAYS_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                          days: value,
+                        }));
+                        setOpenDropdown(null);
+                      }}
+                    />
                   </div>
 
                   <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
@@ -392,7 +494,10 @@ export default function PlanNewPage() {
                       <label className="block text-xl font-semibold text-blue-900">候補範囲</label>
                       <button
                         type="button"
-                        onClick={() => setOpenHintModal("scope")}
+                        onClick={() => {
+                          setOpenDropdown(null);
+                          setOpenHintModal("scope");
+                        }}
                         className="flex h-7 w-7 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-100"
                         aria-label="候補範囲のヒントを表示"
                       >
@@ -404,23 +509,26 @@ export default function PlanNewPage() {
                       {selectedScopeHelpText}
                     </p>
 
-                    <select
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold text-gray-900"
+                    <CustomSelect
+                      label="候補範囲"
                       value={String(form.includeDailyItems)}
-                      onChange={(e) =>
+                      options={SCOPE_OPTIONS.map((option) => ({
+                        value: String(option.value),
+                        label: option.label,
+                      }))}
+                      disabled={isSubmitting || isCheckingFamily}
+                      isOpen={openDropdown === "scope"}
+                      onToggle={() =>
+                        setOpenDropdown((prev) => (prev === "scope" ? null : "scope"))
+                      }
+                      onSelect={(value) => {
                         setForm((prev) => ({
                           ...prev,
-                          includeDailyItems: e.target.value === "true",
-                        }))
-                      }
-                      disabled={isSubmitting || isCheckingFamily}
-                    >
-                      {SCOPE_OPTIONS.map((option) => (
-                        <option key={String(option.value)} value={String(option.value)}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                          includeDailyItems: value === "true",
+                        }));
+                        setOpenDropdown(null);
+                      }}
+                    />
                   </div>
 
                   <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
@@ -428,7 +536,10 @@ export default function PlanNewPage() {
                       <label className="block text-xl font-semibold text-blue-900">優先方針</label>
                       <button
                         type="button"
-                        onClick={() => setOpenHintModal("priority")}
+                        onClick={() => {
+                          setOpenDropdown(null);
+                          setOpenHintModal("priority");
+                        }}
                         className="flex h-7 w-7 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-100"
                         aria-label="優先方針のヒントを表示"
                       >
@@ -440,23 +551,23 @@ export default function PlanNewPage() {
                       {selectedPriorityHelpText}
                     </p>
 
-                    <select
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-lg font-semibold whitespace-pre-line text-gray-900"
+                    <CustomSelect
+                      label="優先方針"
                       value={form.priorityPolicy}
-                      onChange={(e) =>
+                      options={PRIORITY_OPTIONS}
+                      disabled={isSubmitting || isCheckingFamily}
+                      isOpen={openDropdown === "priority"}
+                      onToggle={() =>
+                        setOpenDropdown((prev) => (prev === "priority" ? null : "priority"))
+                      }
+                      onSelect={(value) => {
                         setForm((prev) => ({
                           ...prev,
-                          priorityPolicy: e.target.value as "minimum" | "balanced",
-                        }))
-                      }
-                      disabled={isSubmitting || isCheckingFamily}
-                    >
-                      {PRIORITY_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                          priorityPolicy: value,
+                        }));
+                        setOpenDropdown(null);
+                      }}
+                    />
                   </div>
                 </div>
 
