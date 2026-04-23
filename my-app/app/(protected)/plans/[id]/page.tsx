@@ -134,7 +134,7 @@ export default function PlanDetailPage() {
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [editTitle, setEditTitle] = useState("");
-  const [editFamilyMemberCount, setEditFamilyMemberCount] = useState(0);
+  const [editFamilyMemberCountInput, setEditFamilyMemberCountInput] = useState("0");
   const [editDays, setEditDays] = useState<3 | 7 | 14>(3);
   const [isEditing, setIsEditing] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
@@ -191,7 +191,7 @@ export default function PlanDetailPage() {
         });
 
         setEditTitle(fetchedPlan.title);
-        setEditFamilyMemberCount(fetchedPlan.familyMemberCount);
+        setEditFamilyMemberCountInput(String(fetchedPlan.familyMemberCount));
         setEditDays(fetchedPlan.days);
 
         setPlanItems(fetchedPlan.items);
@@ -242,6 +242,13 @@ export default function PlanDetailPage() {
       return;
     }
 
+    const parsedFamilyMemberCount = Number(editFamilyMemberCountInput);
+
+    if (!Number.isInteger(parsedFamilyMemberCount) || parsedFamilyMemberCount < 1) {
+      setActionError("人数は1以上の整数で入力してください。");
+      return;
+    }
+
     setActionError("");
     setActionSuccess("");
     setIsDaysDropdownOpen(false);
@@ -255,7 +262,7 @@ export default function PlanDetailPage() {
         },
         credentials: "include",
         body: JSON.stringify({
-          familyMemberCount: editFamilyMemberCount,
+          familyMemberCount: parsedFamilyMemberCount,
           days: editDays,
         }),
       });
@@ -284,6 +291,7 @@ export default function PlanDetailPage() {
         totalCost: recalculated.summary.totalEstimatedCost,
         annualCost: recalculated.summary.annualCost,
       }));
+      setEditFamilyMemberCountInput(String(recalculated.summary.familyMemberCount));
       setPlanItems(recalculated.items);
       setIsEditing(true);
     } catch (error) {
@@ -299,6 +307,13 @@ export default function PlanDetailPage() {
 
     if (!planId) {
       setActionError("保存対象のプランIDが取得できませんでした。");
+      return;
+    }
+
+    const parsedFamilyMemberCount = Number(editFamilyMemberCountInput);
+
+    if (!Number.isInteger(parsedFamilyMemberCount) || parsedFamilyMemberCount < 1) {
+      setActionError("人数は1以上の整数で入力してください。");
       return;
     }
 
@@ -328,7 +343,7 @@ export default function PlanDetailPage() {
         credentials: "include",
         body: JSON.stringify({
           title: editTitle,
-          familyMemberCount: editFamilyMemberCount,
+          familyMemberCount: parsedFamilyMemberCount,
           days: editDays,
           totalEstimatedCost: plan.totalCost,
           annualCost: plan.annualCost,
@@ -345,9 +360,10 @@ export default function PlanDetailPage() {
       setPlan((prev) => ({
         ...prev,
         title: editTitle,
-        familyMemberCount: editFamilyMemberCount,
+        familyMemberCount: parsedFamilyMemberCount,
         days: editDays,
       }));
+      setEditFamilyMemberCountInput(String(parsedFamilyMemberCount));
       setIsEditing(false);
       setActionSuccess("保存完了");
     } catch (error) {
@@ -459,9 +475,10 @@ export default function PlanDetailPage() {
               <input
                 type="number"
                 min={1}
-                value={editFamilyMemberCount}
+                inputMode="numeric"
+                value={editFamilyMemberCountInput}
                 onChange={(e) => {
-                  setEditFamilyMemberCount(Number(e.target.value));
+                  setEditFamilyMemberCountInput(e.target.value);
                   setIsEditing(true);
                   setActionError("");
                   setActionSuccess("");
