@@ -10,7 +10,7 @@ import {
   WalletIcon,
   BowlFoodIcon,
 } from "@phosphor-icons/react";
-import type { HomeResponse } from "@/lib/types/home";
+import type { HomeResponse } from "@/src/types/home";
 
 function DashboardCard({
   title,

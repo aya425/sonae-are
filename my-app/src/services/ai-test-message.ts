@@ -1,4 +1,4 @@
-import { openai } from "@/lib/openai";
+import { openai } from "@/src/lib/openai";
 
 type GenerateTestMessageInput = {
   userMessage: string;
