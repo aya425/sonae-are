@@ -1,10 +1,10 @@
-import type { ProductResponseItem, ProductType } from "@/lib/types/product";
+import type { ProductResponseItem, ProductType } from "@/src/types/product";
 import type {
   GeneratePlanRequest,
   GeneratePlanSummary,
   GeneratedPlanItem,
   PriorityPolicy,
-} from "@/lib/types/plan";
+} from "@/src/types/plan";
 
 type GeneratePlanInput = GeneratePlanRequest & {
   familyMemberCount: number;

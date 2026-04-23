@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { sendExpiryNotificationMail } from "@/lib/mail";
-import { logger } from "@/lib/logger";
+import { sendExpiryNotificationMail } from "@/src/lib/mail";
+import { logger } from "@/src/lib/logger";
 
 export const runtime = "nodejs";
 

@@ -1,4 +1,4 @@
-import type { ProductResponseItem } from "@/lib/types/product";
+import type { ProductResponseItem } from "@/src/types/product";
 
 export type PlanDays = 3 | 7 | 14;
 export type PriorityPolicy = "minimum" | "balanced";

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, type ReactNode } from "react";
 import { House, Users, Sparkles, FolderKanban, Package } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/src/lib/supabase/client";
 
 type ProtectedShellProps = {
   children: ReactNode;

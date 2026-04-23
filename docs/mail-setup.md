@@ -52,7 +52,7 @@ SMTP_PORT=1025
 補足:
 
 - Docker Compose では `mailhog` サービス名で名前解決されます
-- `my-app/lib/mail.ts` は `MAIL_PROVIDER=smtp` のとき SMTP 経由で送信します
+- `my-app/src/lib/mail.ts` は `MAIL_PROVIDER=smtp` のとき SMTP 経由で送信します
 
 ### 2. Docker Compose で起動
 

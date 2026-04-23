@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import type { HomeResponse } from "@/lib/types/home";
-import { logger } from "@/lib/logger";
-import { getRedis } from "@/lib/redis";
-import { createClient } from "@/lib/supabase/server";
+import type { HomeResponse } from "@/src/types/home";
+import { logger } from "@/src/lib/logger";
+import { getRedis } from "@/src/lib/redis";
+import { createClient } from "@/src/lib/supabase/server";
 
 export async function GET() {
   const supabase = await createClient();

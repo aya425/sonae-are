@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { openai } from "@/lib/openai";
-import { generatePlan } from "@/lib/services/plan-generator";
-import { logger } from "@/lib/logger";
-import type { ProductType } from "@/lib/types/product";
-import type { GeneratePlanRequest, PlanDays, PriorityPolicy } from "@/lib/types/plan";
+import { openai } from "@/src/lib/openai";
+import { generatePlan } from "@/src/services/plan-generator";
+import { logger } from "@/src/lib/logger";
+import type { ProductType } from "@/src/types/product";
+import type { GeneratePlanRequest, PlanDays, PriorityPolicy } from "@/src/types/plan";
 
 type FamilyMemberRow = {
   id: string;
