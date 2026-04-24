@@ -55,7 +55,7 @@
 - 備蓄商品の登録 / 一覧表示 / 削除
 - 備蓄商品の編集
 - 初期費用・年間維持コスト・備蓄コスト目安の表示
-- 賞味期限30日前のメール通知
+- 賞味期限30日前のメール通知（バッチ実行による）
 - 通知メールから備蓄品一覧画面への導線
 - 有料プラン決済と保存件数制御
 
@@ -98,9 +98,9 @@
 - `/family` 家族情報登録 / 編集
 - `/plan/new` 備えプラン作成
 - `/plans` 保存済みプラン一覧
-- `/plan/temp` 生成プラン確認
+- `/plans/temp` 生成プラン確認
 - `/plans/:id` 備えプラン詳細
-- `/inventory` 備蓄品一覧
+- `/stock-items` 備蓄品一覧
 - `/billing` 料金プラン
 - `/billing/success` 決済完了
 
@@ -122,20 +122,86 @@
 
 ## セットアップ手順
 
-リポジトリをクローンした後、ルートディレクトリでコンテナをビルドして起動します。
+### 1. リポジトリをクローン
 
 ```bash
 git clone https://github.com/ms-engineer-bc26-02/sonae-are.git
 cd sonae-are
+```
+
+### 2. 環境変数の設定
+
+本アプリは、外部サービス（Supabase / Stripe / OpenAI / Resend など）を利用しているため、
+起動前に環境変数の設定が必要です。
+
+#### ① .env を作成（ルート）
+
+```bash
+cp .env.example .env
+```
+
+#### ② `my-app/.env.local` を作成
+
+```bash
+touch my-app/.env.local
+```
+
+その後、ルートの .env.example を参考にして、必要な環境変数を手動で設定してください。
+
+### 3. 必要な環境変数
+
+最低限、以下の外部サービスのキーが必要です。
+
+#### Supabase
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+#### Stripe
+
+- `STRIPE_SECRET_KEY`
+- `STRIPE_PRICE_ID_PREMIUM`
+- `STRIPE_WEBHOOK_SECRET`
+
+#### OpenAI
+
+- `OPENAI_API_KEY`
+
+#### メール（Resend）
+
+- `RESEND_API_KEY`
+- `MAIL_FROM` ← 通知メール送信に必須
+
+#### 通知バッチ
+
+- `CRON_SECRET` ← バッチAPI実行に必須
+
+#### アプリ設定
+
+- `NEXT_PUBLIC_APP_URL`
+
+※ `MAIL_FROM` が未設定の場合、通知メールは送信されません  
+※ `CRON_SECRET` が未設定の場合、通知バッチAPIは実行できません
+
+### 4. Docker起動
+
+```bash
 docker compose build
 docker compose up
 ```
 
-起動後は、以下にアクセスするとローカル環境でアプリを利用できます。
+### 5. アクセス
 
-```text
+```bash
 http://localhost:3000
 ```
+
+### 補足
+
+- .env / .env.local は Git に含めないでください
+- 外部サービスの設定が不足している場合、一部機能（AI・決済・通知など）は動作しません
+- Stripe Webhook はローカルでは stripe listen 等で別途設定が必要です
 
 ---
 
@@ -144,17 +210,18 @@ http://localhost:3000
 ```text
 sonae-are/
 ├── README.md
+├── docker-compose.yml
+├── Dockerfile
+├── docs/
 └── my-app/
     ├── app/
-    ├── docs/
+    │   ├── (protected)/
+    │   │   └── stock-items/
+    │   └── api/
     ├── src/
     ├── public/
-    ├── package.json
-    └── README.md
+    └── package.json
 ```
-
-- `README.md`: プロジェクト全体の説明
-- `my-app/`: アプリ本体
 
 ---
 
@@ -205,3 +272,19 @@ MVPでは、単体テストコードの実装に加えて、主要導線を中�
 - AIによるプラン生成速度の向上
 - 他のユーザーの備えプランを参照できる機能
 - 市町村での活用を見据えた展開
+
+## 通知バッチについて
+
+賞味期限30日前のメール通知は、内部バッチAPIとして実装されています。
+
+- エンドポイント: `POST /api/batch/expire-notification`
+- 認証: Bearer トークン（CRON_SECRET）
+- 実行単位: 1日1回想定
+- 対象: 賞味期限30日前の備蓄商品
+
+### 実行方法（ローカル）
+
+```bash
+curl -X POST http://localhost:3000/api/batch/expire-notification \
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
+```
