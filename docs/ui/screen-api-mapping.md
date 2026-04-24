@@ -17,7 +17,7 @@
 | ------ | ------------------------------------------------------------------------------------ |
 | UI-002 | POST /auth/signup                                                                    |
 | UI-003 | POST /auth/login                                                                     |
-| UI-004 | GET /dashboard                                                                       |
+| UI-004 | GET /home                                                                            |
 | UI-005 | GET /families, POST /families                                                        |
 | UI-006 | POST /plans/generate                                                                 |
 | UI-007 | GET /plans/:id, POST /plans/:id/recalculate, PATCH /plans/:id, POST /plans           |
@@ -68,11 +68,11 @@ POST /auth/login
 
 ---
 
-## UI-004 ダッシュボード
+## UI-004 ホーム
 
 ### API
 
-GET /dashboard
+GET /home
 
 ### 必要データ
 
