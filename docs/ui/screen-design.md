@@ -18,7 +18,7 @@
 | UI-001 | トップ画面          | /                |
 | UI-002 | 会員登録画面        | /signup          |
 | UI-003 | ログイン画面        | /login           |
-| UI-004 | ダッシュボード      | /dashboard       |
+| UI-004 | ホーム              | /home            |
 | UI-005 | 家族情報登録 / 編集 | /family          |
 | UI-006 | 備えプラン作成      | /plan/new        |
 | UI-007 | 備えプラン詳細      | /plans/:id       |
@@ -112,7 +112,7 @@ https://xxxxx（Figma URL）
 
 ---
 
-### UI-004 ダッシュボード（/dashboard）
+### UI-004 ホーム（/home）
 
 #### 目的
 
