@@ -23,15 +23,15 @@
 ### 2.2 設計前提
 
 - 認証は Supabase Auth を利用する
-- アプリ側ユーザー情報は `users` に持つ
+- ログイン / 会員登録 / ログアウトは画面側から Supabase client を直接利用する
+- API設計書では、主に `my-app/app/api` 配下の Route Handlers を対象にする
 - 家族情報は `family_members` と `member_allergens` で管理する
 - 商品は固定商品マスタ `products` を参照する
 - 備えプランは「生成」と「保存」を分離する
 - 保存済み備えプランのみDBに保持する
-- 備えプラン編集機能は当初MVP対象外として整理していたが、追加機能として限定実装する
-  - 編集可能項目は plans.title / plans.family_member_count / plans.days
-  - 再計算対象は plan_items.quantity のみを追記する。
-- 備蓄商品編集機能はMVP対象外
+- 備えプラン編集機能は追加機能として限定実装する
+  - 編集可能項目は `title` / `familyMemberCount` / `days` / `items[].quantity`
+- 備蓄商品編集機能は実装済みとする
 - 備蓄商品は商品マスタから選択して登録できるが、自由入力商品も登録可能とする
 - そのため `stock_items.product_id` は NULL 許容、`product_name` は必須とする
 - `purchased_at` はユーザー入力ではなく、備蓄登録日時を自動保存する
@@ -39,7 +39,7 @@
 - 各備蓄商品に対する30日前通知は1回のみ
 - 同日に通知対象となった商品はユーザー単位で1通のメールにまとめて送信する
 - 有料機能の差分は保存済み備えプラン件数制限の解除のみとする
-- 年間維持コスト、備蓄コスト目安はDBに保存せず、表示時にアプリ側で算出する
+- `annual_cost` はプラン保存時に保存し、ホーム表示でも利用する
 
 ---
 
@@ -56,9 +56,10 @@
 - アレルゲンは `member_allergens`
 - APIでもメンバー単位で扱う
 
-### 3.3 ダッシュボードは集約APIとする
+### 3.3 ホームは集約APIとする
 
-- ダッシュボード画面で必要な情報は `GET /dashboard` でまとめて返す
+- ホーム画面で必要な情報は `GET /home` でまとめて返す
+- `GET /home` は Redis キャッシュの対象とする
 
 ### 3.4 商品はマスタ参照とする
 
@@ -67,27 +68,29 @@
 
 ### 3.5 通知はバッチ実行とする
 
-- 通知実行は `POST /notifications/expiry/run`
+- 通知実行は `POST /batch/expire-notification`
 - cron / バッチ基盤から実行する
+- 通知APIは `Bearer CRON_SECRET` で保護する
 - 通知メールの遷移先は備蓄品一覧画面とする
 
 ---
 
 ## 4. 認証 / 認可
 
-| 区分     | 内容                     |
-| -------- | ------------------------ |
-| 認証方式 | Bearer JWT               |
-| 認証基盤 | Supabase Auth            |
-| 必須API  | Auth系以外すべて         |
-| Webhook  | Stripe署名検証を行う     |
-| 通知API  | 内部実行用キーで保護する |
+| 区分     | 内容                                   |
+| -------- | -------------------------------------- |
+| 認証方式 | Supabase Auth セッション               |
+| 認証基盤 | Supabase Auth                          |
+| 必須API  | `products` と内部テスト系を除く主要API |
+| Webhook  | Stripe署名検証を行う                   |
+| 通知API  | 内部実行用キーで保護する               |
 
 ### 補足
 
 - ログインユーザーに紐づくデータのみ操作可能とする
 - `family_members`、`member_allergens`、`plans`、`plan_items`、`stock_items`、`subscriptions` は本人データのみ取得・操作可能とする
-- `products`、`plans_master` は認証済みユーザー全員が参照可能なマスタとする
+- `products` は現行実装では未認証でも取得可能
+- `plans_master` はサーバー側処理から参照する
 
 ---
 
@@ -116,33 +119,28 @@
   "error": {
     "code": "ERROR_CODE",
     "message": "エラーメッセージ",
-    "details": []
+    "details": null
   }
 }
 ```
 
 ### 5.3 ステータスコード
 
-| コード | 意味           |
-| ------ | -------------- |
-| 200    | 成功           |
-| 201    | 作成成功       |
-| 400    | 入力エラー     |
-| 401    | 未認証         |
-| 403    | 権限なし       |
-| 404    | データなし     |
-| 409    | 競合           |
-| 422    | 業務ルール違反 |
-| 500    | サーバエラー   |
+| コード | 意味                      |
+| ------ | ------------------------- |
+| 200    | 成功                      |
+| 201    | 作成成功                  |
+| 400    | 入力エラー                |
+| 401    | 未認証                    |
+| 403    | 業務ルール違反 / 実行不可 |
+| 404    | データなし                |
+| 500    | サーバエラー              |
 
-### 5.4 422 の代表例
+### 5.4 実装上の補足
 
-- 無料プランで保存済みプラン件数の上限に達している
-- 家族情報が未登録で備えプラン生成できない
-- 備えプラン保存時に `items` が0件
-- 備蓄登録時に `quantity <= 0`
-- 備蓄登録時に `unit_price < 0`
-- 備蓄登録時に `expires_at <= purchased_at`
+- `400`: 必須項目不足、形式不正、数量不正、日付不正など
+- `403`: 無料プラン保存件数上限到達など
+- 一部の旧実装APIでは `message` が英語、`details` が省略される場合がある
 
 ---
 
@@ -150,13 +148,11 @@
 
 | カテゴリ      | メソッド | エンドポイント                | 概要                           |
 | ------------- | -------- | ----------------------------- | ------------------------------ |
-| Auth          | POST     | /auth/signup                  | ユーザー登録                   |
-| Auth          | POST     | /auth/login                   | ログイン                       |
-| Auth          | POST     | /auth/logout                  | ログアウト                     |
 | Me            | GET      | /me                           | 自分情報取得                   |
 | Family        | GET      | /family-members               | 家族一覧取得                   |
 | Family        | POST     | /family-members               | 家族メンバー登録               |
 | Family        | PATCH    | /family-members/:id           | 家族メンバー更新               |
+| Family        | DELETE   | /family-members/:id           | 家族メンバー削除               |
 | Family        | PUT      | /family-members/:id/allergens | アレルゲン一覧更新             |
 | Plans         | POST     | /plans/generate               | 備えプラン生成                 |
 | Plans         | GET      | /plans                        | 保存済みプラン一覧取得         |
@@ -166,96 +162,21 @@
 | Plans         | POST     | /plans                        | 備えプラン保存                 |
 | Plans         | DELETE   | /plans/:id                    | 保存済みプラン削除             |
 | Products      | GET      | /products                     | 商品一覧取得                   |
-| Products      | GET      | /products/:id                 | 商品詳細取得                   |
 | StockItems    | GET      | /stock-items                  | 備蓄一覧取得                   |
 | StockItems    | POST     | /stock-items                  | 備蓄登録                       |
+| StockItems    | PATCH    | /stock-items/:id              | 備蓄更新                       |
 | StockItems    | DELETE   | /stock-items/:id              | 備蓄削除                       |
-| Dashboard     | GET      | /dashboard                    | ダッシュボード取得             |
+| Home          | GET      | /home                         | ホーム集約情報取得             |
 | Payments      | POST     | /payments/checkout            | Stripe Checkout セッション作成 |
+| Payments      | POST     | /payments/cancel              | Stripe定期課金の解約予約       |
 | Payments      | POST     | /payments/webhook             | Stripe Webhook受信             |
-| Notifications | POST     | /notifications/expiry/run     | 賞味期限通知実行               |
+| Notifications | POST     | /batch/expire-notification    | 賞味期限通知実行               |
 
 ---
 
 ## 7. API詳細
 
-### 7.1 Auth
-
-#### POST /auth/signup
-
-##### 用途
-
-ユーザー登録を行う。
-
-##### Request
-
-```json
-{
-  "email": "test@example.com",
-  "password": "password123",
-  "display_name": "山田花子"
-}
-```
-
-##### Response
-
-```json
-{
-  "data": {
-    "user_id": "uuid"
-  },
-  "error": null
-}
-```
-
----
-
-#### POST /auth/login
-
-##### 用途
-
-ユーザーログインを行う。
-
-##### Request
-
-```json
-{
-  "email": "test@example.com",
-  "password": "password123"
-}
-```
-
-##### Response
-
-```json
-{
-  "data": {
-    "access_token": "jwt"
-  },
-  "error": null
-}
-```
-
----
-
-#### POST /auth/logout
-
-##### 用途
-
-ログアウトを行う。
-
-##### Response
-
-```json
-{
-  "data": {
-    "success": true
-  },
-  "error": null
-}
-```
-
----
+### 7.1 Me
 
 #### GET /me
 
@@ -268,15 +189,15 @@
 ```json
 {
   "data": {
-    "user": {
-      "id": "uuid",
-      "display_name": "山田花子"
-    },
+    "id": "uuid",
+    "email": "user@example.com",
+    "planCode": "free",
+    "isPremium": false,
     "subscription": {
-      "plan_code": "free",
-      "plan_name": "無料プラン",
-      "status": "active",
-      "max_saved_plans": 1
+      "planCode": "free",
+      "status": null,
+      "currentPeriodEnd": null,
+      "cancelAtPeriodEnd": false
     }
   },
   "error": null
@@ -297,29 +218,20 @@
 
 ```json
 {
-  "data": {
-    "members": [
-      {
-        "id": "uuid-parent",
-        "role": "parent",
-        "age_group": "adult",
-        "notes": "保護者",
-        "allergens": []
-      },
-      {
-        "id": "uuid-child",
-        "role": "child",
-        "age_group": "child",
-        "notes": "小学生",
-        "allergens": ["egg", "milk"]
-      }
-    ]
-  },
+  "data": [
+    {
+      "id": "uuid-parent",
+      "role": "母",
+      "age_group": "adult",
+      "notes": "",
+      "created_at": "2026-04-09T10:00:00.000Z",
+      "updated_at": "2026-04-09T10:00:00.000Z",
+      "allergens": ["小麦", "乳"]
+    }
+  ],
   "error": null
 }
 ```
-
----
 
 #### POST /family-members
 
@@ -331,10 +243,9 @@
 
 ```json
 {
-  "role": "child",
-  "age_group": "child",
-  "notes": "小学生",
-  "allergens": ["egg", "milk"]
+  "role": "母",
+  "age_group": "adult",
+  "notes": ""
 }
 ```
 
@@ -344,13 +255,16 @@
 {
   "data": {
     "id": "uuid",
-    "created": true
+    "role": "母",
+    "age_group": "adult",
+    "notes": "",
+    "created_at": "2026-04-09T10:00:00.000Z",
+    "updated_at": "2026-04-09T10:00:00.000Z",
+    "allergens": []
   },
   "error": null
 }
 ```
-
----
 
 #### PATCH /family-members/:id
 
@@ -362,7 +276,7 @@
 
 ```json
 {
-  "role": "child",
+  "role": "子ども",
   "age_group": "child",
   "notes": "中学生"
 }
@@ -373,13 +287,33 @@
 ```json
 {
   "data": {
-    "updated": true
+    "id": "uuid",
+    "role": "子ども",
+    "age_group": "child",
+    "notes": "中学生",
+    "created_at": "2026-04-09T10:00:00.000Z",
+    "updated_at": "2026-04-10T10:00:00.000Z"
   },
   "error": null
 }
 ```
 
----
+#### DELETE /family-members/:id
+
+##### 用途
+
+家族メンバーを削除する。
+
+##### Response
+
+```json
+{
+  "data": {
+    "id": "uuid"
+  },
+  "error": null
+}
+```
 
 #### PUT /family-members/:id/allergens
 
@@ -391,7 +325,7 @@
 
 ```json
 {
-  "allergens": ["egg", "wheat"]
+  "allergens": ["卵", "小麦"]
 }
 ```
 
@@ -400,7 +334,8 @@
 ```json
 {
   "data": {
-    "updated": true
+    "family_member_id": "uuid",
+    "allergens": ["卵", "小麦"]
   },
   "error": null
 }
@@ -416,29 +351,22 @@
 
 商品一覧を取得する。
 
-##### Query Parameters
-
-- `category`: 主食 / おかず / おやつ / 飲料
-- `product_type`: `emergency_food` / `daily_item`
-- `is_free_from_28`: boolean
-- `keyword`: 商品名検索用キーワード
-
 ##### Response
 
 ```json
 {
   "data": {
-    "products": [
+    "items": [
       {
         "id": "uuid",
         "name": "アレルギー対応ビスケット",
         "category": "おやつ",
-        "product_type": "daily_item",
-        "is_free_from_28": true,
+        "productType": "daily_item",
+        "isFreeFrom28": true,
         "price": 300,
-        "purchase_url": "https://example.com/item",
-        "shelf_life_months": 12,
-        "note": "28品目不使用"
+        "purchaseUrl": "https://example.com/item",
+        "shelfLifeMonths": 12,
+        "isActive": true
       }
     ]
   },
@@ -446,32 +374,10 @@
 }
 ```
 
----
+##### 補足
 
-#### GET /products/:id
-
-##### 用途
-
-商品詳細を取得する。
-
-##### Response
-
-```json
-{
-  "data": {
-    "id": "uuid",
-    "name": "アレルギー対応ビスケット",
-    "category": "おやつ",
-    "product_type": "daily_item",
-    "is_free_from_28": true,
-    "price": 300,
-    "purchase_url": "https://example.com/item",
-    "shelf_life_months": 12,
-    "note": "28品目不使用"
-  },
-  "error": null
-}
-```
+- 現行実装では `is_active = true` の商品のみ返す
+- 現行実装では認証チェックを行っていない
 
 ---
 
@@ -481,15 +387,15 @@
 
 ##### 用途
 
-家族情報・固定商品マスタ・条件をもとにAIが備えプランを生成する。生成結果は保存しない。
+家族情報・商品マスタ・条件をもとにAIが備えプランを生成する。生成結果は保存しない。
 
 ##### Request
 
 ```json
 {
   "days": 3,
-  "include_daily_items": true,
-  "priority_policy": "balance"
+  "includeDailyItems": true,
+  "priorityPolicy": "balanced"
 }
 ```
 
@@ -498,36 +404,40 @@
 ```json
 {
   "data": {
-    "summary": {
-      "family_member_count": 3,
+    "generatedPlan": {
+      "title": "3日分プラン",
+      "familyMemberCount": 3,
       "days": 3,
-      "total_estimated_cost": 12000,
-      "annual_cost": 8000
-    },
-    "items": [
-      {
-        "product_id": "uuid",
-        "name": "アルファ米",
-        "category": "主食",
-        "product_type": "emergency_food",
-        "quantity": 6,
-        "priority": "high",
-        "price": 400,
-        "purchase_url": "https://example.com/item"
-      }
-    ],
-    "ai_comment": "主食を優先しつつ、日常転用品も含めてバランスよく提案しています。"
+      "includeDailyItems": true,
+      "priorityPolicy": "balanced",
+      "totalCost": 12000,
+      "annualCost": 8000,
+      "explanation": "主食を優先しつつ、日常品も含めて提案しています。",
+      "warnings": [
+        "購入前に必ず商品ページやパッケージで原材料・アレルゲン表示を確認してください。"
+      ],
+      "items": [
+        {
+          "id": "uuid",
+          "name": "アルファ米",
+          "category": "主食",
+          "productType": "emergency_food",
+          "isFreeFrom28": true,
+          "price": 400,
+          "purchaseUrl": "https://example.com/item",
+          "shelfLifeMonths": 60,
+          "isActive": true,
+          "quantity": 6,
+          "subtotal": 2400,
+          "priority": "high",
+          "reason": "災害時のエネルギー確保の中心になる主食として選びました。"
+        }
+      ]
+    }
   },
   "error": null
 }
 ```
-
-##### 補足
-
-- `family_member_count` はログインユーザーに紐づく `family_members` 件数を使う
-- `annual_cost` は表示時に計算する派生値であり、DBには保存しない
-
----
 
 #### GET /plans
 
@@ -539,24 +449,19 @@
 
 ```json
 {
-  "data": {
-    "plans": [
-      {
-        "id": "uuid",
-        "title": "3日分プラン",
-        "family_member_count": 3,
-        "days": 3,
-        "total_estimated_cost": 12000,
-        "created_at": "2026-04-07T10:00:00Z",
-        "updated_at": "2026-04-07T10:00:00Z"
-      }
-    ]
-  },
+  "data": [
+    {
+      "id": "uuid",
+      "title": "3日分プラン",
+      "familyMemberCount": 3,
+      "totalEstimatedCost": 12000,
+      "annualCost": 8000,
+      "updatedAt": "2026-04-07T10:00:00Z"
+    }
+  ],
   "error": null
 }
 ```
-
----
 
 #### GET /plans/:id
 
@@ -571,36 +476,35 @@
   "data": {
     "id": "uuid",
     "title": "3日分プラン",
-    "family_member_count": 3,
     "days": 3,
-    "priority_policy": "balance",
-    "include_daily_items": true,
-    "total_estimated_cost": 12000,
-    "annual_cost": 8000,
-    "ai_comment": "主食を優先しています",
+    "familyMemberCount": 3,
+    "totalEstimatedCost": 12000,
+    "annualCost": 8000,
+    "priorityPolicy": "balanced",
+    "includeDailyItems": true,
+    "aiComment": "主食を優先しています",
+    "warnings": ["購入前に原材料表示を確認してください。"],
     "items": [
       {
-        "product_id": "uuid",
-        "product_name": "アルファ米",
-        "quantity": 6,
-        "priority": "high",
-        "purpose_note": "主食を確保するため",
-        "unit_price": 400,
+        "id": "uuid",
+        "name": "アルファ米",
         "category": "主食",
-        "product_type": "emergency_food",
-        "purchase_url": "https://example.com/item"
+        "productType": "emergency_food",
+        "isFreeFrom28": true,
+        "price": 400,
+        "purchaseUrl": "https://example.com/item",
+        "shelfLifeMonths": 60,
+        "isActive": true,
+        "quantity": 6,
+        "subtotal": 2400,
+        "priority": "high",
+        "reason": "主食を確保するため"
       }
     ]
   },
   "error": null
 }
 ```
-
-##### 補足
-
-- `annual_cost` は `updated_at` が最新の保存済みプラン1件を算出元として、`products.price`、`plan_items.quantity`、`products.shelf_life_months` から表示時に算出する
-
----
 
 #### POST /plans/:id/recalculate
 
@@ -612,7 +516,7 @@
 
 ```json
 {
-  "family_member_count": 4,
+  "familyMemberCount": 4,
   "days": 7
 }
 ```
@@ -623,22 +527,22 @@
 {
   "data": {
     "summary": {
-      "family_member_count": 4,
+      "familyMemberCount": 4,
       "days": 7,
-      "total_estimated_cost": 18000,
-      "annual_cost": 12000
+      "totalEstimatedCost": 18000,
+      "annualCost": 12000
     },
     "items": [
       {
-        "product_id": "uuid",
-        "product_name": "アルファ米",
-        "quantity": 12,
-        "priority": "high",
-        "purpose_note": "主食を確保するため",
-        "unit_price": 400,
+        "productId": "uuid",
+        "name": "アルファ米",
         "category": "主食",
-        "product_type": "emergency_food",
-        "purchase_url": "https://example.com/item"
+        "productType": "emergency_food",
+        "quantity": 12,
+        "subtotal": 4800,
+        "priority": "high",
+        "reason": "主食を確保するため",
+        "purchaseUrl": "https://example.com/item"
       }
     ]
   },
@@ -646,30 +550,24 @@
 }
 ```
 
-##### 業務ルール
-
-- 再計算対象は `plan_items.quantity` のみとする
-- 商品構成、商品ID、カテゴリ、商品種別は変更しない
-- `title` の変更は再計算に影響しない
-
----
-
 #### PATCH /plans/:id
 
 ##### 用途
 
-保存済み備えプランのプラン名・人数・日数・再計算後数量を更新保存する。
+保存済み備えプランのプラン名・人数・日数・数量を更新保存する。
 
 ##### Request
 
 ```json
 {
   "title": "7日分見直しプラン",
-  "family_member_count": 4,
+  "familyMemberCount": 4,
   "days": 7,
+  "totalEstimatedCost": 18000,
+  "annualCost": 12000,
   "items": [
     {
-      "product_id": "uuid",
+      "productId": "uuid",
       "quantity": 12
     }
   ]
@@ -681,20 +579,17 @@
 ```json
 {
   "data": {
-    "updated": true,
-    "plan_id": "uuid"
+    "id": "uuid",
+    "title": "7日分見直しプラン",
+    "familyMemberCount": 4,
+    "days": 7,
+    "totalEstimatedCost": 18000,
+    "annualCost": 12000,
+    "updatedAt": "2026-04-10T10:00:00.000Z"
   },
   "error": null
 }
 ```
-
-##### 業務ルール
-
-- 更新可能項目は title、family_member_count、days、items[].quantity に限定する
-- 商品構成の追加・削除・差し替えは行わない
-- 本人が所有する保存済みプランのみ更新可能とする
-
----
 
 #### POST /plans
 
@@ -708,17 +603,19 @@
 {
   "title": "3日分プラン",
   "days": 3,
-  "priority_policy": "balance",
-  "include_daily_items": true,
-  "family_member_count": 3,
-  "total_estimated_cost": 12000,
-  "ai_comment": "主食を優先しています",
+  "priorityPolicy": "balanced",
+  "includeDailyItems": true,
+  "familyMemberCount": 3,
+  "totalEstimatedCost": 12000,
+  "annualCost": 8000,
+  "aiComment": "主食を優先しています",
+  "warnings": ["購入前に原材料表示を確認してください。"],
   "items": [
     {
-      "product_id": "uuid",
+      "productId": "uuid",
       "quantity": 6,
       "priority": "high",
-      "purpose_note": "主食を確保するため"
+      "purposeNote": "主食を確保するため"
     }
   ]
 }
@@ -729,7 +626,12 @@
 ```json
 {
   "data": {
-    "plan_id": "uuid"
+    "id": "uuid",
+    "title": "3日分プラン",
+    "familyMemberCount": 3,
+    "totalEstimatedCost": 12000,
+    "annualCost": 8000,
+    "updatedAt": "2026-04-07T10:00:00Z"
   },
   "error": null
 }
@@ -739,9 +641,7 @@
 
 - 無料プランは保存可能件数1件まで
 - 有料プランは保存件数制限を解除する
-- 保存件数上限を超える場合は `422` を返す
-
----
+- 保存件数上限を超える場合は `403` を返す
 
 #### DELETE /plans/:id
 
@@ -754,7 +654,7 @@
 ```json
 {
   "data": {
-    "deleted": true
+    "success": true
   },
   "error": null
 }
@@ -774,41 +674,18 @@
 
 ```json
 {
-  "data": {
-    "stock_items": [
-      {
-        "id": "uuid",
-        "product_id": "uuid-product",
-        "product_name": "アレルギー対応ビスケット",
-        "quantity": 2,
-        "purchased_at": "2026-04-07",
-        "expires_at": "2026-06-01",
-        "unit_price": 300,
-        "is_expiring_soon": true
-      },
-      {
-        "id": "uuid-free-input",
-        "product_id": null,
-        "product_name": "家で買ったクラッカー",
-        "quantity": 1,
-        "purchased_at": "2026-04-07",
-        "expires_at": "2026-05-20",
-        "unit_price": 250,
-        "is_expiring_soon": true
-      }
-    ],
-    "stock_total_cost": 850
-  },
+  "data": [
+    {
+      "id": "uuid",
+      "name": "アレルギー対応ビスケット",
+      "quantity": 2,
+      "expiresAt": "2026-06-01",
+      "unitPrice": 300
+    }
+  ],
   "error": null
 }
 ```
-
-##### 補足
-
-- 一覧は `expires_at` 昇順を基本とする
-- `stock_total_cost = Σ(unit_price × quantity)`
-
----
 
 #### POST /stock-items
 
@@ -816,27 +693,15 @@
 
 備蓄商品を登録する。
 
-##### Request（商品マスタから選択する場合）
+##### Request
 
 ```json
 {
-  "product_id": "uuid-product",
-  "product_name": "アレルギー対応ビスケット",
+  "productId": "uuid-product",
+  "productName": "アレルギー対応ビスケット",
   "quantity": 2,
-  "expires_at": "2026-06-01",
-  "unit_price": 300
-}
-```
-
-##### Request（自由入力の場合）
-
-```json
-{
-  "product_id": null,
-  "product_name": "家で買ったクラッカー",
-  "quantity": 1,
-  "expires_at": "2026-05-20",
-  "unit_price": 250
+  "expiresAt": "2026-06-01",
+  "unitPrice": 300
 }
 ```
 
@@ -845,7 +710,11 @@
 ```json
 {
   "data": {
-    "stock_item_id": "uuid"
+    "id": "uuid",
+    "name": "アレルギー対応ビスケット",
+    "quantity": 2,
+    "expiresAt": "2026-06-01",
+    "unitPrice": 300
   },
   "error": null
 }
@@ -854,10 +723,39 @@
 ##### 補足
 
 - `purchased_at` は入力項目とせず、登録日時を自動保存する
-- `product_id` は任意
-- `product_name` は必須
+- `productId` は任意
+- `productName` は必須
 
----
+#### PATCH /stock-items/:id
+
+##### 用途
+
+備蓄商品の数量・単価・賞味期限を更新する。
+
+##### Request
+
+```json
+{
+  "quantity": 3,
+  "unitPrice": 280,
+  "expiresAt": "2026-07-01"
+}
+```
+
+##### Response
+
+```json
+{
+  "data": {
+    "id": "uuid",
+    "name": "アレルギー対応ビスケット",
+    "quantity": 3,
+    "expiresAt": "2026-07-01",
+    "unitPrice": 280
+  },
+  "error": null
+}
+```
 
 #### DELETE /stock-items/:id
 
@@ -870,7 +768,7 @@
 ```json
 {
   "data": {
-    "deleted": true
+    "success": true
   },
   "error": null
 }
@@ -878,45 +776,55 @@
 
 ---
 
-### 7.6 Dashboard
+### 7.6 Home
 
-#### GET /dashboard
+#### GET /home
 
 ##### 用途
 
-ダッシュボード表示に必要な情報をまとめて取得する。
+ホーム表示に必要な情報をまとめて取得する。
 
 ##### Response
 
 ```json
 {
   "data": {
-    "family": {
-      "member_count": 3
+    "familySummary": {
+      "memberCount": 3,
+      "hasFamily": true
     },
-    "cost": {
-      "annual_cost": 8000,
-      "stock_total_cost": 5000
+    "costSummary": {
+      "annualCost": 8000,
+      "sourcePlanId": "uuid"
     },
-    "expiring_items": [
-      {
-        "id": "uuid",
-        "product_name": "アレルギー対応ビスケット",
-        "expires_at": "2026-06-01",
-        "days_left": 25
-      }
-    ],
-    "plans": [
+    "expiringItems": {
+      "count": 1,
+      "items": [
+        {
+          "id": "uuid",
+          "productName": "アレルギー対応ビスケット",
+          "expiresAt": "2026-06-01",
+          "daysLeft": 25
+        }
+      ]
+    },
+    "stockSummary": {
+      "count": 5
+    },
+    "savedPlans": [
       {
         "id": "uuid",
         "title": "3日分プラン",
-        "total_estimated_cost": 12000
+        "days": 3,
+        "familyMemberCount": 3,
+        "totalEstimatedCost": 12000,
+        "annualCost": 8000,
+        "updatedAt": "2026-04-07T10:00:00Z"
       }
     ],
-    "subscription": {
-      "plan_code": "free",
-      "plan_name": "無料プラン",
-      "status": "active"
+    "billingSummary": {
+      "planCode": "free",
+      "maxSavedPlans": 1
     }
   },
   "error": null
@@ -935,26 +843,52 @@ Stripe Checkout セッションを作成する。
 
 ##### Request
 
-```json
-{
-  "plan_code": "premium",
-  "success_url": "https://example.com/billing/success",
-  "cancel_url": "https://example.com/billing"
-}
-```
+リクエストボディなし
 
 ##### Response
 
 ```json
 {
   "data": {
-    "checkout_url": "https://checkout.stripe.com/..."
+    "url": "https://checkout.stripe.com/..."
   },
   "error": null
 }
 ```
 
----
+#### POST /payments/cancel
+
+##### 用途
+
+Stripe定期課金の自動更新停止を予約する。
+
+##### Request
+
+リクエストボディなし
+
+##### Response
+
+```json
+{
+  "data": {
+    "message": "自動更新を停止しました。次回更新日までは利用できます。",
+    "cancelAtPeriodEnd": true,
+    "currentPeriodEnd": "2026-05-01T00:00:00.000Z"
+  },
+  "error": null
+}
+```
+
+##### 既に解約済みの場合
+
+```json
+{
+  "data": {
+    "message": "すでに解約済みです。"
+  },
+  "error": null
+}
+```
 
 #### POST /payments/webhook
 
@@ -973,11 +907,19 @@ Stripe Webhook を受信し、契約状態を更新する。
 }
 ```
 
+##### 補足
+
+- `checkout.session.completed`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+
+を主に処理する。
+
 ---
 
 ### 7.8 Notifications
 
-#### POST /notifications/expiry/run
+#### POST /batch/expire-notification
 
 ##### 用途
 
@@ -985,17 +927,33 @@ Stripe Webhook を受信し、契約状態を更新する。
 
 ##### 認可
 
-内部実行専用
+`Authorization: Bearer <CRON_SECRET>`
 
 ##### Response
 
 ```json
 {
+  "ok": true,
+  "message": "Expire notification batch completed",
   "data": {
-    "processed_users": 10,
-    "sent_notifications": 8
-  },
-  "error": null
+    "targetUsers": 2,
+    "targetItems": 3,
+    "failedUsers": 0
+  }
+}
+```
+
+##### 対象0件の場合
+
+```json
+{
+  "ok": true,
+  "message": "No expiring items found",
+  "data": {
+    "targetUsers": 0,
+    "targetItems": 0,
+    "failedUsers": 0
+  }
 }
 ```
 
@@ -1009,18 +967,17 @@ Stripe Webhook を受信し、契約状態を更新する。
 
 ## 8. 画面との対応
 
-| 画面             | 主に利用するAPI                                                                                         |
-| ---------------- | ------------------------------------------------------------------------------------------------------- | --- |
-| /login           | POST /auth/login                                                                                        |
-| /signup          | POST /auth/signup                                                                                       |
-| /dashboard       | GET /dashboard                                                                                          |
-| /family          | GET /family-members, POST /family-members, PATCH /family-members/:id, PUT /family-members/:id/allergens |
-| /plan/new        | POST /plans/generate                                                                                    |
-| /plans           | GET /plans, DELETE /plans/:id                                                                           |
-| /plans/:id       | GET /plans/:id, POST /plans/:id/recalculate, PATCH /plans/:id, POST /plans, DELETE /plans/:id           |
-| /stock-items     | GET /stock-items, POST /stock-items, PATCH /stock-items/:id, DELETE /stock-items/:id                    |
-| /billing         | POST /billing/checkout                                                                                  |
-| /billing/success | GET /billing/status                                                                                     |     |
+| 画面             | 主に利用するAPI                                                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| /home            | GET /home, GET /me                                                                                                                  |
+| /family          | GET /family-members, POST /family-members, PATCH /family-members/:id, DELETE /family-members/:id, PUT /family-members/:id/allergens |
+| /plan/new        | POST /plans/generate, GET /family-members                                                                                           |
+| /plans           | GET /plans, DELETE /plans/:id                                                                                                       |
+| /plans/:id       | GET /plans/:id, POST /plans/:id/recalculate, PATCH /plans/:id, DELETE /plans/:id                                                    |
+| /plans/temp      | POST /plans                                                                                                                         |
+| /stock-items     | GET /stock-items, POST /stock-items, PATCH /stock-items/:id, DELETE /stock-items/:id                                                |
+| /billing         | POST /payments/checkout, POST /payments/cancel, GET /me                                                                             |
+| /billing/success | GET /me                                                                                                                             |
 
 ---
 
@@ -1031,16 +988,16 @@ Stripe Webhook を受信し、契約状態を更新する。
 - `stock_items` は商品マスタ選択・自由入力の両方に対応する
 - `stock_items.product_id` は NULL 許容だが、`product_name` は必須
 - `purchased_at` は備蓄登録日時を自動保存する
-- 年間維持コストと備蓄コスト目安は表示時に計算する
-- 見直し専用画面はMVP対象外
-- 専用の備えプラン編集画面は作らないが、備えプラン詳細画面に追加機能として限定的な編集を実装する
-- 編集可能項目は `プラン名 / 人数 / 日数` に限定し、再計算対象は `商品の数量のみ` とする
+- `annualCost` は保存済みプランとホーム表示で利用する
+- 専用の備えプラン編集画面は作らないが、備えプラン詳細画面に限定的な編集を実装する
+- 編集可能項目は `プラン名 / 人数 / 日数 / 数量` に限定する
 - 商品情報やAI提案は最終安全判定ではないため、注意文を表示する
+- 認証系は Route Handler API ではなく Supabase Auth client を利用する
 
 ---
 
 ## 10. 現在の状態
 
-- API設計: 更新済み
-- 要件定義 / PRD / MVP / DB設計との整合: 反映済み
-- 実装前提: 整理済み
+- API設計: 現行実装ベースに更新済み
+- 対象: `my-app/app/api` 配下の主要Route Handlers
+- 内部テスト用API: 本書の対象外
