@@ -39,7 +39,7 @@
 
 ### Figma
 
-https://www.figma.com/design/FHWvJG2UjFAKXKyP1V2qh5/%E7%84%A1%E9%A1%8C?node-id=0-1&t=RfCjyWjvPN3NQNrD-1
+外部公開用リポジトリのため、設計資料リンクは掲載していません。
 
 ### 画面遷移図
 
